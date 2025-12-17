@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Countdown</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', sans-serif;
+            background: url('https://png.pngtree.com/background/20210710/original/pngtree-red-christmas-snow-winter-cartoon-show-board-background-picture-image_979028.jpg') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.05s ease-out, filter 0.05s ease-out;
+            transform-origin: center;
+            user-select: none; -webkit-user-select: none; cursor: none;
+        }
+        .container {
+            position: absolute; top: 20px; left: 50%;
+            transform: translateX(-50%); text-align: center;
+            width: 100%; z-index: 5;
+        }
+        h1 {
+            font-size: 8vw; font-weight: 900; color: #ffffff;
+            -webkit-text-stroke: 2px #000000;
+            text-shadow: 0 0 15px rgba(255,255,255,0.6);
+        }
+        #countdown {
+            font-size: 5vw; font-weight: 900; color: #ffffff;
+            -webkit-text-stroke: 2px #000000;
+        }
+        .snowflake { position: fixed; top: -10px; color: white; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+        #santa { position: fixed; top: 15%; left: -200px; width: 180px; z-index: 9999; }
+        .vscode-label { position: absolute; bottom: 10px; right: 20px; font-size: 18px; color: #000; z-index: 10000; }
+        
+        /* Play Button Style */
+        #start-audio-btn {
+            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+            z-index: 20000; background: #007bff; color: white; border: none;
+            padding: 20px 40px; font-size: 24px; font-weight: bold;
+            border-radius: 12px; cursor: pointer !important; pointer-events: auto !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Christmas Countdown</h1>
+    <div id="countdown">Loading…</div>
+</div>
+
+<div class="vscode-label">Made in VS Code</div>
+<img id="santa" src="https://pngimg.com/uploads/santa_sleigh/santa_sleigh_PNG81.png" alt="Santa">
+
+<script>
+    // Security/Control Overrides
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('mousedown', e => { if (e.target.id !== 'start-audio-btn') e.preventDefault(); });
+
+    // Countdown Logic
+    const target = new Date(new Date().getFullYear(), 11, 25);
+    if (new Date() > target) target.setFullYear(target.getFullYear() + 1);
+
+    setInterval(() => {
+        const diff = target - new Date();
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById("countdown").textContent = `${d}d ${h}h ${m}m ${s}s`;
+    }, 1000);
+
+    // Snow
+    setInterval(() => {
+        const s = document.createElement("div");
+        s.className = "snowflake"; s.textContent = "❄";
+        s.style.left = Math.random() * window.innerWidth + "px";
+        s.style.fontSize = Math.random() * 20 + 10 + "px";
+        s.style.animationDuration = Math.random() * 3 + 4 + "s";
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 7000);
+    }, 150);
+</script>
+<script src="music.js"></script>
+</body>
+</html>
