@@ -47,7 +47,7 @@ const visualLayer = document.getElementById('visual-layer');
 
 const btn = document.createElement("button");
 btn.id = "start-audio-btn";
-btn.innerHTML = "START PARTY";
+btn.innerHTML = "START Music";
 document.body.appendChild(btn);
 
 function initVisualizer() {
