@@ -1,9 +1,8 @@
 document.title = "Christmas Countdown (Radio)";
 
 const audio = new Audio();
-audio.autoplay = true;
 
-// Songs list
+// === Playlist + speech track ===
 const songs = [
     "All I Want For Christmas Is You",
     "Baby It's Cold Outside",
@@ -46,40 +45,38 @@ const songs = [
     "You're A Mean One Mr.Grinch!"
 ];
 
-// Build playlist with speech track between each song
 const playlist = [];
 for (let song of songs) {
     playlist.push({ name: song, src: `songs/Music Now, Trap Music Now, Dance Music Now - ${song} (SPOTISAVER).mp3` });
     playlist.push({ name: "Speech", src: "speech.mp3" });
 }
 
-// Approximate durations in seconds (replace with actual durations)
-const songDurations = playlist.map(() => 180); // 3 minutes placeholder
+// Placeholder durations (seconds) – replace with actual track lengths
+const songDurations = playlist.map(() => 180);
 
-// Live radio start: December 1, 2025
+// === Live radio start Dec 1, 2025 ===
 const serverStartTime = new Date("Dec 1, 2025 00:00:00 UTC").getTime();
 
 function getCurrentSongIndexAndOffset() {
     const now = Date.now();
-    const elapsed = (now - serverStartTime) / 1000; // seconds since first song
+    const elapsed = (now - serverStartTime) / 1000;
     const totalDuration = songDurations.reduce((a,b) => a+b, 0);
     let time = elapsed % totalDuration;
 
     for (let i = 0; i < playlist.length; i++) {
-        if (time < songDurations[i]) {
-            return { index: i, offset: time };
-        }
+        if (time < songDurations[i]) return { index: i, offset: time };
         time -= songDurations[i];
     }
 
     return { index: 0, offset: 0 };
 }
 
+// Play sync function
 function playSync() {
     const { index, offset } = getCurrentSongIndexAndOffset();
     audio.src = playlist[index].src;
     audio.currentTime = offset;
-    audio.play();
+    audio.play().catch(() => {}); // ignore autoplay errors
 
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -90,41 +87,32 @@ function playSync() {
         });
     }
 
-    // Schedule next sync just before current song ends
     const remaining = songDurations[index] - offset;
     setTimeout(playSync, remaining * 1000);
 }
 
-// Start live radio
-playSync();
+// Start audio + PiP after user click (required by browsers)
+document.body.addEventListener('click', async () => {
+    playSync();
 
-// Automatic PiP with current song overlay
-async function setupPiP() {
     try {
         const stream = audio.captureStream();
         const track = stream.getAudioTracks()[0];
-
         const video = document.createElement('video');
         video.srcObject = new MediaStream([track]);
         video.muted = true;
-        video.style.display = "none"; // hide video element
+        video.style.display = 'none';
         document.body.appendChild(video);
         await video.play();
+        await video.requestPictureInPicture();
 
-        const pip = await video.requestPictureInPicture();
-
-        // Optional: update PiP metadata dynamically
         setInterval(() => {
             const { index } = getCurrentSongIndexAndOffset();
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata.title = playlist[index].name;
             }
         }, 1000);
-
     } catch (err) {
         console.error('PiP setup failed:', err);
     }
-}
-
-// Start PiP automatically
-setupPiP();
+}, { once: true });
