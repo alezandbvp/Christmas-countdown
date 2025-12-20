@@ -157,13 +157,13 @@ function animateEffects(){
     analyser.getByteFrequencyData(dataArray);
     const avg = dataArray.reduce((a,b)=>a+b,0)/dataArray.length;
 
-    // Zoom and shake background
+    // Zoom and shake body (background)
     const scale = 1 + avg/1000;
-    const xShake = (Math.random()-0.5)*avg/100;
-    const yShake = (Math.random()-0.5)*avg/100;
+    const xShake = (Math.random()-0.5)*avg/50;
+    const yShake = (Math.random()-0.5)*avg/50;
     document.body.style.transform = `scale(${scale}) translate(${xShake}px,${yShake}px)`;
 
-    // Zoom and shake title/subtitle
+    // Zoom and shake title/subtitle/countdown
     titleEl.style.transform = `scale(${1 + avg/800}) translate(${xShake}px,${yShake}px)`;
     subtitleEl.style.transform = `scale(${1 + avg/800}) translate(${xShake}px,${yShake}px)`;
     countdownEl.style.transform = `scale(${1 + avg/900}) translate(${xShake}px,${yShake}px)`;
