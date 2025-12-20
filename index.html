@@ -89,10 +89,9 @@ const countdownEl = document.getElementById('countdown');
 const titleEl = document.getElementById('title');
 const subtitleEl = document.getElementById('subtitle');
 const container = document.getElementById('container');
-const audio = new Audio();
-const speechAudio = new Audio('songs/speech.mp3');
+
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let analyser, dataArray;
+let analyser, dataArray, songGain, speechGain;
 
 // Songs
 const songs = [
@@ -146,25 +145,6 @@ for(let i=0;i<50;i++){
     document.body.appendChild(snow);
 }
 
-// Setup analyser and gains
-let songGain, speechGain;
-function setupAudio(){
-    const songSource = audioCtx.createMediaElementSource(audio);
-    const speechSource = audioCtx.createMediaElementSource(speechAudio);
-
-    analyser = audioCtx.createAnalyser();
-    songGain = audioCtx.createGain();
-    speechGain = audioCtx.createGain();
-    songGain.gain.value = 1;
-    speechGain.gain.value = 0;
-
-    songSource.connect(songGain).connect(analyser);
-    analyser.connect(audioCtx.destination);
-    speechSource.connect(speechGain).connect(audioCtx.destination);
-
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
-}
-
 // Animate container and text
 function animateEffects(){
     requestAnimationFrame(animateEffects);
@@ -189,6 +169,7 @@ function animateEffects(){
 }
 
 let currentIndex = 0;
+let audio, speechAudio;
 
 // Preload durations
 async function preloadDurations(){
@@ -242,7 +223,6 @@ function playNextTrack(){
             audio.addEventListener('timeupdate', function playSpeech(){
                 const remaining = audio.duration - audio.currentTime;
                 if(remaining <= 5){
-                    // Halve music volume while speech plays
                     songGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
                     speechGain.gain.setValueAtTime(1, audioCtx.currentTime);
                     speechAudio.currentTime = 0;
@@ -250,7 +230,6 @@ function playNextTrack(){
                     audio.removeEventListener('timeupdate', playSpeech);
 
                     speechAudio.onended = ()=>{
-                        // Restore music volume
                         songGain.gain.setValueAtTime(1, audioCtx.currentTime);
                         speechGain.gain.setValueAtTime(0, audioCtx.currentTime);
                         currentIndex++;
@@ -270,7 +249,6 @@ function playNextTrack(){
         playNextTrack();
     });
 
-    // MediaSession with skip disabled
     if('mediaSession' in navigator){
         navigator.mediaSession.metadata = new MediaMetadata({
             title: track.name,
@@ -291,8 +269,7 @@ async function jumpToLive(){
     await preloadDurations();
     const {index, time} = calculateLiveIndexAndTime();
     currentIndex = index;
-    const track = playlist[currentIndex];
-    audio.src = track.src;
+    audio.src = playlist[currentIndex].src;
     audio.currentTime = time;
     audio.play();
 }
@@ -300,9 +277,30 @@ async function jumpToLive(){
 // Start music button
 document.getElementById('playButton').addEventListener('click', async ()=>{
     if(audioCtx.state==='suspended') await audioCtx.resume();
-    setupAudio();
+
+    // Create audio elements
+    audio = new Audio();
+    speechAudio = new Audio('songs/speech.mp3');
+
+    // Setup sources and analyser
+    const songSource = audioCtx.createMediaElementSource(audio);
+    const speechSource = audioCtx.createMediaElementSource(speechAudio);
+
+    analyser = audioCtx.createAnalyser();
+    songGain = audioCtx.createGain();
+    speechGain = audioCtx.createGain();
+    songGain.gain.value = 1;
+    speechGain.gain.value = 0;
+
+    songSource.connect(songGain).connect(analyser);
+    analyser.connect(audioCtx.destination);
+    speechSource.connect(speechGain).connect(audioCtx.destination);
+
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+
     animateEffects();
     jumpToLive();
+
     document.getElementById('playButton').style.display='none';
 });
 </script>
