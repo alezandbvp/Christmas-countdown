@@ -22,24 +22,16 @@
         height: 100vh;
     }
 
-    #title {
-        font-size: 6em;
+    #title, #subtitle {
+        font-size: 6em; /* same size */
         color: #fff;
         text-shadow: 0 0 15px red, 0 0 25px green;
         margin: 0;
         font-family: 'ChristmasFont', cursive;
     }
 
-    #subtitle {
-        font-size: 3em;
-        color: #fff;
-        text-shadow: 0 0 10px red, 0 0 15px green;
-        margin: 0;
-        font-family: 'ChristmasFont', cursive;
-    }
-
     #countdown {
-        font-size: 4em;
+        font-size: 6em;
         color: #fff;
         text-shadow: 0 0 10px red, 0 0 20px green;
         margin-top: 20px;
@@ -80,7 +72,7 @@
 </head>
 <body>
 <h1 id="title">Christmas</h1>
-<h2 id="subtitle">Countdown</h2>
+<h1 id="subtitle">Countdown</h1>
 <div id="countdown">00d 00h 00m 00s</div>
 <button id="playButton">Play Music</button>
 
@@ -92,18 +84,15 @@ const countdownEl = document.getElementById('countdown');
 function updateCountdown() {
     const now = new Date();
     let currentYear = now.getFullYear();
-
     let targetDate = new Date(`Dec 25, ${currentYear} 00:00:00`).getTime();
     if (now.getTime() > targetDate) {
         targetDate = new Date(`Dec 25, ${currentYear + 1} 00:00:00`).getTime();
     }
-
     const distance = targetDate - now.getTime();
     const days = Math.floor(distance / (1000*60*60*24));
     const hours = Math.floor((distance % (1000*60*60*24)) / (1000*60*60));
     const minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
     const seconds = Math.floor((distance % (1000*60)) / 1000);
-
     countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
@@ -123,7 +112,8 @@ for (let i=0; i<numSnowflakes; i++){
 }
 
 // Play button
-document.getElementById('playButton').addEventListener('click', () => {
+document.getElementById('playButton').addEventListener('click', async () => {
+    if(audioCtx.state === 'suspended') await audioCtx.resume();
     startMusic();
     document.getElementById('playButton').style.display='none';
 });

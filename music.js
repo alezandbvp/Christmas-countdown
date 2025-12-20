@@ -53,7 +53,7 @@ for (let song of songs){
     playlist.push({name:"Speech", src:"songs/speech.mp3"});
 }
 
-// Placeholder durations for sync (in seconds)
+// Placeholder durations (seconds)
 const songDurations = playlist.map(()=>180);
 
 // Live radio start: Dec 1, 2025
@@ -72,7 +72,7 @@ function getCurrentSongIndexAndOffset(){
     return {index:0, offset:0};
 }
 
-// AudioContext for visual effects
+// AudioContext for effects
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let analyser;
 let dataArray;
@@ -116,23 +116,75 @@ function playSync(){
     setTimeout(playSync, remaining*1000);
 }
 
-// Start music + PiP of page
+// Start music + canvas PiP
 async function startMusic(){
     if(audioCtx.state==='suspended') await audioCtx.resume();
     setupAudioContext();
     animateEffects();
     playSync();
 
-    try{
-        const bodyStream = document.body.captureStream(30); // 30fps
-        const video = document.createElement('video');
-        video.srcObject = bodyStream;
-        video.muted = true;
-        video.style.display='none';
-        document.body.appendChild(video);
-        await video.play();
-        await video.requestPictureInPicture();
-    }catch(err){
-        console.error("PiP setup failed:", err);
+    // Canvas PiP
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const width = 800, height = 600;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.display='none';
+    document.body.appendChild(canvas);
+
+    const video = document.createElement('video');
+    video.srcObject = canvas.captureStream(30);
+    video.muted = true;
+    await video.play();
+
+    function renderCanvas(){
+        ctx.clearRect(0,0,width,height);
+
+        // Background
+        const bg = new Image();
+        bg.src = 'christmas-background.jpg';
+        ctx.drawImage(bg, 0, 0, width, height);
+
+        // Title and countdown
+        ctx.font = '80px ChristmasFont, cursive';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'red';
+        ctx.shadowBlur = 20;
+        ctx.fillText('Christmas', width/2, 150);
+        ctx.fillText('Countdown', width/2, 250);
+
+        ctx.font = '80px ChristmasFont, cursive';
+        ctx.shadowColor = 'green';
+        ctx.shadowBlur = 15;
+        ctx.fillText(countdownEl.textContent, width/2, 350);
+
+        // Snowflakes
+        document.querySelectorAll('.snowflake').forEach((flake)=>{
+            const x = parseFloat(flake.style.left) || Math.random()*width;
+            const y = parseFloat(flake.style.top) || Math.random()*height;
+            ctx.font = flake.style.fontSize || '20px';
+            ctx.fillStyle = 'white';
+            ctx.fillText('❄', x, y);
+        });
+
+        requestAnimationFrame(renderCanvas);
     }
+    renderCanvas();
+
+    // Ctrl+Shift+P to toggle PiP
+    document.addEventListener('keydown', async (event) => {
+        if(event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'p'){
+            event.preventDefault();
+            try{
+                if(!document.pictureInPictureElement){
+                    await video.requestPictureInPicture();
+                }else{
+                    await document.exitPictureInPicture();
+                }
+            }catch(err){
+                console.error('PiP failed:', err);
+            }
+        }
+    });
 }
