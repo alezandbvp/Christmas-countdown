@@ -2,7 +2,7 @@ document.title = "Christmas Countdown (Radio)";
 
 const audio = new Audio();
 
-// === Playlist + speech track ===
+// Playlist + speech
 const songs = [
     "All I Want For Christmas Is You",
     "Baby It's Cold Outside",
@@ -51,10 +51,10 @@ for (let song of songs) {
     playlist.push({ name: "Speech", src: "speech.mp3" });
 }
 
-// Placeholder durations (seconds) – replace with actual track lengths
+// Placeholder durations (seconds)
 const songDurations = playlist.map(() => 180);
 
-// === Live radio start Dec 1, 2025 ===
+// Live radio start: Dec 1, 2025
 const serverStartTime = new Date("Dec 1, 2025 00:00:00 UTC").getTime();
 
 function getCurrentSongIndexAndOffset() {
@@ -67,16 +67,14 @@ function getCurrentSongIndexAndOffset() {
         if (time < songDurations[i]) return { index: i, offset: time };
         time -= songDurations[i];
     }
-
     return { index: 0, offset: 0 };
 }
 
-// Play sync function
 function playSync() {
     const { index, offset } = getCurrentSongIndexAndOffset();
     audio.src = playlist[index].src;
     audio.currentTime = offset;
-    audio.play().catch(() => {}); // ignore autoplay errors
+    audio.play().catch(() => {});
 
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -91,8 +89,8 @@ function playSync() {
     setTimeout(playSync, remaining * 1000);
 }
 
-// Start audio + PiP after user click (required by browsers)
-document.body.addEventListener('click', async () => {
+// === Start music after Play button click ===
+async function startMusic() {
     playSync();
 
     try {
@@ -115,4 +113,4 @@ document.body.addEventListener('click', async () => {
     } catch (err) {
         console.error('PiP setup failed:', err);
     }
-}, { once: true });
+}
