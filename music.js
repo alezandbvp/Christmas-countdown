@@ -1,11 +1,9 @@
-// Fixed site title
 document.title = "Christmas Countdown (Radio)";
 
-// Audio element
 const audio = new Audio();
 audio.autoplay = true;
 
-// Playlist
+// Songs list
 const songs = [
     "All I Want For Christmas Is You",
     "Baby It's Cold Outside",
@@ -48,40 +46,59 @@ const songs = [
     "You're A Mean One Mr.Grinch!"
 ];
 
-// Build playlist with speech track between songs
+// Build playlist with speech track between each song
 const playlist = [];
 for (let song of songs) {
     playlist.push({ name: song, src: `songs/Music Now, Trap Music Now, Dance Music Now - ${song} (SPOTISAVER).mp3` });
     playlist.push({ name: "Speech", src: "speech.mp3" });
 }
 
-let currentIndex = 0;
+// Approximate durations in seconds (replace with actual durations)
+const songDurations = playlist.map(() => 180); // 3 minutes placeholder
 
-// Play song and update MediaSession
-function playSong(song) {
-    audio.src = song.src;
+// Live radio start: December 1, 2025
+const serverStartTime = new Date("Dec 1, 2025 00:00:00 UTC").getTime();
+
+function getCurrentSongIndexAndOffset() {
+    const now = Date.now();
+    const elapsed = (now - serverStartTime) / 1000; // seconds since first song
+    const totalDuration = songDurations.reduce((a,b) => a+b, 0);
+    let time = elapsed % totalDuration;
+
+    for (let i = 0; i < playlist.length; i++) {
+        if (time < songDurations[i]) {
+            return { index: i, offset: time };
+        }
+        time -= songDurations[i];
+    }
+
+    return { index: 0, offset: 0 };
+}
+
+function playSync() {
+    const { index, offset } = getCurrentSongIndexAndOffset();
+    audio.src = playlist[index].src;
+    audio.currentTime = offset;
     audio.play();
 
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: song.name,
+            title: playlist[index].name,
             artist: 'Christmas Countdown',
             album: 'Live Radio',
             artwork: [{ src: 'favicon.ico', sizes: '64x64', type: 'image/png' }]
         });
     }
+
+    // Schedule next sync just before current song ends
+    const remaining = songDurations[index] - offset;
+    setTimeout(playSync, remaining * 1000);
 }
 
-// Auto-next song
-audio.addEventListener('ended', () => {
-    currentIndex = (currentIndex + 1) % playlist.length;
-    playSong(playlist[currentIndex]);
-});
+// Start live radio
+playSync();
 
-// Start first song
-playSong(playlist[currentIndex]);
-
-// Picture-in-Picture setup
+// Automatic PiP with current song overlay
 async function setupPiP() {
     try {
         const stream = audio.captureStream();
@@ -90,12 +107,24 @@ async function setupPiP() {
         const video = document.createElement('video');
         video.srcObject = new MediaStream([track]);
         video.muted = true;
+        video.style.display = "none"; // hide video element
+        document.body.appendChild(video);
         await video.play();
-        await video.requestPictureInPicture();
+
+        const pip = await video.requestPictureInPicture();
+
+        // Optional: update PiP metadata dynamically
+        setInterval(() => {
+            const { index } = getCurrentSongIndexAndOffset();
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata.title = playlist[index].name;
+            }
+        }, 1000);
+
     } catch (err) {
         console.error('PiP setup failed:', err);
     }
 }
 
-// Optional: auto-start PiP
-// setupPiP();
+// Start PiP automatically
+setupPiP();
