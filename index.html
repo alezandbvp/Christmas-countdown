@@ -1,124 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Christmas Countdown</title>
-<link rel="icon" href="favicon.ico" type="image/x-icon">
-<style>
-/* -------------------- General -------------------- */
-html, body {
-    margin: 0; padding: 0;
-    height: 100%; width: 100%;
-    background: #000;
-    overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    cursor: none;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Countdown (Radio)</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(to bottom, #ffefba, #ffffff);
+            overflow: hidden;
+            position: relative;
+        }
 
-/* -------------------- Animated Visual Layer -------------------- */
-#visual-layer {
-    position: fixed;
-    top: -10%; left: -10%;
-    width: 120%; height: 120%;
-    background: url('https://images.splitshire.com/full/A-High-Resolution-Christmas-Background-with-Festive-Lights_mVwGn.png') no-repeat center center;
-    background-size: cover;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-    will-change: transform;
-}
+        #countdown {
+            font-size: 3em;
+            color: #b22222;
+            text-shadow: 2px 2px 5px #fff;
+            margin-top: 20vh;
+        }
 
-.container { text-align:center; width:90%; pointer-events:none; }
+        /* Snow effect */
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 1em;
+            user-select: none;
+            pointer-events: none;
+            animation: fall linear infinite;
+        }
 
-h1 {
-    font-size: clamp(2.5rem,10vw,7rem);
-    font-weight:900;
-    color:#fff;
-    -webkit-text-stroke:3px #000;
-    margin:0;
-    text-transform:uppercase;
-    letter-spacing:2px;
-}
-
-#countdown {
-    font-size: clamp(1.8rem,7vw,5rem);
-    font-weight:900;
-    color:#fff;
-    -webkit-text-stroke:2px #000;
-    font-variant-numeric: tabular-nums;
-}
-
-/* -------------------- Snow Effect -------------------- */
-.snowflake {
-    position: fixed;
-    top: -10px;
-    color: white;
-    animation: fall linear forwards;
-    z-index: 5;
-    pointer-events: none;
-}
-@keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
-
-/* -------------------- Static Label -------------------- */
-.vscode-label {
-    position: fixed;
-    bottom: 20px;
-    right: 25px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #000;
-    z-index: 9999;
-    pointer-events: none;
-    user-select: none;
-    text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
-}
-
-/* -------------------- Start Button -------------------- */
-#start-audio-btn {
-    position: fixed;
-    left: 30px;
-    bottom: 30px;
-    z-index: 10000;
-    background: #ff0000;
-    color: white;
-    padding: 15px 30px;
-    font-size: 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 3px solid white;
-    font-weight: bold;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    pointer-events: auto;
-}
-
-/* -------------------- PiP Video -------------------- */
-video#pip-video { display: none; }
-</style>
+        @keyframes fall {
+            to { transform: translateY(100vh); }
+        }
+    </style>
 </head>
 <body>
+    <div id="countdown">Loading...</div>
 
-<!-- -------------------- Visual Layer -------------------- -->
-<div id="visual-layer">
-    <div class="container">
-        <h1>Christmas</h1>
-        <h1>Countdown</h1>
-        <div id="countdown">Calculating...</div>
-    </div>
-</div>
+    <!-- Call the JS -->
+    <script src="music.js"></script>
+    <script>
+        // Countdown timer
+        const countdownEl = document.getElementById('countdown');
+        const targetDate = new Date("Dec 25, 2025 00:00:00").getTime();
 
-<!-- -------------------- Static Label -------------------- -->
-<div class="vscode-label">This was made in Visual Studio Code</div>
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
 
-<!-- -------------------- Start Music Button -------------------- -->
-<button id="start-audio-btn">START MUSIC</button>
+            if (distance < 0) {
+                countdownEl.textContent = "🎄 Merry Christmas! 🎄";
+                clearInterval(interval);
+                return;
+            }
 
-<!-- -------------------- PiP Video -------------------- -->
-<video id="pip-video" autoplay muted playsinline></video>
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-<!-- -------------------- Music Script -------------------- -->
-<script src="music.js"></script>
+            countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        const interval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Snow effect
+        const numSnowflakes = 50;
+        for (let i = 0; i < numSnowflakes; i++) {
+            const snow = document.createElement('div');
+            snow.className = 'snowflake';
+            snow.textContent = '❄';
+            snow.style.left = Math.random() * 100 + 'vw';
+            snow.style.animationDuration = (3 + Math.random() * 5) + 's';
+            snow.style.fontSize = (10 + Math.random() * 20) + 'px';
+            document.body.appendChild(snow);
+        }
+    </script>
 </body>
 </html>
