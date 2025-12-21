@@ -2,201 +2,191 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Christmas Countdown (Radio)</title>
-<link rel="icon" href="favicon.ico">
+<title>Christmas Countdown Radio</title>
+
 <style>
-body{
+html,body{
     margin:0;
+    background:black;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
     overflow:hidden;
-    height:100vh;
-    background:url('christmas-background.jpg') center/cover fixed;
-    font-family:Arial,sans-serif;
+}
+#start{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:32px;
+    cursor:pointer;
     user-select:none;
 }
-#container{
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    transition:.05s;
-}
-h1,#countdown{
-    color:#fff;
-    text-shadow:0 0 15px red,0 0 25px green;
-    margin:0;
-}
-h1{font-size:6em}
-#countdown{font-size:5em;margin-top:20px}
-button{
-    margin-top:50px;
-    font-size:2em;
-    padding:15px 30px;
-    background:red;
-    color:#fff;
-    border:none;
-    border-radius:15px;
-    cursor:pointer;
-}
-.snowflake{
-    position:absolute;
-    top:-10px;
-    pointer-events:none;
-    animation:fall linear infinite;
-}
-@keyframes fall{to{transform:translateY(100vh)}}
 </style>
 </head>
 <body>
 
-<div id="container">
-    <h1>Christmas</h1>
-    <h1>Countdown</h1>
-    <div id="countdown"></div>
-    <button id="playButton">Start Live Radio</button>
-</div>
+<div id="start">▶ START LIVE RADIO</div>
 
 <script>
-/* ===================== SETUP ===================== */
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-let analyser,dataArray,songGain,speechGain;
-let currentIndex=0;
+/* ================= CONFIG ================= */
+const RADIO_START = new Date("Dec 1, 2025 00:00:00").getTime();
 
-/* ===================== PLAYLIST ===================== */
-const songs=[
-"All I Want For Christmas Is You","Baby It's Cold Outside","Blue Christmas",
-"Carol Of The Bells","Christmas (Baby Please Come Home)","Christmas Canon",
-"Dance Of The Sugar Plum Fairy","Deck The Halls","Do You Want To Build A Snowman",
-"Feliz Navidad","Frosty The Snowman","God Rest Ye Merry Gentlemen","Hallelujah",
-"Here Comes Santa Claus","Holly Jolly Christmas","I Want A Hippopotamus For Christmas",
-"It's Beginning To Look A Lot Like Christmas","It's The Most Wonderful Time Of The Year",
-"Jingle Bell Rock","Jingle Bells","Last Christmas","Let It Snow! Let It Snow!",
-"Little Drummer Boy","Mistletoe","O Christmas Tree","Rockin Around The Christmas Tree",
-"Rudolph The Red-Nosed Reindeer","Santa Baby","Santa Claus Is Comin' To Town",
-"Silent Night","Sleigh Ride","The Christmas Song","The Nutcracker March",
-"Up On The Housetop","We Wish You A Merry Christmas","White Christmas",
-"Winter Wonderland","Wonderful Christmastime","Your A Mean One Mr Grinch"
+const SONG_NAMES = [
+  "All I Want For Christmas Is You",
+  "Baby It's Cold Outside",
+  "Blue Christmas",
+  "Carol Of The Bells",
+  "Christmas (Baby Please Come Home)",
+  "Christmas Canon",
+  "Deck The Halls",
+  "Do You Want To Build A Snowman",
+  "Feliz Navidad",
+  "Frosty The Snowman",
+  "God Rest Ye Merry Gentlemen",
+  "Here Comes Santa Claus",
+  "Holly Jolly Christmas",
+  "I Want A Hippopotamus For Christmas",
+  "It's Beginning To Look A Lot Like Christmas",
+  "It's The Most Wonderful Time Of The Year",
+  "Jingle Bell Rock",
+  "Jingle Bells",
+  "Last Christmas",
+  "Let It Snow! Let It Snow!",
+  "Little Drummer Boy",
+  "Mistletoe",
+  "O Christmas Tree",
+  "Rockin Around The Christmas Tree",
+  "Rudolph The Red-Nosed Reindeer",
+  "Santa Baby",
+  "Santa Claus Is Comin' To Town",
+  "Silent Night",
+  "Sleigh Ride",
+  "The Christmas Song",
+  "Up On The Housetop",
+  "We Wish You A Merry Christmas",
+  "White Christmas",
+  "Winter Wonderland",
+  "Wonderful Christmastime",
+  "You're A Mean One, Mr. Grinch"
 ];
 
-const playlist=songs.map(s=>({
-    name:s,
-    src:`songs/Music Now, Trap Music Now, Dance Music Now - ${s} (SPOTISAVER).mp3`
-}));
+const PLAYLIST = SONG_NAMES.map(name =>
+  `songs/Music Now, Trap Music Now, Dance Music Now - ${name} (SPOTISAVER).mp3`
+);
 
-/* ===== ESTIMATED DURATIONS (REQUIRED FOR LIVE SEEK) ===== */
-let trackDurations=Array(playlist.length).fill(240);
+const SPEECH_SRC = "songs/speech.mp3";
 
-/* ===================== COUNTDOWN ===================== */
-const cd=document.getElementById('countdown');
-function updateCountdown(){
-    const now=new Date();
-    let y=now.getFullYear();
-    let t=new Date(`Dec 25 ${y}`).getTime();
-    if(now>t)t=new Date(`Dec 25 ${y+1}`).getTime();
-    const d=t-now;
-    cd.textContent=
-        Math.floor(d/864e5)+"d "+
-        Math.floor(d/36e5%24)+"h "+
-        Math.floor(d/6e4%60)+"m "+
-        Math.floor(d/1e3%60)+"s";
-}
-setInterval(updateCountdown,1000);updateCountdown();
+/* ================= STATE ================= */
+let audioCtx;
+let durations = [];
+let speechBuffer = null;
 
-/* ===================== SNOW ===================== */
-for(let i=0;i<50;i++){
-    const f=document.createElement('div');
-    f.className='snowflake';
-    f.textContent='❄';
-    f.style.left=Math.random()*100+'vw';
-    f.style.animationDuration=3+Math.random()*5+'s';
-    f.style.fontSize=10+Math.random()*20+'px';
-    document.body.appendChild(f);
-}
-
-/* ===================== EFFECTS ===================== */
-function animate(){
-    requestAnimationFrame(animate);
-    if(!analyser)return;
-    analyser.getByteFrequencyData(dataArray);
-    const avg=dataArray.reduce((a,b)=>a+b)/dataArray.length;
-    document.getElementById('container').style.transform=
-        `scale(${1+avg/1000})`;
-}
-animate();
-
-/* ===================== AUDIO HELPERS ===================== */
-async function loadBuffer(url){
-    const r=await fetch(url);
-    return audioCtx.decodeAudioData(await r.arrayBuffer());
-}
-
-let speechBuffer=null;
-let songSource=null;
-
-/* ===================== PLAY SONG ===================== */
-async function playSong(index,offset){
-    const buf=await loadBuffer(playlist[index].src);
-    trackDurations[index]=buf.duration;
-
-    songSource=audioCtx.createBufferSource();
-    songSource.buffer=buf;
-    songGain=audioCtx.createGain();
-    analyser=audioCtx.createAnalyser();
-    dataArray=new Uint8Array(analyser.frequencyBinCount);
-
-    songSource.connect(songGain).connect(analyser).connect(audioCtx.destination);
-    songSource.start(0,offset);
-
-    if(!speechBuffer){
-        speechBuffer=await loadBuffer("songs/speech.mp3");
-    }
-
-    setTimeout(()=>{
-        const s=audioCtx.createBufferSource();
-        speechGain=audioCtx.createGain();
-        s.buffer=speechBuffer;
-        songGain.gain.value=.6;
-        s.connect(speechGain).connect(audioCtx.destination);
-        s.start();
-        s.onended=()=>songGain.gain.value=1;
-    },(buf.duration-offset-5)*1000);
-
-    setTimeout(()=>{
-        currentIndex=(index+1)%playlist.length;
-        playSong(currentIndex,0);
-    },(buf.duration-offset)*1000);
-}
-
-/* ===================== BLOCK MEDIA KEYS ===================== */
-if('mediaSession'in navigator){
-    ["play","pause","nexttrack","previoustrack","stop"].forEach(a=>{
-        navigator.mediaSession.setActionHandler(a,null);
+/* ================= METADATA DURATION ================= */
+function getDuration(src){
+    return new Promise(resolve=>{
+        const a = new Audio();
+        a.preload = "metadata";
+        a.src = src;
+        a.onloadedmetadata = ()=>{
+            resolve(a.duration);
+            a.src = "";
+        };
+        a.onerror = ()=>resolve(240);
     });
 }
 
-/* ===================== START LIVE ===================== */
-document.getElementById('playButton').onclick=async()=>{
-    await audioCtx.resume();
+async function loadDurations(){
+    for(const src of PLAYLIST){
+        durations.push(await getDuration(src));
+    }
+}
 
-    const start=new Date("Dec 1, 2025 00:00:00").getTime();
-    let elapsed=(Date.now()-start)/1000;
+/* ================= BUFFER LOAD ================= */
+async function loadBuffer(src){
+    const res = await fetch(src);
+    const buf = await res.arrayBuffer();
+    return await audioCtx.decodeAudioData(buf);
+}
 
-    const total=trackDurations.reduce((a,b)=>a+b,0);
-    elapsed=elapsed%total;   // 🔥 THE FIX
+/* ================= PLAY LIVE ================= */
+async function playLive(index, offset){
+    const buffer = await loadBuffer(PLAYLIST[index]);
 
-    let sum=0,idx=0,off=0;
-    for(let i=0;i<trackDurations.length;i++){
-        if(sum+trackDurations[i]>elapsed){
-            idx=i;off=elapsed-sum;break;
-        }
-        sum+=trackDurations[i];
+    if(offset >= buffer.duration){
+        return playLive((index+1)%PLAYLIST.length, offset-buffer.duration);
     }
 
-    currentIndex=idx;
-    playSong(idx,off);
-    document.getElementById('playButton').remove();
+    const source = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 1;
+
+    source.buffer = buffer;
+    source.connect(gain).connect(audioCtx.destination);
+    source.start(0, offset);
+
+    if(!speechBuffer){
+        speechBuffer = await loadBuffer(SPEECH_SRC);
+    }
+
+    const speechDelay = Math.max(0, buffer.duration - offset - 5);
+    setTimeout(()=>{
+        const s = audioCtx.createBufferSource();
+        const g = audioCtx.createGain();
+        g.gain.value = 1;
+
+        gain.gain.value = 0.6;
+        s.buffer = speechBuffer;
+        s.connect(g).connect(audioCtx.destination);
+        s.start();
+        s.onended = ()=>gain.gain.value = 1;
+    }, speechDelay*1000);
+
+    setTimeout(()=>{
+        playLive((index+1)%PLAYLIST.length, 0);
+    }, (buffer.duration-offset)*1000);
+}
+
+/* ================= START ================= */
+document.getElementById("start").onclick = async ()=>{
+    document.getElementById("start").remove();
+
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    await audioCtx.resume();
+
+    await loadDurations();
+
+    let elapsed = (Date.now() - RADIO_START) / 1000;
+    const total = durations.reduce((a,b)=>a+b,0);
+    elapsed = ((elapsed % total) + total) % total;
+
+    let index = 0, offset = 0, sum = 0;
+    for(let i=0;i<durations.length;i++){
+        if(sum + durations[i] > elapsed){
+            index = i;
+            offset = elapsed - sum;
+            break;
+        }
+        sum += durations[i];
+    }
+
+    playLive(index, offset);
 };
+
+/* ================= HARD CONTROL LOCK ================= */
+document.addEventListener("keydown",e=>{
+    if(
+        e.code==="Space" ||
+        e.code.startsWith("Media") ||
+        e.ctrlKey || e.metaKey || e.altKey
+    ){
+        e.preventDefault();
+        e.stopPropagation();
+    }
+},{capture:true});
+
+document.addEventListener("contextmenu",e=>e.preventDefault());
 </script>
+
 </body>
 </html>
