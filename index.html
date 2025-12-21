@@ -4,270 +4,199 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Christmas Countdown (Radio)</title>
-<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" href="favicon.ico">
 <style>
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial', sans-serif;
-    overflow: hidden;
-    height: 100vh;
-    background: url('christmas-background.jpg') no-repeat center center fixed;
-    background-size: cover;
-    user-select: none;
+body{
+    margin:0;
+    overflow:hidden;
+    height:100vh;
+    background:url('christmas-background.jpg') center/cover fixed;
+    font-family:Arial,sans-serif;
+    user-select:none;
 }
-#container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    transition: transform 0.05s ease;
+#container{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    transition:.05s;
 }
-#title, #subtitle {
-    font-size: 6em;
-    color: #fff;
-    text-shadow: 0 0 15px red, 0 0 25px green;
-    margin: 0;
-    display: inline-block;
-    transition: transform 0.05s ease;
+h1,#countdown{
+    color:#fff;
+    text-shadow:0 0 15px red,0 0 25px green;
+    margin:0;
 }
-#countdown {
-    font-size: 6em;
-    color: #fff;
-    text-shadow: 0 0 10px red, 0 0 20px green;
-    margin-top: 20px;
-    display: inline-block;
-    transition: transform 0.05s ease;
+h1{font-size:6em}
+#countdown{font-size:5em;margin-top:20px}
+button{
+    margin-top:50px;
+    font-size:2em;
+    padding:15px 30px;
+    background:red;
+    color:#fff;
+    border:none;
+    border-radius:15px;
+    cursor:pointer;
 }
-#playButton {
-    margin-top: 50px;
-    font-size: 2em;
-    padding: 15px 30px;
-    background-color: red;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    text-shadow: 1px 1px 2px #000;
-    transition: transform 0.2s;
+.snowflake{
+    position:absolute;
+    top:-10px;
+    pointer-events:none;
+    animation:fall linear infinite;
 }
-#playButton:hover { transform: scale(1.1); }
-.snowflake {
-    position: absolute;
-    top: -10px;
-    color: white;
-    font-size: 1em;
-    user-select: none;
-    pointer-events: none;
-    animation: fall linear infinite;
-}
-@keyframes fall { to { transform: translateY(100vh); } }
+@keyframes fall{to{transform:translateY(100vh)}}
 </style>
 </head>
 <body>
+
 <div id="container">
-    <h1 id="title">Christmas</h1>
-    <h1 id="subtitle">Countdown</h1>
-    <div id="countdown">00d 00h 00m 00s</div>
+    <h1>Christmas</h1>
+    <h1>Countdown</h1>
+    <div id="countdown"></div>
     <button id="playButton">Start Live Radio</button>
 </div>
 
 <script>
-const countdownEl = document.getElementById('countdown');
-const titleEl = document.getElementById('title');
-const subtitleEl = document.getElementById('subtitle');
-const container = document.getElementById('container');
+/* ===================== SETUP ===================== */
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+let analyser,dataArray,songGain,speechGain;
+let currentIndex=0;
 
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let analyser, dataArray;
-let songGain, speechGain;
-
-const songs = [
-    "All I Want For Christmas Is You","Baby It's Cold Outside","Blue Christmas",
-    "Carol Of The Bells","Christmas (Baby Please Come Home)","Christmas Canon",
-    "Dance Of The Sugar Plum Fairy","Deck The Halls","Do You Want To Build A Snowman",
-    "Feliz Navidad","Frosty The Snowman","God Rest Ye Merry Gentlemen","Hallelujah",
-    "Here Comes Santa Claus","Holly Jolly Christmas","I Want A Hippopotamus For Christmas",
-    "It's Beginning To Look A Lot Like Christmas","It's The Most Wonderful Time Of The Year",
-    "Jingle Bell Rock","Jingle Bells","Last Christmas","Let It Snow! Let It Snow!",
-    "Little Drummer Boy","Mistletoe","O Christmas Tree","Rockin Around The Christmas Tree",
-    "Rudolph The Red-Nosed Reindeer","Santa Baby","Santa Claus Is Comin' To Town",
-    "Silent Night","Sleigh Ride","The Christmas Song","The Nutcracker March",
-    "Up On The Housetop","We Wish You A Merry Christmas","White Christmas",
-    "Winter Wonderland","Wonderful Christmastime","Your A Mean One Mr Grinch",
+/* ===================== PLAYLIST ===================== */
+const songs=[
+"All I Want For Christmas Is You","Baby It's Cold Outside","Blue Christmas",
+"Carol Of The Bells","Christmas (Baby Please Come Home)","Christmas Canon",
+"Dance Of The Sugar Plum Fairy","Deck The Halls","Do You Want To Build A Snowman",
+"Feliz Navidad","Frosty The Snowman","God Rest Ye Merry Gentlemen","Hallelujah",
+"Here Comes Santa Claus","Holly Jolly Christmas","I Want A Hippopotamus For Christmas",
+"It's Beginning To Look A Lot Like Christmas","It's The Most Wonderful Time Of The Year",
+"Jingle Bell Rock","Jingle Bells","Last Christmas","Let It Snow! Let It Snow!",
+"Little Drummer Boy","Mistletoe","O Christmas Tree","Rockin Around The Christmas Tree",
+"Rudolph The Red-Nosed Reindeer","Santa Baby","Santa Claus Is Comin' To Town",
+"Silent Night","Sleigh Ride","The Christmas Song","The Nutcracker March",
+"Up On The Housetop","We Wish You A Merry Christmas","White Christmas",
+"Winter Wonderland","Wonderful Christmastime","Your A Mean One Mr Grinch"
 ];
-const playlist = songs.map(song => ({name: song, src: `songs/Music Now, Trap Music Now, Dance Music Now - ${song} (SPOTISAVER).mp3`}));
-const speechTrack = {name:"Speech", src:"songs/speech.mp3"};
 
-// Precomputed approximate durations in seconds for all songs (can be adjusted)
-const estimatedDurations = Array(playlist.length).fill(240); // replace with real numbers if known
-let trackDurations = [...estimatedDurations];
+const playlist=songs.map(s=>({
+    name:s,
+    src:`songs/Music Now, Trap Music Now, Dance Music Now - ${s} (SPOTISAVER).mp3`
+}));
 
-let speechBuffer = null;
+/* ===== ESTIMATED DURATIONS (REQUIRED FOR LIVE SEEK) ===== */
+let trackDurations=Array(playlist.length).fill(240);
 
-// Countdown
+/* ===================== COUNTDOWN ===================== */
+const cd=document.getElementById('countdown');
 function updateCountdown(){
-    const now = new Date();
-    let year = now.getFullYear();
-    let target = new Date(`Dec 25, ${year} 00:00:00`).getTime();
-    if(now.getTime() > target) target = new Date(`Dec 25, ${year+1} 00:00:00`).getTime();
-    const distance = target - now.getTime();
-    const days = Math.floor(distance/(1000*60*60*24));
-    const hours = Math.floor((distance % (1000*60*60*24))/(1000*60*60));
-    const minutes = Math.floor((distance % (1000*60*60))/(1000*60));
-    const seconds = Math.floor((distance % (1000*60))/1000);
-    countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    const now=new Date();
+    let y=now.getFullYear();
+    let t=new Date(`Dec 25 ${y}`).getTime();
+    if(now>t)t=new Date(`Dec 25 ${y+1}`).getTime();
+    const d=t-now;
+    cd.textContent=
+        Math.floor(d/864e5)+"d "+
+        Math.floor(d/36e5%24)+"h "+
+        Math.floor(d/6e4%60)+"m "+
+        Math.floor(d/1e3%60)+"s";
 }
-setInterval(updateCountdown,1000);
-updateCountdown();
+setInterval(updateCountdown,1000);updateCountdown();
 
-// Snowflakes
+/* ===================== SNOW ===================== */
 for(let i=0;i<50;i++){
-    const snow = document.createElement('div');
-    snow.className='snowflake';
-    snow.textContent='❄';
-    snow.style.left=Math.random()*100+'vw';
-    snow.style.animationDuration=(3+Math.random()*5)+'s';
-    snow.style.fontSize=(10+Math.random()*20)+'px';
-    document.body.appendChild(snow);
+    const f=document.createElement('div');
+    f.className='snowflake';
+    f.textContent='❄';
+    f.style.left=Math.random()*100+'vw';
+    f.style.animationDuration=3+Math.random()*5+'s';
+    f.style.fontSize=10+Math.random()*20+'px';
+    document.body.appendChild(f);
 }
 
-// Animate container/text + background brightness
-function animateEffects(){
-    requestAnimationFrame(animateEffects);
-    if(!analyser) return;
+/* ===================== EFFECTS ===================== */
+function animate(){
+    requestAnimationFrame(animate);
+    if(!analyser)return;
     analyser.getByteFrequencyData(dataArray);
-    const avg = dataArray.reduce((a,b)=>a+b,0)/dataArray.length;
+    const avg=dataArray.reduce((a,b)=>a+b)/dataArray.length;
+    document.getElementById('container').style.transform=
+        `scale(${1+avg/1000})`;
+}
+animate();
 
-    const scale = 1 + avg/1000;
-    const xShake = (Math.random()-0.5)*avg/50;
-    const yShake = (Math.random()-0.5)*avg/50;
-    container.style.transform = `scale(${scale}) translate(${xShake}px,${yShake}px)`;
-
-    const brightness = 1 + avg/500;
-    document.body.style.filter = `brightness(${brightness})`;
-    document.body.style.backgroundSize = `${100 + avg/5}% ${100 + avg/5}%`;
-
-    titleEl.style.transform = `scale(${1 + avg/1200}) translate(${xShake/2}px,${yShake/2}px)`;
-    subtitleEl.style.transform = `scale(${1 + avg/1200}) translate(${xShake/2}px,${yShake/2}px)`;
-    countdownEl.style.transform = `scale(${1 + avg/1400}) translate(${xShake/2}px,${yShake/2}px)`;
-
-    document.querySelectorAll('.snowflake').forEach((flake,i)=>{
-        flake.style.transform = `translateY(${Math.sin(Date.now()/1000+i)*5 + avg/15}px)`;
-        flake.style.opacity = 0.5 + avg/512;
-    });
+/* ===================== AUDIO HELPERS ===================== */
+async function loadBuffer(url){
+    const r=await fetch(url);
+    return audioCtx.decodeAudioData(await r.arrayBuffer());
 }
 
-// Load audio buffer
-async function loadAudioBuffer(url){
-    const res = await fetch(url);
-    const arrayBuffer = await res.arrayBuffer();
-    return audioCtx.decodeAudioData(arrayBuffer);
-}
+let speechBuffer=null;
+let songSource=null;
 
-// Play current + next song with live durations
-let currentIndex = 0;
-let songSource = null;
-let nextSongBuffer = null;
-let speechSource = null;
+/* ===================== PLAY SONG ===================== */
+async function playSong(index,offset){
+    const buf=await loadBuffer(playlist[index].src);
+    trackDurations[index]=buf.duration;
 
-async function playLiveSong(index, offset=0){
-    const buffer = await loadAudioBuffer(playlist[index].src);
-    trackDurations[index] = buffer.duration;
-
-    songSource = audioCtx.createBufferSource();
-    songSource.buffer = buffer;
-    songGain = audioCtx.createGain();
-    songGain.gain.value = 1;
-
-    analyser = audioCtx.createAnalyser();
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    songSource=audioCtx.createBufferSource();
+    songSource.buffer=buf;
+    songGain=audioCtx.createGain();
+    analyser=audioCtx.createAnalyser();
+    dataArray=new Uint8Array(analyser.frequencyBinCount);
 
     songSource.connect(songGain).connect(analyser).connect(audioCtx.destination);
-    songSource.start(0, offset);
+    songSource.start(0,offset);
 
     if(!speechBuffer){
-        speechBuffer = await loadAudioBuffer(speechTrack.src);
+        speechBuffer=await loadBuffer("songs/speech.mp3");
     }
 
-    const duration = buffer.duration - offset;
-    const speechTime = Math.max(0, duration - 5);
-    speechSource = audioCtx.createBufferSource();
-    speechSource.buffer = speechBuffer;
-    speechGain = audioCtx.createGain();
-    speechGain.gain.value = 0;
-    speechSource.connect(speechGain).connect(audioCtx.destination);
+    setTimeout(()=>{
+        const s=audioCtx.createBufferSource();
+        speechGain=audioCtx.createGain();
+        s.buffer=speechBuffer;
+        songGain.gain.value=.6;
+        s.connect(speechGain).connect(audioCtx.destination);
+        s.start();
+        s.onended=()=>songGain.gain.value=1;
+    },(buf.duration-offset-5)*1000);
 
     setTimeout(()=>{
-        songGain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-        speechGain.gain.setValueAtTime(1, audioCtx.currentTime);
-        speechSource.start();
-        speechSource.onended = ()=>{
-            songGain.gain.setValueAtTime(1, audioCtx.currentTime);
-            speechGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        };
-    }, speechTime * 1000);
-
-    const nextIndex = (index + 1) % playlist.length;
-    nextSongBuffer = await loadAudioBuffer(playlist[nextIndex].src);
-    trackDurations[nextIndex] = nextSongBuffer.duration;
-
-    setTimeout(()=>{
-        songSource.disconnect();
-        songSource = null;
-        songGain.disconnect();
-        songGain = null;
-        currentIndex = nextIndex;
-        playLiveSong(currentIndex, 0);
-    }, duration*1000);
+        currentIndex=(index+1)%playlist.length;
+        playSong(currentIndex,0);
+    },(buf.duration-offset)*1000);
 }
 
-// Block media keys
-function blockControls(){
-    if('mediaSession' in navigator){
-        ['play','pause','previoustrack','nexttrack','stop','seekbackward','seekforward','seekto'].forEach(a=>{
-            navigator.mediaSession.setActionHandler(a,null);
-        });
-    }
-    window.addEventListener('contextmenu', e => e.preventDefault());
-    window.addEventListener('keydown', e=>{
-        const mediaKeys = ["MediaPlayPause","MediaTrackNext","MediaTrackPrevious","MediaStop"];
-        if(mediaKeys.includes(e.code)){
-            e.preventDefault();
-            e.stopPropagation();
-        }
+/* ===================== BLOCK MEDIA KEYS ===================== */
+if('mediaSession'in navigator){
+    ["play","pause","nexttrack","previoustrack","stop"].forEach(a=>{
+        navigator.mediaSession.setActionHandler(a,null);
     });
 }
 
-// Start live radio
-document.getElementById('playButton').addEventListener('click', async ()=>{
-    if(audioCtx.state === 'suspended') await audioCtx.resume();
+/* ===================== START LIVE ===================== */
+document.getElementById('playButton').onclick=async()=>{
+    await audioCtx.resume();
 
-    // Calculate live song from Dec 1, 2025
-    const now = new Date().getTime();
-    const start = new Date("Dec 1, 2025 00:00:00").getTime();
-    let elapsed = Math.max(0,(now - start)/1000);
+    const start=new Date("Dec 1, 2025 00:00:00").getTime();
+    let elapsed=(Date.now()-start)/1000;
 
-    let liveIndex = 0;
-    let offset = 0;
-    let sum = 0;
-    for(let i=0;i<playlist.length;i++){
-        const dur = trackDurations[i];
-        if(sum + dur > elapsed){
-            liveIndex = i;
-            offset = elapsed - sum;
-            break;
+    const total=trackDurations.reduce((a,b)=>a+b,0);
+    elapsed=elapsed%total;   // 🔥 THE FIX
+
+    let sum=0,idx=0,off=0;
+    for(let i=0;i<trackDurations.length;i++){
+        if(sum+trackDurations[i]>elapsed){
+            idx=i;off=elapsed-sum;break;
         }
-        sum += dur;
+        sum+=trackDurations[i];
     }
 
-    currentIndex = liveIndex;
-    playLiveSong(currentIndex, offset);
-    animateEffects();
-    blockControls();
-    document.getElementById('playButton').style.display='none';
-});
+    currentIndex=idx;
+    playSong(idx,off);
+    document.getElementById('playButton').remove();
+};
 </script>
 </body>
 </html>
