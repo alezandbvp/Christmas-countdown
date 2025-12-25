@@ -130,20 +130,33 @@ let durations = [];
 let speechBuffer = null;
 
 /* ------------------- COUNTDOWN ------------------- */
+    
 function updateCountdown(){
     const now = new Date();
     let year = now.getFullYear();
     let target = new Date(`Dec 25, ${year} 00:00:00`).getTime();
     if(now.getTime() > target) target = new Date(`Dec 25, ${year+1} 00:00:00`).getTime();
+
     const distance = target - now.getTime();
+
+    if (distance <= 0) {
+        countdownEl.textContent = "🎄🎅 Merry Christmas! 🎁✨";
+        titleEl.textContent = "Merry";
+        subtitleEl.textContent = "Christmas";
+        return;
+    }
+
     const days = Math.floor(distance/(1000*60*60*24));
     const hours = Math.floor((distance % (1000*60*60*24))/(1000*60*60));
     const minutes = Math.floor((distance % (1000*60*60))/(1000*60));
     const seconds = Math.floor((distance % (1000*60))/1000);
+
     countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
+
 setInterval(updateCountdown,1000);
 updateCountdown();
+
 
 /* ------------------- SNOWFLAKES ------------------- */
 for(let i=0;i<50;i++){
