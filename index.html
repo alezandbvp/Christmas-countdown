@@ -36,16 +36,27 @@
             -webkit-user-select: none;
         }
 
+        /*
+         * FULL TOUCH/GESTURE PREVENTION
+         *
+         * touch-action: none prevents:
+         * - Pinch-to-zoom
+         * - Touch panning
+         * - Browser touch gestures
+         *
+         * The JavaScript below additionally prevents:
+         * - Double-tap zoom
+         * - Safari gesture zoom
+         */
+
         html,
         body {
             width: 100%;
             height: 100%;
             overflow: hidden;
 
-            /* Prevent browser gesture zooming */
-            touch-action: manipulation;
+            touch-action: none;
 
-            /* Prevent iOS text from resizing */
             -webkit-text-size-adjust: 100%;
             text-size-adjust: 100%;
 
@@ -294,15 +305,19 @@
             font-size: 1rem;
             font-weight: 800;
             cursor: pointer;
+
+            /*
+             * Allow normal button taps while preventing
+             * browser manipulation/zoom behavior.
+             */
+            touch-action: manipulation;
+
             box-shadow:
                 0 12px 30px rgba(150, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.18);
             transition:
                 transform 0.18s ease,
                 box-shadow 0.18s ease;
-
-            /* Prevent browser gesture interpretation */
-            touch-action: manipulation;
         }
 
         #playButton:active {
@@ -593,12 +608,13 @@
 
     <script>
         /*
-         * DOUBLE-TAP ZOOM PROTECTION
+         * MOBILE GESTURE PROTECTION
          *
-         * iOS Safari can still interpret two fast taps
-         * as a zoom gesture. Ignore the second touchend
-         * when two taps happen within 300ms.
+         * Keeps the original touch-action: none protection
+         * while additionally blocking double-tap and Safari
+         * gesture-based zooming.
          */
+
         let lastTouchEnd = 0;
 
         document.addEventListener(
@@ -616,6 +632,44 @@
                 passive: false
             }
         );
+
+        /*
+         * Extra Safari gesture protection.
+         *
+         * These events are used by Safari for pinch/gesture
+         * manipulation and are blocked as an additional layer.
+         */
+
+        document.addEventListener(
+            "gesturestart",
+            event => {
+                event.preventDefault();
+            },
+            {
+                passive: false
+            }
+        );
+
+        document.addEventListener(
+            "gesturechange",
+            event => {
+                event.preventDefault();
+            },
+            {
+                passive: false
+            }
+        );
+
+        document.addEventListener(
+            "gestureend",
+            event => {
+                event.preventDefault();
+            },
+            {
+                passive: false
+            }
+        );
+
 
         const musicAudio = document.getElementById("musicAudio");
         const speechAudio = document.getElementById("speechAudio");
@@ -689,9 +743,12 @@
 
         const formatTime = seconds => {
             if (!Number.isFinite(seconds)) return "0:00";
+
             seconds = Math.max(0, Math.floor(seconds));
+
             const minutes = Math.floor(seconds / 60);
             const secs = String(seconds % 60).padStart(2, "0");
+
             return `${minutes}:${secs}`;
         };
 
@@ -776,9 +833,20 @@
             }
         }
 
-        createSnowflakes(document.getElementById("snowFar"), 20);
-        createSnowflakes(document.getElementById("snowMid"), 15);
-        createSnowflakes(document.getElementById("snowNear"), 10);
+        createSnowflakes(
+            document.getElementById("snowFar"),
+            20
+        );
+
+        createSnowflakes(
+            document.getElementById("snowMid"),
+            15
+        );
+
+        createSnowflakes(
+            document.getElementById("snowNear"),
+            10
+        );
 
         function getAudioDuration(url) {
             return new Promise((resolve, reject) => {
@@ -795,37 +863,63 @@
 
                     finished = true;
                     cleanup();
-                    reject(new Error("Timed out reading audio duration"));
+
+                    reject(
+                        new Error(
+                            "Timed out reading audio duration"
+                        )
+                    );
                 }, 15000);
 
                 audio.preload = "metadata";
 
-                audio.addEventListener("loadedmetadata", () => {
-                    if (finished) return;
+                audio.addEventListener(
+                    "loadedmetadata",
+                    () => {
+                        if (finished) return;
 
-                    const duration = audio.duration;
+                        const duration = audio.duration;
 
-                    if (Number.isFinite(duration) && duration > 0) {
+                        if (
+                            Number.isFinite(duration) &&
+                            duration > 0
+                        ) {
+                            finished = true;
+                            clearTimeout(timeout);
+                            cleanup();
+                            resolve(duration);
+                        } else {
+                            finished = true;
+                            clearTimeout(timeout);
+                            cleanup();
+
+                            reject(
+                                new Error(
+                                    "Invalid audio duration"
+                                )
+                            );
+                        }
+                    },
+                    { once: true }
+                );
+
+                audio.addEventListener(
+                    "error",
+                    () => {
+                        if (finished) return;
+
                         finished = true;
                         clearTimeout(timeout);
                         cleanup();
-                        resolve(duration);
-                    } else {
-                        finished = true;
-                        clearTimeout(timeout);
-                        cleanup();
-                        reject(new Error("Invalid audio duration"));
-                    }
-                }, { once: true });
 
-                audio.addEventListener("error", () => {
-                    if (finished) return;
-
-                    finished = true;
-                    clearTimeout(timeout);
-                    cleanup();
-                    reject(new Error("Could not load audio"));
-                }, { once: true });
+                        reject(
+                            new Error(
+                                "Could not load audio"
+                            )
+                        );
+                    },
+                    { once: true }
+                );
 
                 audio.src = url;
             });
@@ -833,7 +927,10 @@
 
         async function loadDurations() {
             if (metadataLoaded) return;
-            if (metadataLoadingPromise) return metadataLoadingPromise;
+
+            if (metadataLoadingPromise) {
+                return metadataLoadingPromise;
+            }
 
             metadataLoadingPromise = (async () => {
                 let manifest = null;
@@ -841,20 +938,31 @@
                 try {
                     const response = await fetch(
                         DURATION_MANIFEST,
-                        { cache: "no-store" }
+                        {
+                            cache: "no-store"
+                        }
                     );
 
                     if (!response.ok) {
-                        throw new Error("Duration manifest unavailable");
+                        throw new Error(
+                            "Duration manifest unavailable"
+                        );
                     }
 
-                    const data = await response.json();
+                    const data =
+                        await response.json();
 
-                    if (!data || !Array.isArray(data.songs)) {
-                        throw new Error("Invalid duration manifest");
+                    if (
+                        !data ||
+                        !Array.isArray(data.songs)
+                    ) {
+                        throw new Error(
+                            "Invalid duration manifest"
+                        );
                     }
 
                     manifest = data.songs;
+
                 } catch (error) {
                     console.warn(
                         "Could not load durations.json.",
@@ -862,24 +970,40 @@
                     );
                 }
 
-                durations = new Array(SONG_NAMES.length);
+                durations =
+                    new Array(SONG_NAMES.length);
 
-                for (let i = 0; i < SONG_NAMES.length; i++) {
-                    const entry = manifest?.find(
-                        item => item?.name === SONG_NAMES[i]
-                    );
+                for (
+                    let i = 0;
+                    i < SONG_NAMES.length;
+                    i++
+                ) {
+                    const entry =
+                        manifest?.find(
+                            item =>
+                                item?.name ===
+                                SONG_NAMES[i]
+                        );
 
-                    const duration = Number(entry?.duration);
+                    const duration =
+                        Number(entry?.duration);
 
-                    if (Number.isFinite(duration) && duration > 0) {
+                    if (
+                        Number.isFinite(duration) &&
+                        duration > 0
+                    ) {
                         durations[i] = duration;
                         continue;
                     }
 
                     try {
-                        durations[i] = await getAudioDuration(
-                            getSongURL(SONG_NAMES[i])
-                        );
+                        durations[i] =
+                            await getAudioDuration(
+                                getSongURL(
+                                    SONG_NAMES[i]
+                                )
+                            );
+
                     } catch (error) {
                         console.error(
                             `Could not get duration for ${SONG_NAMES[i]}`,
@@ -892,7 +1016,10 @@
 
                 try {
                     speechDuration =
-                        await getAudioDuration(SPEECH_SRC);
+                        await getAudioDuration(
+                            SPEECH_SRC
+                        );
+
                 } catch (error) {
                     console.error(
                         "Could not get speech duration:",
@@ -904,18 +1031,27 @@
 
                 totalPlaylistDuration = 0;
 
-                for (let i = 0; i < SONG_NAMES.length; i++) {
-                    totalPlaylistDuration += durations[i] || 0;
+                for (
+                    let i = 0;
+                    i < SONG_NAMES.length;
+                    i++
+                ) {
+                    totalPlaylistDuration +=
+                        durations[i] || 0;
 
                     if (
-                        (i + 1) % SONGS_PER_SPEECH === 0
+                        (i + 1) %
+                            SONGS_PER_SPEECH ===
+                        0
                     ) {
                         totalPlaylistDuration +=
                             speechDuration || 0;
                     }
                 }
 
-                if (totalPlaylistDuration <= 0) {
+                if (
+                    totalPlaylistDuration <= 0
+                ) {
                     throw new Error(
                         "No valid audio durations were found."
                     );
@@ -925,13 +1061,18 @@
 
                 console.log(
                     "Radio timeline:",
-                    formatTime(totalPlaylistDuration)
+                    formatTime(
+                        totalPlaylistDuration
+                    )
                 );
 
                 console.log(
                     "Speech duration:",
-                    formatTime(speechDuration)
+                    formatTime(
+                        speechDuration
+                    )
                 );
+
             })().catch(error => {
                 metadataLoadingPromise = null;
                 throw error;
@@ -953,44 +1094,62 @@
             }
 
             const elapsed =
-                (Date.now() - RADIO_START) / 1000;
+                (Date.now() - RADIO_START) /
+                1000;
 
             const position =
-                ((elapsed % totalPlaylistDuration) +
+                ((elapsed %
+                    totalPlaylistDuration) +
                     totalPlaylistDuration) %
                 totalPlaylistDuration;
 
             let accumulated = 0;
 
-            for (let i = 0; i < SONG_NAMES.length; i++) {
-                const duration = durations[i] || 0;
+            for (
+                let i = 0;
+                i < SONG_NAMES.length;
+                i++
+            ) {
+                const duration =
+                    durations[i] || 0;
 
-                if (position < accumulated + duration) {
+                if (
+                    position <
+                    accumulated + duration
+                ) {
                     return {
                         type: "song",
                         index: i,
-                        offset: position - accumulated
+                        offset:
+                            position -
+                            accumulated
                     };
                 }
 
                 accumulated += duration;
 
                 if (
-                    (i + 1) % SONGS_PER_SPEECH === 0 &&
+                    (i + 1) %
+                        SONGS_PER_SPEECH ===
+                        0 &&
                     speechDuration > 0
                 ) {
                     if (
                         position <
-                        accumulated + speechDuration
+                        accumulated +
+                            speechDuration
                     ) {
                         return {
                             type: "speech",
                             index: i,
-                            offset: position - accumulated
+                            offset:
+                                position -
+                                accumulated
                         };
                     }
 
-                    accumulated += speechDuration;
+                    accumulated +=
+                        speechDuration;
                 }
             }
 
@@ -1014,7 +1173,9 @@
 
         function getDisplayNextSongIndex(segment) {
             const current =
-                getDisplaySongIndex(segment);
+                getDisplaySongIndex(
+                    segment
+                );
 
             return (
                 (current + 1) %
@@ -1024,10 +1185,14 @@
 
         function updateRadioUI(segment) {
             const current =
-                getDisplaySongIndex(segment);
+                getDisplaySongIndex(
+                    segment
+                );
 
             const next =
-                getDisplayNextSongIndex(segment);
+                getDisplayNextSongIndex(
+                    segment
+                );
 
             songNameElement.textContent =
                 SONG_NAMES[current];
@@ -1037,14 +1202,19 @@
         }
 
         function updateLiveMediaSession() {
-            if (!("mediaSession" in navigator)) return;
+            if (!("mediaSession" in navigator)) {
+                return;
+            }
 
-            const segment = findLiveSegment();
+            const segment =
+                findLiveSegment();
 
             const title =
                 segment.type === "speech"
                     ? "Break"
-                    : SONG_NAMES[segment.index];
+                    : SONG_NAMES[
+                          segment.index
+                      ];
 
             try {
                 navigator.mediaSession.metadata =
@@ -1065,6 +1235,7 @@
                             type: "image/x-icon"
                         }]
                     });
+
             } catch {}
 
             try {
@@ -1073,8 +1244,11 @@
                         ? speechAudio
                         : musicAudio;
 
-                const duration = audio.duration;
-                const position = audio.currentTime;
+                const duration =
+                    audio.duration;
+
+                const position =
+                    audio.currentTime;
 
                 if (
                     Number.isFinite(duration) &&
@@ -1083,32 +1257,41 @@
                     position >= 0 &&
                     position <= duration
                 ) {
-                    navigator.mediaSession.setPositionState({
-                        duration,
-                        playbackRate:
-                            audio.playbackRate || 1,
-                        position
-                    });
+                    navigator.mediaSession
+                        .setPositionState({
+                            duration,
+                            playbackRate:
+                                audio.playbackRate ||
+                                1,
+                            position
+                        });
                 }
+
             } catch {}
         }
 
         function restoreVisualPosition() {
-            if (!("mediaSession" in navigator)) return;
+            if (!("mediaSession" in navigator)) {
+                return;
+            }
 
             updateLiveMediaSession();
 
-            [50, 150, 300].forEach(delay => {
-                setTimeout(() => {
-                    if (radioPlaying) {
-                        updateLiveMediaSession();
-                    }
-                }, delay);
-            });
+            [50, 150, 300].forEach(
+                delay => {
+                    setTimeout(() => {
+                        if (radioPlaying) {
+                            updateLiveMediaSession();
+                        }
+                    }, delay);
+                }
+            );
         }
 
         function setupMediaSession() {
-            if (!("mediaSession" in navigator)) return;
+            if (!("mediaSession" in navigator)) {
+                return;
+            }
 
             try {
                 navigator.mediaSession.setActionHandler(
@@ -1131,93 +1314,125 @@
                 "seekforward"
             ].forEach(action => {
                 try {
-                    navigator.mediaSession.setActionHandler(
-                        action,
-                        () => {}
-                    );
+                    navigator.mediaSession
+                        .setActionHandler(
+                            action,
+                            () => {}
+                        );
                 } catch {}
             });
 
             try {
-                navigator.mediaSession.setActionHandler(
-                    "seekto",
-                    restoreVisualPosition
-                );
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekto",
+                        restoreVisualPosition
+                    );
             } catch {}
 
             try {
-                navigator.mediaSession.playbackState = "none";
+                navigator.mediaSession.playbackState =
+                    "none";
             } catch {}
         }
 
         setupMediaSession();
 
-        async function loadAudio(audio, src, offset) {
+        async function loadAudio(
+            audio,
+            src,
+            offset
+        ) {
             const absoluteURL =
-                new URL(src, location.href).href;
+                new URL(
+                    src,
+                    location.href
+                ).href;
 
-            if (audio.src !== absoluteURL) {
+            if (
+                audio.src !==
+                absoluteURL
+            ) {
                 audio.src = src;
                 audio.load();
 
-                await new Promise((resolve, reject) => {
-                    const onMetadata = () => {
-                        cleanup();
-                        resolve();
-                    };
+                await new Promise(
+                    (resolve, reject) => {
+                        const onMetadata =
+                            () => {
+                                cleanup();
+                                resolve();
+                            };
 
-                    const onError = () => {
-                        cleanup();
-                        reject(
-                            new Error("Could not load audio")
-                        );
-                    };
+                        const onError =
+                            () => {
+                                cleanup();
 
-                    const cleanup = () => {
-                        audio.removeEventListener(
+                                reject(
+                                    new Error(
+                                        "Could not load audio"
+                                    )
+                                );
+                            };
+
+                        const cleanup =
+                            () => {
+                                audio.removeEventListener(
+                                    "loadedmetadata",
+                                    onMetadata
+                                );
+
+                                audio.removeEventListener(
+                                    "error",
+                                    onError
+                                );
+                            };
+
+                        audio.addEventListener(
                             "loadedmetadata",
-                            onMetadata
+                            onMetadata,
+                            { once: true }
                         );
 
-                        audio.removeEventListener(
+                        audio.addEventListener(
                             "error",
-                            onError
+                            onError,
+                            { once: true }
                         );
-                    };
-
-                    audio.addEventListener(
-                        "loadedmetadata",
-                        onMetadata,
-                        { once: true }
-                    );
-
-                    audio.addEventListener(
-                        "error",
-                        onError,
-                        { once: true }
-                    );
-                });
+                    }
+                );
             }
 
             if (
                 Number.isFinite(offset) &&
                 offset >= 0 &&
-                Number.isFinite(audio.duration) &&
-                offset < audio.duration
+                Number.isFinite(
+                    audio.duration
+                ) &&
+                offset <
+                    audio.duration
             ) {
-                audio.currentTime = offset;
+                audio.currentTime =
+                    offset;
             }
         }
 
-        async function loadSong(index, offset) {
+        async function loadSong(
+            index,
+            offset
+        ) {
             await loadAudio(
                 musicAudio,
-                getSongURL(SONG_NAMES[index]),
+                getSongURL(
+                    SONG_NAMES[index]
+                ),
                 offset
             );
         }
 
-        async function loadSpeech(offset) {
+        async function loadSpeech(
+            offset
+        ) {
             await loadAudio(
                 speechAudio,
                 SPEECH_SRC,
@@ -1226,24 +1441,34 @@
         }
 
         async function playLive() {
-            if (isChangingTrack) return;
+            if (isChangingTrack) {
+                return;
+            }
 
             isChangingTrack = true;
 
             try {
                 await loadDurations();
 
-                const segment = findLiveSegment();
+                const segment =
+                    findLiveSegment();
 
                 currentSongIndex =
-                    getDisplaySongIndex(segment);
+                    getDisplaySongIndex(
+                        segment
+                    );
 
                 currentSegmentType =
                     segment.type;
 
-                updateRadioUI(segment);
+                updateRadioUI(
+                    segment
+                );
 
-                if (segment.type === "speech") {
+                if (
+                    segment.type ===
+                    "speech"
+                ) {
                     musicAudio.pause();
 
                     await loadSpeech(
@@ -1264,11 +1489,13 @@
                 }
 
                 radioPlaying = true;
+
                 updatePlayButton();
                 updateLiveMediaSession();
 
                 try {
-                    navigator.mediaSession.playbackState =
+                    navigator.mediaSession
+                        .playbackState =
                         "playing";
                 } catch {}
 
@@ -1279,6 +1506,7 @@
                 );
 
                 radioPlaying = false;
+
                 updatePlayButton();
 
                 songNameElement.textContent =
@@ -1297,10 +1525,12 @@
             speechAudio.pause();
 
             radioPlaying = false;
+
             updatePlayButton();
 
             try {
-                navigator.mediaSession.playbackState =
+                navigator.mediaSession
+                    .playbackState =
                     "paused";
             } catch {}
         }
@@ -1314,33 +1544,51 @@
 
         function updatePlayButton() {
             if (radioPlaying) {
-                playButton.textContent = "⏸ Pause";
-                playButton.classList.remove("paused");
+                playButton.textContent =
+                    "⏸ Pause";
+
+                playButton.classList.remove(
+                    "paused"
+                );
+
             } else {
-                playButton.textContent = "▶️ Play";
-                playButton.classList.add("paused");
+                playButton.textContent =
+                    "▶️ Play";
+
+                playButton.classList.add(
+                    "paused"
+                );
             }
         }
 
-        playButton.addEventListener("click", async () => {
-            if (radioPlaying) {
-                pauseRadio();
-            } else {
-                await resumeLive();
+        playButton.addEventListener(
+            "click",
+            async () => {
+                if (radioPlaying) {
+                    pauseRadio();
+                } else {
+                    await resumeLive();
+                }
             }
-        });
+        );
 
-        musicAudio.addEventListener("ended", async () => {
-            if (radioPlaying) {
-                await playLive();
+        musicAudio.addEventListener(
+            "ended",
+            async () => {
+                if (radioPlaying) {
+                    await playLive();
+                }
             }
-        });
+        );
 
-        speechAudio.addEventListener("ended", async () => {
-            if (radioPlaying) {
-                await playLive();
+        speechAudio.addEventListener(
+            "ended",
+            async () => {
+                if (radioPlaying) {
+                    await playLive();
+                }
             }
-        });
+        );
 
         function retryLive() {
             if (!radioPlaying) return;
@@ -1352,25 +1600,39 @@
             }, 1000);
         }
 
-        musicAudio.addEventListener("error", retryLive);
+        musicAudio.addEventListener(
+            "error",
+            retryLive
+        );
 
-        speechAudio.addEventListener("error", () => {
-            console.error("Speech audio error.");
-            retryLive();
-        });
+        speechAudio.addEventListener(
+            "error",
+            () => {
+                console.error(
+                    "Speech audio error."
+                );
+
+                retryLive();
+            }
+        );
 
         async function syncRadio() {
             if (!radioPlaying) return;
 
             try {
-                const live = findLiveSegment();
+                const live =
+                    findLiveSegment();
 
                 const displayIndex =
-                    getDisplaySongIndex(live);
+                    getDisplaySongIndex(
+                        live
+                    );
 
                 if (
-                    live.type !== currentSegmentType ||
-                    displayIndex !== currentSongIndex
+                    live.type !==
+                        currentSegmentType ||
+                    displayIndex !==
+                        currentSongIndex
                 ) {
                     await playLive();
                     return;
@@ -1403,40 +1665,53 @@
             }
         }
 
-        setInterval(syncRadio, 5000);
+        setInterval(
+            syncRadio,
+            5000
+        );
 
-        setInterval(() => {
-            if (radioPlaying) {
-                updateLiveMediaSession();
-            }
-        }, 3000);
+        setInterval(
+            () => {
+                if (radioPlaying) {
+                    updateLiveMediaSession();
+                }
+            },
+            3000
+        );
 
         document.addEventListener(
             "visibilitychange",
             async () => {
                 if (
-                    document.visibilityState !== "visible" ||
+                    document.visibilityState !==
+                        "visible" ||
                     !radioPlaying
                 ) {
                     return;
                 }
 
                 try {
-                    const live = findLiveSegment();
+                    const live =
+                        findLiveSegment();
 
                     const displayIndex =
-                        getDisplaySongIndex(live);
+                        getDisplaySongIndex(
+                            live
+                        );
 
                     if (
-                        live.type !== currentSegmentType ||
-                        displayIndex !== currentSongIndex
+                        live.type !==
+                            currentSegmentType ||
+                        displayIndex !==
+                            currentSongIndex
                     ) {
                         await playLive();
                         return;
                     }
 
                     const audio =
-                        live.type === "speech"
+                        live.type ===
+                            "speech"
                             ? speechAudio
                             : musicAudio;
 
@@ -1449,7 +1724,10 @@
                     if (drift > 3) {
                         await playLive();
                     } else {
-                        updateRadioUI(live);
+                        updateRadioUI(
+                            live
+                        );
+
                         updateLiveMediaSession();
                     }
 
@@ -1462,26 +1740,34 @@
             }
         );
 
-        document.addEventListener("keydown", event => {
-            const blocked = [
-                "ArrowLeft",
-                "ArrowRight",
-                "Home",
-                "End",
-                "MediaTrackNext",
-                "MediaTrackPrevious",
-                "MediaFastForward",
-                "MediaRewind"
-            ];
+        document.addEventListener(
+            "keydown",
+            event => {
+                const blocked = [
+                    "ArrowLeft",
+                    "ArrowRight",
+                    "Home",
+                    "End",
+                    "MediaTrackNext",
+                    "MediaTrackPrevious",
+                    "MediaFastForward",
+                    "MediaRewind"
+                ];
 
-            if (blocked.includes(event.key)) {
-                event.preventDefault();
+                if (
+                    blocked.includes(
+                        event.key
+                    )
+                ) {
+                    event.preventDefault();
+                }
             }
-        });
+        );
 
         document.addEventListener(
             "contextmenu",
-            event => event.preventDefault()
+            event =>
+                event.preventDefault()
         );
 
         updatePlayButton();
@@ -1494,10 +1780,13 @@
 
         loadDurations()
             .then(() => {
-                const live = findLiveSegment();
+                const live =
+                    findLiveSegment();
 
                 currentSongIndex =
-                    getDisplaySongIndex(live);
+                    getDisplaySongIndex(
+                        live
+                    );
 
                 currentSegmentType =
                     live.type;
@@ -1518,10 +1807,13 @@
                     "Please try again";
             });
 
-        window.addEventListener("beforeunload", () => {
-            musicAudio.pause();
-            speechAudio.pause();
-        });
+        window.addEventListener(
+            "beforeunload",
+            () => {
+                musicAudio.pause();
+                speechAudio.pause();
+            }
+        );
     </script>
 
 </body>
