@@ -582,13 +582,8 @@
     </audio>
 
     <script>
-        /* =========================
-           AUDIO / CONFIG
-        ========================= */
-
         const musicAudio = document.getElementById("musicAudio");
         const speechAudio = document.getElementById("speechAudio");
-
         const playButton = document.getElementById("playButton");
         const songNameElement = document.getElementById("songName");
         const upNextElement = document.getElementById("upNext");
@@ -598,13 +593,8 @@
         const SONG_FOLDER = "./songs/";
         const SPEECH_SRC = "./songs/speech.mp3";
         const DURATION_MANIFEST = "./songs/durations.json";
-
-        const PLAYLIST_PREFIX =
-            "Music Now, Trap Music Now, Dance Music Now - ";
-
-        const PLAYLIST_SUFFIX =
-            " (SPOTISAVER).mp3";
-
+        const PLAYLIST_PREFIX = "Music Now, Trap Music Now, Dance Music Now - ";
+        const PLAYLIST_SUFFIX = " (SPOTISAVER).mp3";
         const SONGS_PER_SPEECH = 4;
 
         const SONG_NAMES = [
@@ -649,19 +639,12 @@
         let durations = [];
         let speechDuration = 0;
         let totalPlaylistDuration = 0;
-
         let metadataLoaded = false;
         let metadataLoadingPromise = null;
-
         let radioPlaying = false;
         let currentSongIndex = 0;
         let currentSegmentType = "song";
         let isChangingTrack = false;
-
-
-        /* =========================
-           HELPERS
-        ========================= */
 
         const getSongFilename = name =>
             PLAYLIST_PREFIX + name + PLAYLIST_SUFFIX;
@@ -671,19 +654,11 @@
 
         const formatTime = seconds => {
             if (!Number.isFinite(seconds)) return "0:00";
-
             seconds = Math.max(0, Math.floor(seconds));
-
             const minutes = Math.floor(seconds / 60);
             const secs = String(seconds % 60).padStart(2, "0");
-
             return `${minutes}:${secs}`;
         };
-
-
-        /* =========================
-           COUNTDOWN
-        ========================= */
 
         function updateCountdown() {
             const now = new Date();
@@ -725,11 +700,6 @@
 
         updateCountdown();
         setInterval(updateCountdown, 1000);
-
-
-        /* =========================
-           SNOW
-        ========================= */
 
         function createSnowflakes(container, amount) {
             for (let i = 0; i < amount; i++) {
@@ -775,11 +745,6 @@
         createSnowflakes(document.getElementById("snowMid"), 15);
         createSnowflakes(document.getElementById("snowNear"), 10);
 
-
-        /* =========================
-           AUDIO DURATION
-        ========================= */
-
         function getAudioDuration(url) {
             return new Promise((resolve, reject) => {
                 const audio = document.createElement("audio");
@@ -795,7 +760,6 @@
 
                     finished = true;
                     cleanup();
-
                     reject(new Error("Timed out reading audio duration"));
                 }, 15000);
 
@@ -825,18 +789,12 @@
                     finished = true;
                     clearTimeout(timeout);
                     cleanup();
-
                     reject(new Error("Could not load audio"));
                 }, { once: true });
 
                 audio.src = url;
             });
         }
-
-
-        /* =========================
-           LOAD DURATIONS
-        ========================= */
 
         async function loadDurations() {
             if (metadataLoaded) return;
@@ -947,11 +905,6 @@
             return metadataLoadingPromise;
         }
 
-
-        /* =========================
-           GLOBAL RADIO POSITION
-        ========================= */
-
         function findLiveSegment() {
             if (
                 !metadataLoaded ||
@@ -1013,18 +966,7 @@
             };
         }
 
-
-        /* =========================
-           UI SONG LOGIC
-           Speech is skipped.
-        ========================= */
-
         function getDisplaySongIndex(segment) {
-            /*
-                During speech after Song 4,
-                display Song 5 as current.
-            */
-
             if (segment.type === "speech") {
                 return (
                     (segment.index + 1) %
@@ -1036,11 +978,6 @@
         }
 
         function getDisplayNextSongIndex(segment) {
-            /*
-                Always show the song after the
-                displayed current song.
-            */
-
             const current =
                 getDisplaySongIndex(segment);
 
@@ -1064,9 +1001,10 @@
                 SONG_NAMES[next];
         }
 
-
         /* =========================
            MEDIA SESSION
+           Lock screen DOES display
+           the break.
         ========================= */
 
         function updateLiveMediaSession() {
@@ -1074,19 +1012,16 @@
 
             const segment = findLiveSegment();
 
-            /*
-                Lock screen also skips speech
-                for the displayed title.
-            */
-
-            const displayIndex =
-                getDisplaySongIndex(segment);
+            const title =
+                segment.type === "speech"
+                    ? "Break"
+                    : SONG_NAMES[segment.index];
 
             try {
                 navigator.mediaSession.metadata =
                     new MediaMetadata({
                         title:
-                            SONG_NAMES[displayIndex] ||
+                            title ||
                             "Christmas Countdown Radio",
 
                         artist:
@@ -1104,11 +1039,6 @@
             } catch {}
 
             try {
-                /*
-                    Position still represents the
-                    actual audio currently playing.
-                */
-
                 const audio =
                     segment.type === "speech"
                         ? speechAudio
@@ -1193,11 +1123,6 @@
 
         setupMediaSession();
 
-
-        /* =========================
-           LOAD SONG / SPEECH
-        ========================= */
-
         async function loadAudio(audio, src, offset) {
             const absoluteURL =
                 new URL(src, location.href).href;
@@ -1271,11 +1196,6 @@
             );
         }
 
-
-        /* =========================
-           PLAY LIVE
-        ========================= */
-
         async function playLive() {
             if (isChangingTrack) return;
 
@@ -1295,11 +1215,6 @@
                 updateRadioUI(segment);
 
                 if (segment.type === "speech") {
-                    /*
-                        Speech plays normally,
-                        but UI shows the next song.
-                    */
-
                     musicAudio.pause();
 
                     await loadSpeech(
@@ -1348,11 +1263,6 @@
             }
         }
 
-
-        /* =========================
-           PLAYBACK CONTROLS
-        ========================= */
-
         function pauseRadio() {
             musicAudio.pause();
             speechAudio.pause();
@@ -1391,11 +1301,6 @@
             }
         });
 
-
-        /* =========================
-           AUDIO ENDED
-        ========================= */
-
         musicAudio.addEventListener("ended", async () => {
             if (radioPlaying) {
                 await playLive();
@@ -1407,11 +1312,6 @@
                 await playLive();
             }
         });
-
-
-        /* =========================
-           AUDIO ERRORS
-        ========================= */
 
         function retryLive() {
             if (!radioPlaying) return;
@@ -1430,22 +1330,11 @@
             retryLive();
         });
 
-
-        /* =========================
-           GLOBAL SYNC
-        ========================= */
-
         async function syncRadio() {
             if (!radioPlaying) return;
 
             try {
                 const live = findLiveSegment();
-
-                /*
-                    currentSongIndex contains the displayed
-                    song index, so speech is compared against
-                    the song that should be shown.
-                */
 
                 const displayIndex =
                     getDisplaySongIndex(live);
@@ -1487,21 +1376,11 @@
 
         setInterval(syncRadio, 5000);
 
-
-        /* =========================
-           MEDIA POSITION
-        ========================= */
-
         setInterval(() => {
             if (radioPlaying) {
                 updateLiveMediaSession();
             }
         }, 3000);
-
-
-        /* =========================
-           VISIBILITY SYNC
-        ========================= */
 
         document.addEventListener(
             "visibilitychange",
@@ -1554,11 +1433,6 @@
             }
         );
 
-
-        /* =========================
-           BLOCK SEEK / CONTEXT MENU
-        ========================= */
-
         document.addEventListener("keydown", event => {
             const blocked = [
                 "ArrowLeft",
@@ -1580,11 +1454,6 @@
             "contextmenu",
             event => event.preventDefault()
         );
-
-
-        /* =========================
-           INITIALIZATION
-        ========================= */
 
         updatePlayButton();
 
@@ -1619,11 +1488,6 @@
                 upNextElement.textContent =
                     "Please try again";
             });
-
-
-        /* =========================
-           CLEANUP
-        ========================= */
 
         window.addEventListener("beforeunload", () => {
             musicAudio.pause();
