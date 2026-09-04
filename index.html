@@ -90,9 +90,11 @@
             color: rgba(255, 255, 255, 0.9);
             font-size: var(--size);
             opacity: var(--opacity);
+
             animation:
                 snowFall var(--duration) linear infinite,
                 snowDrift var(--drift) ease-in-out infinite alternate;
+
             animation-delay: var(--delay);
         }
 
@@ -372,7 +374,8 @@
 
             opacity: 0.65;
 
-            animation: starFloat 3s ease-in-out infinite alternate;
+            animation:
+                starFloat 3s ease-in-out infinite alternate;
         }
 
         .star.one {
@@ -415,6 +418,7 @@
         }
 
         @media (max-width: 768px) {
+
             #container {
                 padding:
                     max(15px, env(safe-area-inset-top))
@@ -450,6 +454,7 @@
         }
 
         @media (max-width: 900px) and (orientation: landscape) {
+
             #container {
                 align-items: center;
             }
@@ -487,6 +492,7 @@
         }
 
         @media (max-height: 650px) {
+
             .card {
                 padding-top: 20px;
                 padding-bottom: 20px;
@@ -514,6 +520,7 @@
         }
 
         @media (max-width: 380px) {
+
             .card {
                 padding: 25px 15px;
             }
@@ -533,6 +540,7 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
+
             *,
             *::before,
             *::after {
@@ -567,7 +575,10 @@
             </div>
 
             <h1 id="title">Christmas</h1>
-            <h1 id="subtitle">Countdown</h1>
+
+            <h1 id="subtitle">
+                Countdown
+            </h1>
 
             <div id="countdown">
                 Loading...
@@ -614,7 +625,7 @@
     <script>
 
         /* =========================================================
-           AUDIO ELEMENTS
+           AUDIO
         ========================================================= */
 
         const musicAudio =
@@ -622,91 +633,6 @@
 
         const speechAudio =
             document.getElementById("speechAudio");
-
-
-        /* =========================================================
-           SEEK PROTECTION
-        ========================================================= */
-
-        let realPlaybackPosition = 0;
-
-        let correctingSeek = false;
-
-
-        /*
-            Remember the last REAL position.
-
-            This is deliberately separate from the position
-            requested by the Lock Screen.
-        */
-
-        function rememberRealPosition() {
-
-            if (
-                correctingSeek ||
-                !radioPlaying
-            ) {
-                return;
-            }
-
-
-            if (
-                Number.isFinite(
-                    musicAudio.currentTime
-                )
-            ) {
-
-                realPlaybackPosition =
-                    musicAudio.currentTime;
-            }
-        }
-
-
-        musicAudio.addEventListener(
-            "timeupdate",
-            rememberRealPosition
-        );
-
-
-        /*
-            If iOS actually changes currentTime because the
-            user dragged the Lock Screen slider, immediately
-            restore the real position.
-        */
-
-        musicAudio.addEventListener(
-            "seeking",
-            () => {
-
-                if (
-                    !radioPlaying ||
-                    correctingSeek
-                ) {
-                    return;
-                }
-
-
-                correctingSeek = true;
-
-
-                try {
-
-                    musicAudio.currentTime =
-                        realPlaybackPosition;
-
-                } catch {}
-
-
-                requestAnimationFrame(
-                    () => {
-
-                        correctingSeek =
-                            false;
-
-                    }
-                );
-            }
-        );
 
 
         /* =========================================================
@@ -718,29 +644,24 @@
                 "Dec 1, 2025 00:00:00"
             ).getTime();
 
-
         const SONG_FOLDER =
             "./songs/";
-
 
         const SPEECH_SRC =
             "./songs/speech.mp3";
 
-
         const DURATION_MANIFEST =
             "./songs/durations.json";
 
-
         const PLAYLIST_PREFIX =
             "Music Now, Trap Music Now, Dance Music Now - ";
-
 
         const PLAYLIST_SUFFIX =
             " (SPOTISAVER).mp3";
 
 
         /* =========================================================
-           SONG LIST
+           SONGS
         ========================================================= */
 
         const SONG_NAMES = [
@@ -829,12 +750,10 @@
                 "playButton"
             );
 
-
         const songNameElement =
             document.getElementById(
                 "songName"
             );
-
 
         const countdownElement =
             document.getElementById(
@@ -862,303 +781,144 @@
 
         let lastSyncTime = 0;
 
-        let speechStarted = false;
+
+        /*
+            This stores the actual position that the audio
+            is playing at.
+
+            IMPORTANT:
+            This is NOT changed when the Lock Screen slider
+            is dragged.
+        */
+
+        let realPlaybackPosition = 0;
+
+
+        /*
+            Used only while we are correcting the visual
+            Media Session position.
+        */
+
+        let correctingSeek = false;
 
 
         /* =========================================================
-           MEDIA SESSION
+           REAL AUDIO POSITION TRACKING
         ========================================================= */
 
-        function updateLiveMediaSession() {
+        function rememberRealPosition() {
 
             if (
-                !("mediaSession" in navigator)
+                correctingSeek ||
+                !radioPlaying
             ) {
                 return;
             }
 
 
-            const currentSong =
-                SONG_NAMES[
-                    currentSongIndex
-                ] ||
-                "Christmas Countdown Radio";
+            const position =
+                musicAudio.currentTime;
 
 
-            try {
+            if (
+                Number.isFinite(
+                    position
+                )
+            ) {
 
-                navigator.mediaSession.metadata =
-                    new MediaMetadata({
-
-                        title:
-                            currentSong,
-
-                        artist:
-                            "Christmas Countdown Radio",
-
-                        album:
-                            "Christmas Countdown",
-
-                        artwork: [
-
-                            {
-                                src:
-                                    "./favicon.ico",
-
-                                sizes:
-                                    "512x512",
-
-                                type:
-                                    "image/x-icon"
-                            }
-
-                        ]
-
-                    });
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not set Media Session metadata:",
-                    error
-                );
+                realPlaybackPosition =
+                    position;
             }
+        }
 
 
-            /*
-                Give the Lock Screen the ACTUAL finite
-                duration and ACTUAL current position.
-
-                This lets the progress indicator move normally
-                while allowing us to reject manual seeking.
-            */
-
-            try {
-
-                const duration =
-                    musicAudio.duration;
+        musicAudio.addEventListener(
+            "timeupdate",
+            rememberRealPosition
+        );
 
 
-                const position =
-                    musicAudio.currentTime;
+        /*
+            DO NOT restore currentTime here.
+
+            The audio should never be moved because of
+            a Lock Screen slider interaction.
+
+            This listener only remembers what the real
+            position was before iOS processes the seek.
+        */
+
+        musicAudio.addEventListener(
+            "seeking",
+            () => {
+
+                if (
+                    correctingSeek
+                ) {
+                    return;
+                }
+
+
+                /*
+                    If iOS changes the actual audio position
+                    internally, restore it immediately.
+
+                    This is a safety net for Safari versions
+                    that apply the seek to the HTMLAudioElement.
+                */
+
+                if (
+                    !radioPlaying
+                ) {
+                    return;
+                }
+
+
+                const target =
+                    realPlaybackPosition;
 
 
                 if (
-                    Number.isFinite(
-                        duration
-                    ) &&
-                    duration > 0 &&
-                    Number.isFinite(
-                        position
-                    ) &&
-                    position >= 0 &&
-                    position <= duration
+                    !Number.isFinite(
+                        target
+                    )
                 ) {
-
-                    navigator.mediaSession
-                        .setPositionState({
-
-                            duration:
-                                duration,
-
-                            playbackRate:
-                                musicAudio.playbackRate || 1,
-
-                            position:
-                                position
-
-                        });
-
+                    return;
                 }
 
-            } catch (error) {
 
-                console.warn(
-                    "Could not update Media Session position:",
-                    error
+                correctingSeek =
+                    true;
+
+
+                try {
+
+                    musicAudio.currentTime =
+                        target;
+
+                } catch {}
+
+
+                setTimeout(
+                    () => {
+
+                        correctingSeek =
+                            false;
+
+                    },
+                    100
                 );
             }
-        }
-
-
-        function setupMediaSession() {
-
-            if (
-                !("mediaSession" in navigator)
-            ) {
-                return;
-            }
-
-
-            updateLiveMediaSession();
-
-
-            /*
-                PLAY
-            */
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "play",
-                        async () => {
-
-                            await resumeLive();
-
-                        }
-                    );
-
-            } catch {}
-
-
-            /*
-                PAUSE
-            */
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "pause",
-                        () => {
-
-                            pauseRadio();
-
-                        }
-                    );
-
-            } catch {}
-
-
-            /*
-                PREVIOUS / NEXT
-
-                These remain disabled.
-            */
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "nexttrack",
-                        () => {}
-                    );
-
-            } catch {}
-
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "previoustrack",
-                        () => {}
-                    );
-
-            } catch {}
-
-
-            /*
-                15 SECOND BACK / FORWARD
-
-                These remain disabled.
-            */
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "seekbackward",
-                        () => {}
-                    );
-
-            } catch {}
-
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "seekforward",
-                        () => {}
-                    );
-
-            } catch {}
-
-
-            /*
-                LOCK SCREEN SLIDER
-
-                Do NOT allow the requested seek.
-
-                Instead immediately restore the actual
-                playback position to the Media Session.
-            */
-
-            try {
-
-                navigator.mediaSession
-                    .setActionHandler(
-                        "seekto",
-                        () => {
-
-                            correctingSeek = true;
-
-
-                            try {
-
-                                musicAudio.currentTime =
-                                    realPlaybackPosition;
-
-                            } catch {}
-
-
-                            /*
-                                Force the Lock Screen position
-                                back to the real position.
-                            */
-
-                            updateLiveMediaSession();
-
-
-                            requestAnimationFrame(
-                                () => {
-
-                                    correctingSeek =
-                                        false;
-
-                                }
-                            );
-
-                        }
-                    );
-
-            } catch {}
-
-
-            /*
-                Disable the Media Session seek position
-                from being treated as a user-controlled action.
-            */
-
-            try {
-
-                navigator.mediaSession.playbackState =
-                    "none";
-
-            } catch {}
-        }
-
-
-        setupMediaSession();
+        );
 
 
         /* =========================================================
            HELPERS
         ========================================================= */
 
-        function getSongFilename(songName) {
+        function getSongFilename(
+            songName
+        ) {
 
             return (
                 PLAYLIST_PREFIX +
@@ -1168,7 +928,9 @@
         }
 
 
-        function getSongURL(songName) {
+        function getSongURL(
+            songName
+        ) {
 
             return (
                 SONG_FOLDER +
@@ -1181,7 +943,9 @@
         }
 
 
-        function formatTime(seconds) {
+        function formatTime(
+            seconds
+        ) {
 
             if (
                 !Number.isFinite(
@@ -1456,7 +1220,7 @@
             } catch (error) {
 
                 console.warn(
-                    "Could not load durations.json. Falling back to MP3 metadata.",
+                    "Could not load durations.json.",
                     error
                 );
 
@@ -1467,13 +1231,18 @@
 
 
         /* =========================================================
-           FALLBACK METADATA READER
+           FALLBACK AUDIO DURATION
         ========================================================= */
 
-        function getAudioDuration(url) {
+        function getAudioDuration(
+            url
+        ) {
 
             return new Promise(
-                (resolve, reject) => {
+                (
+                    resolve,
+                    reject
+                ) => {
 
                     const audio =
                         document.createElement(
@@ -1481,7 +1250,8 @@
                         );
 
 
-                    let finished = false;
+                    let finished =
+                        false;
 
 
                     const cleanup =
@@ -1492,7 +1262,6 @@
                             );
 
                             audio.load();
-
                         };
 
 
@@ -1507,7 +1276,8 @@
                                 }
 
 
-                                finished = true;
+                                finished =
+                                    true;
 
 
                                 cleanup();
@@ -1684,16 +1454,12 @@
                             i++
                         ) {
 
-                            const songName =
-                                SONG_NAMES[i];
-
-
                             const entry =
                                 manifest.find(
                                     item =>
                                         item &&
                                         item.name ===
-                                        songName
+                                        SONG_NAMES[i]
                                 );
 
 
@@ -1730,7 +1496,6 @@
                             ) &&
                             durations[i] > 0
                         ) {
-
                             continue;
                         }
 
@@ -1792,7 +1557,7 @@
 
 
                     console.log(
-                        "Radio playlist duration:",
+                        "Total playlist duration:",
                         formatTime(
                             totalPlaylistDuration
                         )
@@ -1815,7 +1580,7 @@
 
 
         /* =========================================================
-           FIND LIVE SONG
+           FIND CURRENT LIVE SONG
         ========================================================= */
 
         function findCurrentSong() {
@@ -1832,18 +1597,16 @@
             }
 
 
-            const now =
-                Date.now();
-
-
-            let elapsed =
+            const elapsed =
                 (
-                    now -
-                    RADIO_START
-                ) / 1000;
+                    (
+                        Date.now() -
+                        RADIO_START
+                    ) / 1000
+                );
 
 
-            elapsed =
+            const position =
                 (
                     elapsed %
                     totalPlaylistDuration +
@@ -1867,7 +1630,7 @@
 
 
                 if (
-                    elapsed <
+                    position <
                     accumulated +
                     duration
                 ) {
@@ -1878,7 +1641,7 @@
                             i,
 
                         offset:
-                            elapsed -
+                            position -
                             accumulated
 
                     };
@@ -1898,28 +1661,324 @@
 
 
         /* =========================================================
-           DISPLAY CURRENT SONG
+           MEDIA SESSION
         ========================================================= */
 
-        function updateSongDisplay(
-            index
-        ) {
+        function updateLiveMediaSession() {
 
             if (
-                index >= 0 &&
-                index <
-                    SONG_NAMES.length
+                !("mediaSession" in navigator)
             ) {
-
-                songNameElement
-                    .textContent =
-                    SONG_NAMES[index];
+                return;
             }
+
+
+            const currentSong =
+                SONG_NAMES[
+                    currentSongIndex
+                ] ||
+                "Christmas Countdown Radio";
+
+
+            try {
+
+                navigator.mediaSession.metadata =
+                    new MediaMetadata({
+
+                        title:
+                            currentSong,
+
+                        artist:
+                            "Christmas Countdown Radio",
+
+                        album:
+                            "Christmas Countdown",
+
+                        artwork: [
+
+                            {
+                                src:
+                                    "./favicon.ico",
+
+                                sizes:
+                                    "512x512",
+
+                                type:
+                                    "image/x-icon"
+                            }
+
+                        ]
+
+                    });
+
+            } catch {}
+
+
+            /*
+                IMPORTANT:
+
+                The Lock Screen gets the CURRENT REAL AUDIO
+                POSITION.
+
+                We are NOT changing musicAudio.currentTime here.
+            */
+
+            try {
+
+                const duration =
+                    musicAudio.duration;
+
+
+                const position =
+                    musicAudio.currentTime;
+
+
+                if (
+                    Number.isFinite(
+                        duration
+                    ) &&
+                    duration > 0 &&
+                    Number.isFinite(
+                        position
+                    ) &&
+                    position >= 0 &&
+                    position <= duration
+                ) {
+
+                    navigator.mediaSession
+                        .setPositionState({
+
+                            duration:
+                                duration,
+
+                            playbackRate:
+                                musicAudio.playbackRate || 1,
+
+                            position:
+                                position
+
+                        });
+                }
+
+            } catch {}
         }
 
 
+        function restoreVisualPosition() {
+
+            if (
+                !("mediaSession" in navigator)
+            ) {
+                return;
+            }
+
+
+            /*
+                Tell iOS what the REAL position is.
+
+                We intentionally do NOT modify the audio.
+            */
+
+            updateLiveMediaSession();
+
+
+            /*
+                iOS can visually keep the dragged position
+                for a short moment, so send the real state
+                again several times.
+            */
+
+            setTimeout(
+                () => {
+
+                    if (
+                        radioPlaying
+                    ) {
+
+                        updateLiveMediaSession();
+                    }
+
+                },
+                50
+            );
+
+
+            setTimeout(
+                () => {
+
+                    if (
+                        radioPlaying
+                    ) {
+
+                        updateLiveMediaSession();
+                    }
+
+                },
+                150
+            );
+
+
+            setTimeout(
+                () => {
+
+                    if (
+                        radioPlaying
+                    ) {
+
+                        updateLiveMediaSession();
+                    }
+
+                },
+                300
+            );
+        }
+
+
+        function setupMediaSession() {
+
+            if (
+                !("mediaSession" in navigator)
+            ) {
+                return;
+            }
+
+
+            /*
+                PLAY
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "play",
+                        async () => {
+
+                            await resumeLive();
+
+                        }
+                    );
+
+            } catch {}
+
+
+            /*
+                PAUSE
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "pause",
+                        () => {
+
+                            pauseRadio();
+
+                        }
+                    );
+
+            } catch {}
+
+
+            /*
+                PREVIOUS
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "previoustrack",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            /*
+                NEXT
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "nexttrack",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            /*
+                15 SECOND BACK
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekbackward",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            /*
+                15 SECOND FORWARD
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekforward",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            /*
+                LOCK SCREEN SLIDER
+
+                DO NOT SEEK AUDIO.
+
+                Only restore the visual Media Session
+                position to where the song actually is.
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekto",
+                        () => {
+
+                            restoreVisualPosition();
+
+                        }
+                    );
+
+            } catch {}
+
+
+            try {
+
+                navigator.mediaSession.playbackState =
+                    "none";
+
+            } catch {}
+        }
+
+
+        setupMediaSession();
+
+
         /* =========================================================
-           PLAY CURRENT LIVE POSITION
+           PLAY LIVE
         ========================================================= */
 
         async function playLive() {
@@ -1929,24 +1988,22 @@
                 await loadDurations();
 
 
-                const position =
+                const live =
                     findCurrentSong();
 
 
                 currentSongIndex =
-                    position.index;
+                    live.index;
 
 
                 currentSongOffset =
-                    position.offset;
+                    live.offset;
 
 
-                updateSongDisplay(
-                    currentSongIndex
-                );
-
-
-                updateLiveMediaSession();
+                songNameElement.textContent =
+                    SONG_NAMES[
+                        currentSongIndex
+                    ];
 
 
                 const url =
@@ -2007,26 +2064,26 @@
                 }
 
 
-                const targetOffset =
+                /*
+                    Recalculate the live position AFTER
+                    the audio has loaded.
+                */
+
+                const recalculated =
                     findCurrentSong();
 
 
                 if (
-                    targetOffset.index !==
+                    recalculated.index !==
                     currentSongIndex
                 ) {
 
                     currentSongIndex =
-                        targetOffset.index;
+                        recalculated.index;
 
 
                     currentSongOffset =
-                        targetOffset.offset;
-
-
-                    updateSongDisplay(
-                        currentSongIndex
-                    );
+                        recalculated.offset;
 
 
                     musicAudio.src =
@@ -2064,14 +2121,23 @@
                         }
                     );
 
-
-                    updateLiveMediaSession();
-
                 } else {
 
                     currentSongOffset =
-                        targetOffset.offset;
+                        recalculated.offset;
                 }
+
+
+                /*
+                    Initial live seek.
+
+                    This is NOT a Lock Screen seek.
+                    This is the initial synchronization
+                    when starting the radio.
+                */
+
+                correctingSeek =
+                    true;
 
 
                 try {
@@ -2079,19 +2145,12 @@
                     musicAudio.currentTime =
                         currentSongOffset;
 
-                } catch (error) {
-
-                    console.warn(
-                        "Could not seek immediately:",
-                        error
-                    );
-                }
+                } catch {}
 
 
-                /*
-                    Establish the initial real position
-                    before playback begins.
-                */
+                correctingSeek =
+                    false;
+
 
                 realPlaybackPosition =
                     musicAudio.currentTime;
@@ -2104,32 +2163,28 @@
                     true;
 
 
-                updatePlayButton();
+                realPlaybackPosition =
+                    musicAudio.currentTime;
 
 
                 lastSyncTime =
                     Date.now();
 
 
-                realPlaybackPosition =
-                    musicAudio.currentTime;
+                updatePlayButton();
 
 
                 updateLiveMediaSession();
 
 
-                if (
-                    "mediaSession" in navigator
-                ) {
+                try {
 
-                    try {
+                    navigator.mediaSession
+                        .playbackState =
+                        "playing";
 
-                        navigator.mediaSession
-                            .playbackState =
-                            "playing";
+                } catch {}
 
-                    } catch {}
-                }
 
             } catch (error) {
 
@@ -2146,9 +2201,8 @@
                 updatePlayButton();
 
 
-                songNameElement
-                    .textContent =
-                    "Tap Start Live Radio to begin";
+                songNameElement.textContent =
+                    "Could not start radio";
             }
         }
 
@@ -2171,32 +2225,29 @@
             updatePlayButton();
 
 
-            if (
-                "mediaSession" in navigator
-            ) {
+            try {
 
-                try {
+                navigator.mediaSession
+                    .playbackState =
+                    "paused";
 
-                    navigator.mediaSession
-                        .playbackState =
-                        "paused";
-
-                } catch {}
-            }
+            } catch {}
         }
 
 
         /* =========================================================
-           RESUME LIVE
+           RESUME
         ========================================================= */
 
         async function resumeLive() {
 
             speechAudio.pause();
 
-            speechStarted =
-                false;
 
+            /*
+                Resume always jumps to the CURRENT LIVE
+                position instead of resuming an old position.
+            */
 
             await playLive();
         }
@@ -2215,7 +2266,6 @@
                 playButton.textContent =
                     "⏸ Pause";
 
-
                 playButton.classList
                     .remove(
                         "paused"
@@ -2225,7 +2275,6 @@
 
                 playButton.textContent =
                     "▶️ Play";
-
 
                 playButton.classList
                     .add(
@@ -2254,7 +2303,7 @@
 
 
         /* =========================================================
-           AUTOMATIC NEXT SONG
+           SONG ENDED
         ========================================================= */
 
         musicAudio.addEventListener(
@@ -2262,35 +2311,28 @@
             async () => {
 
                 if (
-                    !radioPlaying
+                    radioPlaying
                 ) {
-                    return;
+
+                    await playLive();
                 }
-
-
-                await playLive();
             }
         );
 
 
         /* =========================================================
-           AUDIO ERROR RECOVERY
+           AUDIO ERROR
         ========================================================= */
 
         musicAudio.addEventListener(
             "error",
-            async () => {
+            () => {
 
                 if (
                     !radioPlaying
                 ) {
                     return;
                 }
-
-
-                console.warn(
-                    "Music playback error. Resynchronizing..."
-                );
 
 
                 setTimeout(
@@ -2306,100 +2348,6 @@
                     },
                     1000
                 );
-            }
-        );
-
-
-        /* =========================================================
-           VISIBILITY / RETURN TO PAGE
-        ========================================================= */
-
-        document.addEventListener(
-            "visibilitychange",
-            async () => {
-
-                if (
-                    document.visibilityState !==
-                    "visible"
-                ) {
-                    return;
-                }
-
-
-                if (
-                    !radioPlaying
-                ) {
-                    return;
-                }
-
-
-                const now =
-                    Date.now();
-
-
-                if (
-                    now -
-                    lastSyncTime <
-                    3000
-                ) {
-
-                    return;
-                }
-
-
-                lastSyncTime =
-                    now;
-
-
-                try {
-
-                    const live =
-                        findCurrentSong();
-
-
-                    if (
-                        live.index !==
-                        currentSongIndex
-                    ) {
-
-                        await playLive();
-
-                        return;
-                    }
-
-
-                    const expected =
-                        live.offset;
-
-
-                    const actual =
-                        musicAudio.currentTime;
-
-
-                    if (
-                        Math.abs(
-                            expected -
-                            actual
-                        ) > 3
-                    ) {
-
-                        await playLive();
-
-                    } else {
-
-                        realPlaybackPosition =
-                            actual;
-
-                        updateLiveMediaSession();
-                    }
-
-                } catch (error) {
-
-                    console.warn(
-                        "Resync failed:",
-                        error
-                    );
-                }
             }
         );
 
@@ -2435,9 +2383,13 @@
                     }
 
 
+                    const actual =
+                        musicAudio.currentTime;
+
+
                     const drift =
                         Math.abs(
-                            musicAudio.currentTime -
+                            actual -
                             live.offset
                         );
 
@@ -2450,27 +2402,25 @@
                             true;
 
 
-                        musicAudio.currentTime =
-                            live.offset;
+                        try {
+
+                            musicAudio.currentTime =
+                                live.offset;
+
+                        } catch {}
+
+
+                        correctingSeek =
+                            false;
 
 
                         realPlaybackPosition =
-                            live.offset;
-
-
-                        requestAnimationFrame(
-                            () => {
-
-                                correctingSeek =
-                                    false;
-
-                            }
-                        );
+                            musicAudio.currentTime;
 
                     } else {
 
                         realPlaybackPosition =
-                            musicAudio.currentTime;
+                            actual;
                     }
 
 
@@ -2494,7 +2444,70 @@
 
 
         /* =========================================================
-           PREVENT SEEKING THROUGH KEYBOARD
+           VISIBILITY SYNC
+        ========================================================= */
+
+        document.addEventListener(
+            "visibilitychange",
+            async () => {
+
+                if (
+                    document.visibilityState !==
+                    "visible"
+                ) {
+                    return;
+                }
+
+
+                if (
+                    !radioPlaying
+                ) {
+                    return;
+                }
+
+
+                const live =
+                    findCurrentSong();
+
+
+                if (
+                    live.index !==
+                    currentSongIndex
+                ) {
+
+                    await playLive();
+
+                    return;
+                }
+
+
+                const drift =
+                    Math.abs(
+                        musicAudio.currentTime -
+                        live.offset
+                    );
+
+
+                if (
+                    drift > 3
+                ) {
+
+                    await playLive();
+
+                } else {
+
+                    realPlaybackPosition =
+                        musicAudio.currentTime;
+
+                    updateLiveMediaSession();
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           KEYBOARD MEDIA CONTROLS
         ========================================================= */
 
         document.addEventListener(
@@ -2535,7 +2548,7 @@
 
 
         /* =========================================================
-           PREVENT CONTEXT MENU
+           CONTEXT MENU
         ========================================================= */
 
         document.addEventListener(
@@ -2548,7 +2561,7 @@
 
 
         /* =========================================================
-           INITIAL STATE
+           INITIALIZATION
         ========================================================= */
 
         updatePlayButton();
@@ -2574,9 +2587,10 @@
                         live.offset;
 
 
-                    updateSongDisplay(
-                        live.index
-                    );
+                    songNameElement.textContent =
+                        SONG_NAMES[
+                            live.index
+                        ];
 
 
                     updateLiveMediaSession();
@@ -2595,7 +2609,7 @@
 
 
         /* =========================================================
-           BEFORE UNLOAD
+           CLEANUP
         ========================================================= */
 
         window.addEventListener(
