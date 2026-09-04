@@ -1033,157 +1033,86 @@ body::before {
    CONFIG
 ========================================================= */
 
-const RADIO_START =
-  new Date(
-    "Dec 1, 2025 00:00:00"
-  ).getTime();
-
+const RADIO_START = new Date("Dec 1, 2025 00:00:00").getTime();
 
 const SONG_NAMES = [
-
   "All I Want For Christmas Is You",
-
   "Baby It's Cold Outside",
-
   "Blue Christmas",
-
   "Carol Of The Bells",
-
   "Christmas (Baby Please Come Home)",
-
   "Christmas Canon",
-
   "Deck The Halls",
-
   "Do You Want To Build A Snowman",
-
   "Feliz Navidad",
-
   "Frosty The Snowman",
-
   "God Rest Ye Merry Gentlemen",
-
   "Here Comes Santa Claus",
-
   "Holly Jolly Christmas",
-
   "I Want A Hippopotamus For Christmas",
-
   "It's Beginning To Look A Lot Like Christmas",
-
   "It's The Most Wonderful Time Of The Year",
-
   "Jingle Bell Rock",
-
   "Jingle Bells",
-
   "Last Christmas",
-
   "Let It Snow! Let It Snow!",
-
   "Little Drummer Boy",
-
   "Mistletoe",
-
   "O Christmas Tree",
-
   "Rockin Around The Christmas Tree",
-
   "Rudolph The Red-Nosed Reindeer",
-
   "Santa Baby",
-
   "Santa Claus Is Comin' To Town",
-
   "Silent Night",
-
   "Sleigh Ride",
-
   "The Christmas Song",
-
   "Up On The Housetop",
-
   "We Wish You A Merry Christmas",
-
   "White Christmas",
-
   "Winter Wonderland",
-
   "Wonderful Christmastime",
-
   "You're A Mean One, Mr. Grinch"
-
 ];
 
+const PLAYLIST = SONG_NAMES.map(
+  name => `songs/Music Now, Trap Music Now, Dance Music Now - ${name} (SPOTISAVER).mp3`
+);
 
-const PLAYLIST =
-  SONG_NAMES.map(
-    name =>
-      `songs/Music Now, Trap Music Now, Dance Music Now - ${name} (SPOTISAVER).mp3`
-  );
-
-
-const SPEECH_SRC =
-  "songs/speech.mp3";
+const SPEECH_SRC = "songs/speech.mp3";
 
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
 
-const countdownEl =
-  document.getElementById(
-    "countdown"
-  );
+const countdownEl = document.getElementById("countdown");
+const titleEl = document.getElementById("title");
+const subtitleEl = document.getElementById("subtitle");
+const songNameEl = document.getElementById("songName");
+const bgEl = document.getElementById("bg");
+const playButton = document.getElementById("playButton");
 
-
-const titleEl =
-  document.getElementById(
-    "title"
-  );
-
-
-const subtitleEl =
-  document.getElementById(
-    "subtitle"
-  );
-
-
-const songNameEl =
-  document.getElementById(
-    "songName"
-  );
-
-
-const bgEl =
-  document.getElementById(
-    "bg"
-  );
-
-
-const playButton =
-  document.getElementById(
-    "playButton"
-  );
+const snowFar = document.getElementById("snowFar");
+const snowMid = document.getElementById("snowMid");
+const snowNear = document.getElementById("snowNear");
 
 
 /* =========================================================
-   AUDIO
+   AUDIO STATE
 ========================================================= */
 
 let audioCtx = null;
-
-let durations = [];
-
-let speechBuffer = null;
-
-let globalSongIndex = 0;
-
 let analyser = null;
-
 let dataArray = null;
 
 let radioStarted = false;
+let globalSongIndex = 0;
+
+const durations = new Array(PLAYLIST.length);
+const durationPromises = new Map();
+const bufferCache = new Map();
+
+let speechBuffer = null;
 
 
 /* =========================================================
@@ -1191,170 +1120,69 @@ let radioStarted = false;
 ========================================================= */
 
 function updateCountdown() {
+  const now = new Date();
+  const year = now.getFullYear();
 
-  const now =
-    new Date();
+  const christmas = new Date(
+    `Dec 25, ${year} 00:00:00`
+  );
 
+  const newYear = new Date(
+    `Jan 1, ${year + 1} 00:00:00`
+  );
 
-  const year =
-    now.getFullYear();
-
-
-  const christmas =
-    new Date(
-      `Dec 25, ${year} 00:00:00`
-    );
-
-
-  const newYear =
-    new Date(
-      `Jan 1, ${year + 1} 00:00:00`
-    );
-
-
-  /*
-    Christmas Day
-  */
-
-  if (
-    now >= christmas &&
-    now < newYear
-  ) {
-
-    countdownEl.textContent =
-      "";
-
-    titleEl.textContent =
-      "Merry";
-
-    subtitleEl.textContent =
-      "Christmas";
-
+  if (now >= christmas && now < newYear) {
+    countdownEl.textContent = "";
+    titleEl.textContent = "Merry";
+    subtitleEl.textContent = "Christmas";
     return;
-
   }
-
-
-  /*
-    Find next Christmas
-  */
 
   const targetYear =
     now >= newYear
       ? year + 1
       : year;
 
-
-  const target =
+  const difference =
     new Date(
       `Dec 25, ${targetYear} 00:00:00`
-    ).getTime();
+    ).getTime() - now.getTime();
 
+  const days = Math.floor(
+    difference / 86400000
+  );
 
-  const difference =
-    target -
-    now.getTime();
+  const hours = Math.floor(
+    (difference % 86400000) / 3600000
+  );
 
+  const minutes = Math.floor(
+    (difference % 3600000) / 60000
+  );
 
-  const days =
-    Math.floor(
-      difference /
-      86400000
-    );
-
-
-  const hours =
-    Math.floor(
-      (difference %
-        86400000) /
-      3600000
-    );
-
-
-  const minutes =
-    Math.floor(
-      (difference %
-        3600000) /
-      60000
-    );
-
-
-  const seconds =
-    Math.floor(
-      (difference %
-        60000) /
-      1000
-    );
-
+  const seconds = Math.floor(
+    (difference % 60000) / 1000
+  );
 
   countdownEl.textContent =
     `${days}d ` +
     `${String(hours).padStart(2, "0")}h ` +
     `${String(minutes).padStart(2, "0")}m ` +
     `${String(seconds).padStart(2, "0")}s`;
-
 }
 
-
 updateCountdown();
-
-
-setInterval(
-  updateCountdown,
-  1000
-);
+setInterval(updateCountdown, 1000);
 
 
 /* =========================================================
-   DISTANCE SNOW SYSTEM
+   SNOW
 ========================================================= */
 
-const snowFar =
-  document.getElementById(
-    "snowFar"
-  );
+function createSnowflake(layer, distance) {
+  const snow = document.createElement("div");
 
-
-const snowMid =
-  document.getElementById(
-    "snowMid"
-  );
-
-
-const snowNear =
-  document.getElementById(
-    "snowNear"
-  );
-
-
-/*
-   distance:
-
-   0.0 = very far
-
-   0.5 = medium
-
-   1.0 = very close
-*/
-
-function createSnowflake(
-  layer,
-  distance
-) {
-
-  const snow =
-    document.createElement(
-      "div"
-    );
-
-
-  snow.className =
-    "snowflake";
-
-
-  /*
-     Different snowflake shapes.
-  */
+  snow.className = "snowflake";
 
   const characters = [
     "❄",
@@ -1364,470 +1192,338 @@ function createSnowflake(
     "✦"
   ];
 
-
   snow.textContent =
     characters[
       Math.floor(
-        Math.random() *
-        characters.length
+        Math.random() * characters.length
       )
     ];
 
-
-  /*
-     SIZE
-
-     Far = small
-
-     Near = large
-  */
-
-  const size =
-    5 +
-    distance * 25 +
-    Math.random() * 8;
-
-
   snow.style.fontSize =
-    `${size}px`;
-
-
-  /*
-     OPACITY
-
-     Far = faint
-
-     Near = bright
-  */
-
-  const opacity =
-    0.16 +
-    distance * 0.72;
-
+    `${5 + distance * 25 + Math.random() * 8}px`;
 
   snow.style.opacity =
-    opacity;
-
-
-  /*
-     RANDOM HORIZONTAL POSITION
-  */
+    0.16 + distance * 0.72;
 
   snow.style.left =
     `${Math.random() * 100}%`;
 
-
-  /*
-     DEPTH AFFECTS SPEED
-
-     Far = slower
-
-     Near = faster
-  */
-
-  const duration =
-    16 -
-    distance * 9 +
-    Math.random() * 5;
-
-
   snow.style.animationDuration =
-    `${duration}s`;
-
-
-  /*
-     Random animation position.
-
-     This makes snow already
-     falling when page opens.
-  */
+    `${16 - distance * 9 + Math.random() * 5}s`;
 
   snow.style.animationDelay =
     `${Math.random() * -20}s`;
 
-
-  /*
-     DEPTH BLUR
-
-     Far snow is blurry.
-
-     Near snow is sharp.
-  */
-
-  const blur =
-    (1 - distance) * 2.8;
-
-
   snow.style.filter =
-    `blur(${blur}px)`;
-
-
-  /*
-     Near snow gets a stronger glow.
-  */
+    `blur(${(1 - distance) * 2.8}px)`;
 
   if (distance > 0.7) {
-
     snow.style.textShadow =
       "0 0 4px white, 0 0 10px rgba(255,255,255,.7)";
-
   }
 
-
-  layer.appendChild(
-    snow
-  );
-
+  layer.appendChild(snow);
 }
 
-
-/* =========================================================
-   BUILD SNOW
-========================================================= */
 
 function createDistanceSnow() {
+  snowFar.innerHTML = "";
+  snowMid.innerHTML = "";
+  snowNear.innerHTML = "";
 
-  snowFar.innerHTML =
-    "";
+  const mobile = window.innerWidth < 768;
 
-  snowMid.innerHTML =
-    "";
+  const counts = mobile
+    ? [25, 18, 10]
+    : [50, 38, 22];
 
-  snowNear.innerHTML =
-    "";
+  const layers = [
+    [snowFar, 0.12, 0.30],
+    [snowMid, 0.40, 0.60],
+    [snowNear, 0.80, 1]
+  ];
 
+  for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
+    const [layer, min, max] = layers[layerIndex];
 
-  const mobile =
-    window.innerWidth < 768;
-
-
-  /*
-     FAR
-
-     Lots of tiny flakes.
-  */
-
-  const farCount =
-    mobile ? 25 : 50;
-
-
-  /*
-     MID
-
-     Medium number.
-  */
-
-  const midCount =
-    mobile ? 18 : 38;
-
-
-  /*
-     NEAR
-
-     Fewer large flakes.
-  */
-
-  const nearCount =
-    mobile ? 10 : 22;
-
-
-  /*
-     FAR
-  */
-
-  for (
-    let i = 0;
-    i < farCount;
-    i++
-  ) {
-
-    createSnowflake(
-      snowFar,
-      0.12 +
-      Math.random() * 0.18
-    );
-
+    for (let i = 0; i < counts[layerIndex]; i++) {
+      createSnowflake(
+        layer,
+        min + Math.random() * (max - min)
+      );
+    }
   }
-
-
-  /*
-     MID
-  */
-
-  for (
-    let i = 0;
-    i < midCount;
-    i++
-  ) {
-
-    createSnowflake(
-      snowMid,
-      0.40 +
-      Math.random() * 0.20
-    );
-
-  }
-
-
-  /*
-     NEAR
-  */
-
-  for (
-    let i = 0;
-    i < nearCount;
-    i++
-  ) {
-
-    createSnowflake(
-      snowNear,
-      0.80 +
-      Math.random() * 0.20
-    );
-
-  }
-
 }
-
-
-/*
-   Create initial snow.
-*/
 
 createDistanceSnow();
 
 
-/*
-   Rebuild on major resize.
-
-   This prevents hundreds of extra
-   snowflakes from accumulating.
-*/
-
 let resizeTimer = null;
 
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
 
-window.addEventListener(
-  "resize",
-  () => {
-
-    clearTimeout(
-      resizeTimer
-    );
-
-
-    resizeTimer =
-      setTimeout(
-        createDistanceSnow,
-        300
-      );
-
-  }
-);
+  resizeTimer = setTimeout(
+    createDistanceSnow,
+    300
+  );
+});
 
 
 /* =========================================================
-   AUDIO HELPERS
+   AUDIO DURATION CACHE
 ========================================================= */
 
-function getDuration(
-  src
-) {
+function getDuration(index) {
+  if (Number.isFinite(durations[index])) {
+    return Promise.resolve(durations[index]);
+  }
 
-  return new Promise(
-    resolve => {
+  if (durationPromises.has(index)) {
+    return durationPromises.get(index);
+  }
 
-      const audio =
-        new Audio();
+  const promise = new Promise(resolve => {
+    const audio = new Audio();
+
+    audio.preload = "metadata";
+    audio.src = PLAYLIST[index];
+
+    const finish = duration => {
+      durations[index] = duration;
+
+      audio.removeAttribute("src");
+      audio.load();
+
+      resolve(duration);
+    };
+
+    audio.addEventListener(
+      "loadedmetadata",
+      () => {
+        const duration =
+          Number.isFinite(audio.duration) &&
+          audio.duration > 0
+            ? audio.duration
+            : 240;
+
+        finish(duration);
+      },
+      { once: true }
+    );
+
+    audio.addEventListener(
+      "error",
+      () => finish(240),
+      { once: true }
+    );
+  });
+
+  durationPromises.set(index, promise);
+
+  return promise;
+}
 
 
-      audio.preload =
-        "metadata";
+/*
+   Only determine as much of the playlist
+   as is necessary to find the current song.
+*/
 
+async function findCurrentSong() {
+  let elapsed =
+    Math.max(
+      0,
+      Date.now() - RADIO_START
+    ) / 1000;
 
-      audio.src =
-        src;
+  for (let i = 0; i < PLAYLIST.length; i++) {
+    const duration =
+      await getDuration(i);
 
-
-      audio.onloadedmetadata =
-        () => {
-
-          resolve(
-            Number.isFinite(
-              audio.duration
-            )
-              ? audio.duration
-              : 240
-          );
-
-        };
-
-
-      audio.onerror =
-        () => {
-
-          resolve(240);
-
-        };
-
+    if (elapsed < duration) {
+      return {
+        index: i,
+        offset: elapsed
+      };
     }
+
+    elapsed -= duration;
+  }
+
+  return {
+    index: 0,
+    offset: 0
+  };
+}
+
+
+/* =========================================================
+   AUDIO BUFFER CACHE
+========================================================= */
+
+function loadBuffer(src) {
+  if (bufferCache.has(src)) {
+    return bufferCache.get(src);
+  }
+
+  const promise = fetch(
+    src,
+    {
+      cache: "force-cache"
+    }
+  )
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(
+          `Unable to load ${src}`
+        );
+      }
+
+      return response.arrayBuffer();
+    })
+    .then(data =>
+      audioCtx.decodeAudioData(data)
+    );
+
+  bufferCache.set(
+    src,
+    promise
   );
 
+  promise.catch(() => {
+    bufferCache.delete(src);
+  });
+
+  return promise;
 }
 
 
-async function loadDurations() {
+/*
+   Start downloading the next song while
+   the current one is playing.
+*/
 
-  if (
-    durations.length
-  ) {
-
+function preloadSong(index) {
+  if (!audioCtx) {
     return;
-
   }
 
-
-  durations =
-    await Promise.all(
-      PLAYLIST.map(
-        src =>
-          getDuration(src)
-      )
+  loadBuffer(
+    PLAYLIST[index]
+  ).catch(error => {
+    console.warn(
+      "Next song preload failed:",
+      error
     );
-
+  });
 }
 
 
-async function loadBuffer(
-  src
-) {
+/*
+   Speech loads independently and never
+   blocks the initial radio startup.
+*/
 
-  const response =
-    await fetch(src);
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      `Unable to load ${src}`
-    );
-
+function preloadSpeech() {
+  if (!audioCtx || speechBuffer) {
+    return;
   }
 
-
-  const arrayBuffer =
-    await response.arrayBuffer();
-
-
-  return await
-    audioCtx.decodeAudioData(
-      arrayBuffer
-    );
-
+  loadBuffer(SPEECH_SRC)
+    .then(buffer => {
+      speechBuffer = buffer;
+    })
+    .catch(error => {
+      console.warn(
+        "Speech preload failed:",
+        error
+      );
+    });
 }
 
 
 /* =========================================================
-   LIVE RADIO
+   ANALYSER
 ========================================================= */
 
-async function playLive(
-  index,
-  offset
-) {
-
-  if (!radioStarted) {
-
+function setupAnalyser() {
+  if (analyser) {
     return;
-
   }
 
+  analyser =
+    audioCtx.createAnalyser();
+
+  analyser.fftSize = 64;
+
+  analyser.smoothingTimeConstant =
+    0.75;
+
+  dataArray =
+    new Uint8Array(
+      analyser.frequencyBinCount
+    );
+}
+
+
+/* =========================================================
+   PLAY LIVE
+========================================================= */
+
+async function playLive(index, offset) {
+  if (!radioStarted) {
+    return;
+  }
 
   try {
-
     songNameEl.textContent =
       SONG_NAMES[index];
-
 
     const buffer =
       await loadBuffer(
         PLAYLIST[index]
       );
 
+    if (!radioStarted) {
+      return;
+    }
 
     /*
-       Skip if offset is past
-       the end of the song.
+       Protect against bad duration
+       calculations.
     */
 
     if (
-      offset >=
-      buffer.duration
+      offset >= buffer.duration
     ) {
-
-      globalSongIndex =
+      const nextIndex =
         (index + 1) %
         PLAYLIST.length;
 
+      globalSongIndex =
+        nextIndex;
 
       return playLive(
-        globalSongIndex,
-        offset -
-        buffer.duration
+        nextIndex,
+        offset - buffer.duration
       );
-
     }
 
+    setupAnalyser();
 
     /*
-       ANALYSER
-    */
-
-    if (!analyser) {
-
-      analyser =
-        audioCtx.createAnalyser();
-
-
-      analyser.fftSize =
-        64;
-
-
-      analyser.smoothingTimeConstant =
-        0.75;
-
-
-      dataArray =
-        new Uint8Array(
-          analyser.frequencyBinCount
-        );
-
-    }
-
-
-    /*
-       AUDIO GRAPH
-
-       source
-         ↓
-       gain
-         ↓
-       analyser
-         ↓
-       speakers
+       Create the current source.
     */
 
     const source =
       audioCtx.createBufferSource();
 
-
     const gain =
       audioCtx.createGain();
 
-
     source.buffer =
       buffer;
-
 
     source
       .connect(gain)
@@ -1836,185 +1532,156 @@ async function playLive(
         audioCtx.destination
       );
 
+    gain.gain.value = 1;
 
-    gain.gain.value =
-      1;
-
+    /*
+       Start exactly at the
+       synchronized position.
+    */
 
     source.start(
       0,
-      offset
+      Math.max(0, offset)
     );
 
 
     /*
-       Speech every 3 songs.
+       Preload the next song immediately.
+    */
+
+    const nextIndex =
+      (index + 1) %
+      PLAYLIST.length;
+
+    preloadSong(nextIndex);
+
+
+    /*
+       Load speech in the background.
     */
 
     if (
-      (globalSongIndex + 1) %
-      3 === 0
+      (index + 1) % 3 === 0
     ) {
-
-      if (!speechBuffer) {
-
-        speechBuffer =
-          await loadBuffer(
-            SPEECH_SRC
-          );
-
-      }
+      preloadSpeech();
+    }
 
 
-      const delay =
+    /*
+       Remaining playback time.
+    */
+
+    const remaining =
+      Math.max(
+        0,
+        buffer.duration - offset
+      );
+
+
+    /*
+       Speech approximately five seconds
+       before the song ends.
+    */
+
+    if (
+      (index + 1) % 3 === 0
+    ) {
+      const speechDelay =
         Math.max(
           0,
-          buffer.duration -
-          offset -
-          5
+          remaining - 5
         );
-
 
       setTimeout(
         () => {
-
           if (
-            !radioStarted
+            !radioStarted ||
+            !speechBuffer
           ) {
-
             return;
-
           }
 
-
           try {
-
             gain.gain.value =
               0.55;
-
 
             const speech =
               audioCtx.createBufferSource();
 
-
             speech.buffer =
               speechBuffer;
-
 
             speech.connect(
               audioCtx.destination
             );
 
+            speech.onended = () => {
+              if (radioStarted) {
+                gain.gain.value = 1;
+              }
+            };
 
             speech.start();
 
-
-            speech.onended =
-              () => {
-
-                gain.gain.value =
-                  1;
-
-              };
-
-
-          } catch (
-            error
-          ) {
-
-            console.error(
-              "Speech error:",
+          } catch (error) {
+            console.warn(
+              "Speech playback error:",
               error
             );
 
-
-            gain.gain.value =
-              1;
-
+            gain.gain.value = 1;
           }
-
         },
-        delay * 1000
+        speechDelay * 1000
       );
-
     }
 
 
     /*
-       Next song.
+       Move to the next song.
     */
-
-    const remaining =
-      buffer.duration -
-      offset;
-
 
     setTimeout(
       () => {
-
-        if (
-          !radioStarted
-        ) {
-
+        if (!radioStarted) {
           return;
-
         }
 
-
         globalSongIndex =
-          (
-            globalSongIndex +
-            1
-          ) %
-          PLAYLIST.length;
-
+          nextIndex;
 
         playLive(
-          globalSongIndex,
+          nextIndex,
           0
         );
-
       },
       remaining * 1000
     );
 
-
-  } catch (
-    error
-  ) {
-
+  } catch (error) {
     console.error(
       "Radio playback error:",
       error
     );
 
-
-    /*
-       Skip broken songs.
-    */
+    if (!radioStarted) {
+      return;
+    }
 
     globalSongIndex =
-      (
-        globalSongIndex +
-        1
-      ) %
+      (index + 1) %
       PLAYLIST.length;
-
 
     setTimeout(
       () => {
-
         playLive(
           globalSongIndex,
           0
         );
-
       },
-      1000
+      500
     );
-
   }
-
 }
 
 
@@ -2022,27 +1689,20 @@ async function playLive(
    START RADIO
 ========================================================= */
 
-playButton.onclick =
+playButton.addEventListener(
+  "click",
   async () => {
 
     if (radioStarted) {
-
       return;
-
     }
 
+    radioStarted = true;
 
-    radioStarted =
-      true;
-
-
-    playButton.disabled =
-      true;
-
+    playButton.disabled = true;
 
     playButton.textContent =
       "🎄 Starting Radio...";
-
 
     try {
 
@@ -2052,195 +1712,121 @@ playButton.onclick =
           window.webkitAudioContext
         )();
 
-
       await audioCtx.resume();
 
 
       /*
-         Get all song durations.
+         Find the current track.
+
+         This no longer requests metadata
+         for all 36 songs at once.
       */
 
-      await loadDurations();
+      const position =
+        await findCurrentSong();
 
-
-      /*
-         Calculate current position
-         in the continuous radio stream.
-      */
-
-      let elapsed =
-        (
-          Date.now() -
-          RADIO_START
-        ) / 1000;
-
-
-      const total =
-        durations.reduce(
-          (sum, duration) =>
-            sum + duration,
-          0
-        );
-
-
-      if (
-        !total ||
-        !Number.isFinite(total)
-      ) {
-
-        throw new Error(
-          "Unable to calculate playlist duration."
-        );
-
+      if (!radioStarted) {
+        return;
       }
 
 
-      /*
-         Loop elapsed time around
-         the playlist.
-      */
-
-      elapsed =
-        (
-          (
-            elapsed %
-            total
-          ) +
-          total
-        ) %
-        total;
-
-
-      let sum =
-        0;
+      globalSongIndex =
+        position.index;
 
 
       /*
-         Find current song.
+         Hide button before playback.
       */
 
-      for (
-        let i = 0;
-        i < durations.length;
-        i++
-      ) {
-
-        if (
-          sum +
-          durations[i] >
-          elapsed
-        ) {
-
-          globalSongIndex =
-            i;
+      playButton.style.display =
+        "none";
 
 
-          playButton.style.display =
-            "none";
+      /*
+         Start the current song.
+      */
 
+      playLive(
+        position.index,
+        position.offset
+      );
 
-          playLive(
-            i,
-            elapsed - sum
-          );
-
-
-          break;
-
-        }
-
-
-        sum +=
-          durations[i];
-
-      }
-
-
-    } catch (
-      error
-    ) {
+    } catch (error) {
 
       console.error(
         "Radio startup error:",
         error
       );
 
-
-      radioStarted =
-        false;
-
+      radioStarted = false;
 
       playButton.disabled =
         false;
 
-
       playButton.textContent =
         "🎄 Start Live Radio";
 
-
       songNameEl.textContent =
         "Unable to start radio";
-
     }
 
-  };
+  }
+);
 
 
 /* =========================================================
    MUSIC VISUALIZER
 ========================================================= */
 
+let visualizerRunning = false;
+
 function animateEffects() {
+
+  if (!visualizerRunning) {
+    visualizerRunning = true;
+
+    requestAnimationFrame(
+      animateEffects
+    );
+
+    return;
+  }
 
   requestAnimationFrame(
     animateEffects
   );
 
-
   if (
     !analyser ||
     !dataArray
   ) {
-
     return;
-
   }
-
 
   analyser.getByteFrequencyData(
     dataArray
   );
 
-
-  let total =
-    0;
-
+  let total = 0;
 
   for (
     let i = 0;
     i < dataArray.length;
     i++
   ) {
-
-    total +=
-      dataArray[i];
-
+    total += dataArray[i];
   }
 
-
   const avg =
-    total /
-    dataArray.length;
+    total / dataArray.length;
 
 
   /*
-     Background movement.
+     Background scale.
   */
 
   const bgScale =
-    1 +
-    avg / 12000;
-
+    1 + avg / 12000;
 
   bgEl.style.transform =
     `scale(${bgScale})`;
@@ -2257,23 +1843,19 @@ function animateEffects() {
       0.35
     );
 
-
   bgEl.style.filter =
     `brightness(${brightness})`;
 
 
   /*
-     Main title pulse.
+     Title pulse.
   */
 
   const titleScale =
-    1 +
-    avg / 5000;
-
+    1 + avg / 5000;
 
   titleEl.style.transform =
     `scale(${titleScale})`;
-
 
   subtitleEl.style.transform =
     `scale(${titleScale})`;
@@ -2293,9 +1875,7 @@ function animateEffects() {
 
   songNameEl.style.transform =
     `scale(${1 + avg / 9000})`;
-
 }
-
 
 animateEffects();
 
@@ -2304,24 +1884,17 @@ animateEffects();
    PREVENT ZOOM
 ========================================================= */
 
-
-/*
-   iOS gesture prevention.
-*/
-
 document.addEventListener(
   "gesturestart",
   event =>
     event.preventDefault()
 );
 
-
 document.addEventListener(
   "gesturechange",
   event =>
     event.preventDefault()
 );
-
 
 document.addEventListener(
   "gestureend",
@@ -2331,19 +1904,15 @@ document.addEventListener(
 
 
 /*
-   Ctrl/Cmd + mouse wheel zoom.
+   Ctrl/Cmd + wheel zoom.
 */
 
 document.addEventListener(
   "wheel",
   event => {
 
-    if (
-      event.ctrlKey
-    ) {
-
+    if (event.ctrlKey) {
       event.preventDefault();
-
     }
 
   },
@@ -2373,9 +1942,7 @@ document.addEventListener(
         event.key === "0"
       )
     ) {
-
       event.preventDefault();
-
     }
 
   }
@@ -2386,9 +1953,7 @@ document.addEventListener(
    Prevent double-tap zoom.
 */
 
-let lastTouchEnd =
-  0;
-
+let lastTouchEnd = 0;
 
 document.addEventListener(
   "touchend",
@@ -2397,20 +1962,13 @@ document.addEventListener(
     const now =
       Date.now();
 
-
     if (
-      now -
-      lastTouchEnd <=
-      300
+      now - lastTouchEnd <= 300
     ) {
-
       event.preventDefault();
-
     }
 
-
-    lastTouchEnd =
-      now;
+    lastTouchEnd = now;
 
   },
   {
