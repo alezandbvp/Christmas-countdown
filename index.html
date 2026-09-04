@@ -1811,7 +1811,11 @@
 
 
         setupMediaSession();
+setInterval(() => {
+    if (!radioPlaying) return;
 
+    updateLiveMediaSession();
+}, 3000);
 
         /* =========================================================
            PLAY LIVE
