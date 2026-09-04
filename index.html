@@ -55,8 +55,6 @@
                 #12030a;
         }
 
-        /* BACKGROUND */
-
         #bg {
             position: fixed;
             inset: -4%;
@@ -77,8 +75,6 @@
             filter: saturate(1.15);
             z-index: -5;
         }
-
-        /* SNOW */
 
         .snow-layer {
             position: fixed;
@@ -120,8 +116,6 @@
             }
         }
 
-        /* MAIN */
-
         #container {
             width: 100%;
             height: 100dvh;
@@ -161,8 +155,6 @@
 
             position: relative;
         }
-
-        /* LIVE LABEL */
 
         .live-label {
             display: inline-flex;
@@ -210,8 +202,6 @@
             }
         }
 
-        /* TITLE */
-
         #title {
             font-size: clamp(3rem, 9vw, 7rem);
             line-height: 0.95;
@@ -251,8 +241,6 @@
             margin-bottom: 28px;
         }
 
-        /* COUNTDOWN */
-
         #countdown {
             display: inline-flex;
             align-items: center;
@@ -285,8 +273,6 @@
             margin-bottom: 30px;
         }
 
-        /* SONG */
-
         .song-wrapper {
             margin-bottom: 28px;
         }
@@ -314,8 +300,6 @@
             text-shadow:
                 0 2px 12px rgba(0, 0, 0, 0.45);
         }
-
-        /* PLAY BUTTON */
 
         #playButton {
             border: 0;
@@ -370,8 +354,6 @@
                 );
         }
 
-        /* FOOTER */
-
         footer {
             margin-top: 28px;
 
@@ -382,8 +364,6 @@
 
             letter-spacing: 0.08em;
         }
-
-        /* CORNER STARS */
 
         .star {
             position: absolute;
@@ -430,13 +410,9 @@
             }
         }
 
-        /* HIDDEN AUDIO */
-
         audio {
             display: none !important;
         }
-
-        /* PORTRAIT MOBILE */
 
         @media (max-width: 768px) {
             #container {
@@ -472,8 +448,6 @@
                 margin-top: 22px;
             }
         }
-
-        /* LANDSCAPE PHONE */
 
         @media (max-width: 900px) and (orientation: landscape) {
             #container {
@@ -512,8 +486,6 @@
             }
         }
 
-        /* SHORT SCREENS */
-
         @media (max-height: 650px) {
             .card {
                 padding-top: 20px;
@@ -541,8 +513,6 @@
             }
         }
 
-        /* VERY SMALL PHONES */
-
         @media (max-width: 380px) {
             .card {
                 padding: 25px 15px;
@@ -561,8 +531,6 @@
                 padding: 13px 20px;
             }
         }
-
-        /* REDUCED MOTION */
 
         @media (prefers-reduced-motion: reduce) {
             *,
@@ -644,21 +612,128 @@
     </audio>
 
     <script>
+
+        /* =========================================================
+           AUDIO ELEMENTS
+        ========================================================= */
+
+        const musicAudio =
+            document.getElementById("musicAudio");
+
+        const speechAudio =
+            document.getElementById("speechAudio");
+
+
+        /* =========================================================
+           SEEK PROTECTION
+        ========================================================= */
+
+        let realPlaybackPosition = 0;
+
+        let correctingSeek = false;
+
+
+        /*
+            Remember the last REAL position.
+
+            This is deliberately separate from the position
+            requested by the Lock Screen.
+        */
+
+        function rememberRealPosition() {
+
+            if (
+                correctingSeek ||
+                !radioPlaying
+            ) {
+                return;
+            }
+
+
+            if (
+                Number.isFinite(
+                    musicAudio.currentTime
+                )
+            ) {
+
+                realPlaybackPosition =
+                    musicAudio.currentTime;
+            }
+        }
+
+
+        musicAudio.addEventListener(
+            "timeupdate",
+            rememberRealPosition
+        );
+
+
+        /*
+            If iOS actually changes currentTime because the
+            user dragged the Lock Screen slider, immediately
+            restore the real position.
+        */
+
+        musicAudio.addEventListener(
+            "seeking",
+            () => {
+
+                if (
+                    !radioPlaying ||
+                    correctingSeek
+                ) {
+                    return;
+                }
+
+
+                correctingSeek = true;
+
+
+                try {
+
+                    musicAudio.currentTime =
+                        realPlaybackPosition;
+
+                } catch {}
+
+
+                requestAnimationFrame(
+                    () => {
+
+                        correctingSeek =
+                            false;
+
+                    }
+                );
+            }
+        );
+
+
         /* =========================================================
            CONFIG
         ========================================================= */
 
         const RADIO_START =
-            new Date("Dec 1, 2025 00:00:00").getTime();
+            new Date(
+                "Dec 1, 2025 00:00:00"
+            ).getTime();
 
-        const SONG_FOLDER = "./songs/";
-        const SPEECH_SRC = "./songs/speech.mp3";
+
+        const SONG_FOLDER =
+            "./songs/";
+
+
+        const SPEECH_SRC =
+            "./songs/speech.mp3";
+
 
         const DURATION_MANIFEST =
             "./songs/durations.json";
 
+
         const PLAYLIST_PREFIX =
             "Music Now, Trap Music Now, Dance Music Now - ";
+
 
         const PLAYLIST_SUFFIX =
             " (SPOTISAVER).mp3";
@@ -669,63 +744,102 @@
         ========================================================= */
 
         const SONG_NAMES = [
+
             "All I Want For Christmas Is You",
+
             "Baby It's Cold Outside",
+
             "Blue Christmas",
+
             "Carol Of The Bells",
+
             "Christmas (Baby Please Come Home)",
+
             "Christmas Canon",
+
             "Deck The Halls",
+
             "Do You Want To Build A Snowman",
+
             "Feliz Navidad",
+
             "Frosty The Snowman",
+
             "God Rest Ye Merry Gentlemen",
+
             "Here Comes Santa Claus",
+
             "Holly Jolly Christmas",
+
             "I Want A Hippopotamus For Christmas",
+
             "It's Beginning To Look A Lot Like Christmas",
+
             "It's The Most Wonderful Time Of The Year",
+
             "Jingle Bell Rock",
+
             "Jingle Bells",
+
             "Last Christmas",
+
             "Let It Snow! Let It Snow!",
+
             "Little Drummer Boy",
+
             "Mistletoe",
+
             "O Christmas Tree",
+
             "Rockin Around The Christmas Tree",
+
             "Rudolph The Red-Nosed Reindeer",
+
             "Santa Baby",
+
             "Santa Claus Is Comin' To Town",
+
             "Silent Night",
+
             "Sleigh Ride",
+
             "The Christmas Song",
+
             "Up On The Housetop",
+
             "We Wish You A Merry Christmas",
+
             "White Christmas",
+
             "Winter Wonderland",
+
             "Wonderful Christmastime",
+
             "You're A Mean One, Mr. Grinch"
+
         ];
 
 
         /* =========================================================
-           AUDIO
+           UI
         ========================================================= */
 
-        const musicAudio =
-            document.getElementById("musicAudio");
-
-        const speechAudio =
-            document.getElementById("speechAudio");
-
         const playButton =
-            document.getElementById("playButton");
+            document.getElementById(
+                "playButton"
+            );
+
 
         const songNameElement =
-            document.getElementById("songName");
+            document.getElementById(
+                "songName"
+            );
+
 
         const countdownElement =
-            document.getElementById("countdown");
+            document.getElementById(
+                "countdown"
+            );
 
 
         /* =========================================================
@@ -733,14 +847,17 @@
         ========================================================= */
 
         let durations = [];
+
         let totalPlaylistDuration = 0;
 
         let radioPlaying = false;
 
         let currentSongIndex = 0;
+
         let currentSongOffset = 0;
 
         let metadataLoaded = false;
+
         let metadataLoadingPromise = null;
 
         let lastSyncTime = 0;
@@ -754,18 +871,17 @@
 
         function updateLiveMediaSession() {
 
-            if (!("mediaSession" in navigator)) {
+            if (
+                !("mediaSession" in navigator)
+            ) {
                 return;
             }
 
 
-            /*
-                The Lock Screen title is always the song currently
-                playing on the live radio.
-            */
-
             const currentSong =
-                SONG_NAMES[currentSongIndex] ||
+                SONG_NAMES[
+                    currentSongIndex
+                ] ||
                 "Christmas Countdown Radio";
 
 
@@ -773,16 +889,31 @@
 
                 navigator.mediaSession.metadata =
                     new MediaMetadata({
-                        title: currentSong,
-                        artist: "Christmas Countdown Radio",
-                        album: "Christmas Countdown",
+
+                        title:
+                            currentSong,
+
+                        artist:
+                            "Christmas Countdown Radio",
+
+                        album:
+                            "Christmas Countdown",
+
                         artwork: [
+
                             {
-                                src: "./favicon.ico",
-                                sizes: "512x512",
-                                type: "image/x-icon"
+                                src:
+                                    "./favicon.ico",
+
+                                sizes:
+                                    "512x512",
+
+                                type:
+                                    "image/x-icon"
                             }
+
                         ]
+
                     });
 
             } catch (error) {
@@ -795,26 +926,55 @@
 
 
             /*
-                Tell the operating system that this is a
-                LIVE / INDEFINITE broadcast.
+                Give the Lock Screen the ACTUAL finite
+                duration and ACTUAL current position.
 
-                Infinity means there is no finite duration.
-                This prevents the Media Session from being
-                treated like a normal song with a known end.
+                This lets the progress indicator move normally
+                while allowing us to reject manual seeking.
             */
 
             try {
 
-                navigator.mediaSession.setPositionState({
-                    duration: Infinity,
-                    playbackRate: 1,
-                    position: 0
-                });
+                const duration =
+                    musicAudio.duration;
+
+
+                const position =
+                    musicAudio.currentTime;
+
+
+                if (
+                    Number.isFinite(
+                        duration
+                    ) &&
+                    duration > 0 &&
+                    Number.isFinite(
+                        position
+                    ) &&
+                    position >= 0 &&
+                    position <= duration
+                ) {
+
+                    navigator.mediaSession
+                        .setPositionState({
+
+                            duration:
+                                duration,
+
+                            playbackRate:
+                                musicAudio.playbackRate || 1,
+
+                            position:
+                                position
+
+                        });
+
+                }
 
             } catch (error) {
 
                 console.warn(
-                    "Could not set live Media Session position:",
+                    "Could not update Media Session position:",
                     error
                 );
             }
@@ -823,7 +983,9 @@
 
         function setupMediaSession() {
 
-            if (!("mediaSession" in navigator)) {
+            if (
+                !("mediaSession" in navigator)
+            ) {
                 return;
             }
 
@@ -837,14 +999,15 @@
 
             try {
 
-                navigator.mediaSession.setActionHandler(
-                    "play",
-                    async () => {
+                navigator.mediaSession
+                    .setActionHandler(
+                        "play",
+                        async () => {
 
-                        await resumeLive();
+                            await resumeLive();
 
-                    }
-                );
+                        }
+                    );
 
             } catch {}
 
@@ -855,55 +1018,128 @@
 
             try {
 
-                navigator.mediaSession.setActionHandler(
-                    "pause",
-                    () => {
+                navigator.mediaSession
+                    .setActionHandler(
+                        "pause",
+                        () => {
 
-                        pauseRadio();
+                            pauseRadio();
 
-                    }
-                );
+                        }
+                    );
 
             } catch {}
 
 
             /*
-                BLOCK ALL TRACK SKIPPING
+                PREVIOUS / NEXT
+
+                These remain disabled.
             */
 
-   const blockedActions = [
+            try {
 
-    "nexttrack",
+                navigator.mediaSession
+                    .setActionHandler(
+                        "nexttrack",
+                        () => {}
+                    );
 
-    "previoustrack",
+            } catch {}
 
-    "seekbackward",
 
-    "seekforward",
+            try {
 
-    "seekto"
+                navigator.mediaSession
+                    .setActionHandler(
+                        "previoustrack",
+                        () => {}
+                    );
 
-];
-
-for (const action of blockedActions) {
-
-    try {
-
-        navigator.mediaSession.setActionHandler(
-
-            action,
-
-            () => {}
-
-        );
-
-    } catch {}
-
-}
+            } catch {}
 
 
             /*
-                Mark the session as live playback.
+                15 SECOND BACK / FORWARD
+
+                These remain disabled.
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekbackward",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekforward",
+                        () => {}
+                    );
+
+            } catch {}
+
+
+            /*
+                LOCK SCREEN SLIDER
+
+                Do NOT allow the requested seek.
+
+                Instead immediately restore the actual
+                playback position to the Media Session.
+            */
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekto",
+                        () => {
+
+                            correctingSeek = true;
+
+
+                            try {
+
+                                musicAudio.currentTime =
+                                    realPlaybackPosition;
+
+                            } catch {}
+
+
+                            /*
+                                Force the Lock Screen position
+                                back to the real position.
+                            */
+
+                            updateLiveMediaSession();
+
+
+                            requestAnimationFrame(
+                                () => {
+
+                                    correctingSeek =
+                                        false;
+
+                                }
+                            );
+
+                        }
+                    );
+
+            } catch {}
+
+
+            /*
+                Disable the Media Session seek position
+                from being treated as a user-controlled action.
             */
 
             try {
@@ -937,7 +1173,9 @@ for (const action of blockedActions) {
             return (
                 SONG_FOLDER +
                 encodeURIComponent(
-                    getSongFilename(songName)
+                    getSongFilename(
+                        songName
+                    )
                 )
             );
         }
@@ -945,23 +1183,39 @@ for (const action of blockedActions) {
 
         function formatTime(seconds) {
 
-            if (!Number.isFinite(seconds)) {
+            if (
+                !Number.isFinite(
+                    seconds
+                )
+            ) {
+
                 return "0:00";
             }
+
 
             seconds =
                 Math.max(
                     0,
-                    Math.floor(seconds)
+                    Math.floor(
+                        seconds
+                    )
                 );
 
+
             const minutes =
-                Math.floor(seconds / 60);
+                Math.floor(
+                    seconds / 60
+                );
+
 
             const secs =
                 String(
                     seconds % 60
-                ).padStart(2, "0");
+                ).padStart(
+                    2,
+                    "0"
+                );
+
 
             return `${minutes}:${secs}`;
         }
@@ -975,6 +1229,7 @@ for (const action of blockedActions) {
 
             const now =
                 new Date();
+
 
             let christmas =
                 new Date(
@@ -1022,15 +1277,20 @@ for (const action of blockedActions) {
                     totalSeconds / 86400
                 );
 
+
             const hours =
                 Math.floor(
-                    (totalSeconds % 86400) / 3600
+                    (totalSeconds % 86400) /
+                    3600
                 );
+
 
             const minutes =
                 Math.floor(
-                    (totalSeconds % 3600) / 60
+                    (totalSeconds % 3600) /
+                    60
                 );
+
 
             const seconds =
                 totalSeconds % 60;
@@ -1042,6 +1302,7 @@ for (const action of blockedActions) {
 
 
         updateCountdown();
+
 
         setInterval(
             updateCountdown,
@@ -1065,43 +1326,54 @@ for (const action of blockedActions) {
             ) {
 
                 const snowflake =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
+
 
                 snowflake.className =
                     "snowflake";
+
 
                 snowflake.textContent =
                     Math.random() > 0.5
                         ? "❄"
                         : "•";
 
+
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
+
 
                 snowflake.style.setProperty(
                     "--size",
                     `${8 + Math.random() * 14}px`
                 );
 
+
                 snowflake.style.setProperty(
                     "--opacity",
                     `${0.25 + Math.random() * 0.65}`
                 );
+
 
                 snowflake.style.setProperty(
                     "--duration",
                     `${7 + Math.random() * 12}s`
                 );
 
+
                 snowflake.style.setProperty(
                     "--drift",
                     `${2 + Math.random() * 4}s`
                 );
 
+
                 snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * 15}s`
                 );
+
 
                 container.appendChild(
                     snowflake
@@ -1111,17 +1383,25 @@ for (const action of blockedActions) {
 
 
         createSnowflakes(
-            document.getElementById("snowFar"),
+            document.getElementById(
+                "snowFar"
+            ),
             20
         );
 
+
         createSnowflakes(
-            document.getElementById("snowMid"),
+            document.getElementById(
+                "snowMid"
+            ),
             15
         );
 
+
         createSnowflakes(
-            document.getElementById("snowNear"),
+            document.getElementById(
+                "snowNear"
+            ),
             10
         );
 
@@ -1138,12 +1418,15 @@ for (const action of blockedActions) {
                     await fetch(
                         DURATION_MANIFEST,
                         {
-                            cache: "no-store"
+                            cache:
+                                "no-store"
                         }
                     );
 
 
-                if (!response.ok) {
+                if (
+                    !response.ok
+                ) {
 
                     throw new Error(
                         "Duration manifest unavailable"
@@ -1157,7 +1440,9 @@ for (const action of blockedActions) {
 
                 if (
                     !data ||
-                    !Array.isArray(data.songs)
+                    !Array.isArray(
+                        data.songs
+                    )
                 ) {
 
                     throw new Error(
@@ -1175,6 +1460,7 @@ for (const action of blockedActions) {
                     error
                 );
 
+
                 return null;
             }
         }
@@ -1190,7 +1476,10 @@ for (const action of blockedActions) {
                 (resolve, reject) => {
 
                     const audio =
-                        document.createElement("audio");
+                        document.createElement(
+                            "audio"
+                        );
+
 
                     let finished = false;
 
@@ -1198,7 +1487,10 @@ for (const action of blockedActions) {
                     const cleanup =
                         () => {
 
-                            audio.removeAttribute("src");
+                            audio.removeAttribute(
+                                "src"
+                            );
+
                             audio.load();
 
                         };
@@ -1208,13 +1500,18 @@ for (const action of blockedActions) {
                         setTimeout(
                             () => {
 
-                                if (finished) {
+                                if (
+                                    finished
+                                ) {
                                     return;
                                 }
 
+
                                 finished = true;
 
+
                                 cleanup();
+
 
                                 reject(
                                     new Error(
@@ -1235,7 +1532,9 @@ for (const action of blockedActions) {
                         "loadedmetadata",
                         () => {
 
-                            if (finished) {
+                            if (
+                                finished
+                            ) {
                                 return;
                             }
 
@@ -1245,17 +1544,23 @@ for (const action of blockedActions) {
 
 
                             if (
-                                Number.isFinite(duration) &&
+                                Number.isFinite(
+                                    duration
+                                ) &&
                                 duration > 0
                             ) {
 
-                                finished = true;
+                                finished =
+                                    true;
+
 
                                 clearTimeout(
                                     timeout
                                 );
 
+
                                 cleanup();
+
 
                                 resolve(
                                     duration
@@ -1263,13 +1568,17 @@ for (const action of blockedActions) {
 
                             } else {
 
-                                finished = true;
+                                finished =
+                                    true;
+
 
                                 clearTimeout(
                                     timeout
                                 );
 
+
                                 cleanup();
+
 
                                 reject(
                                     new Error(
@@ -1280,7 +1589,8 @@ for (const action of blockedActions) {
 
                         },
                         {
-                            once: true
+                            once:
+                                true
                         }
                     );
 
@@ -1289,17 +1599,24 @@ for (const action of blockedActions) {
                         "error",
                         () => {
 
-                            if (finished) {
+                            if (
+                                finished
+                            ) {
                                 return;
                             }
 
-                            finished = true;
+
+                            finished =
+                                true;
+
 
                             clearTimeout(
                                 timeout
                             );
 
+
                             cleanup();
+
 
                             reject(
                                 new Error(
@@ -1309,12 +1626,14 @@ for (const action of blockedActions) {
 
                         },
                         {
-                            once: true
+                            once:
+                                true
                         }
                     );
 
 
-                    audio.src = url;
+                    audio.src =
+                        url;
                 }
             );
         }
@@ -1326,12 +1645,18 @@ for (const action of blockedActions) {
 
         async function loadDurations() {
 
-            if (metadataLoaded) {
+            if (
+                metadataLoaded
+            ) {
+
                 return;
             }
 
 
-            if (metadataLoadingPromise) {
+            if (
+                metadataLoadingPromise
+            ) {
+
                 return metadataLoadingPromise;
             }
 
@@ -1349,11 +1674,9 @@ for (const action of blockedActions) {
                         );
 
 
-                    /*
-                        First use durations.json.
-                    */
-
-                    if (manifest) {
+                    if (
+                        manifest
+                    ) {
 
                         for (
                             let i = 0;
@@ -1369,7 +1692,8 @@ for (const action of blockedActions) {
                                 manifest.find(
                                     item =>
                                         item &&
-                                        item.name === songName
+                                        item.name ===
+                                        songName
                                 );
 
 
@@ -1394,11 +1718,6 @@ for (const action of blockedActions) {
                     }
 
 
-                    /*
-                        Fallback:
-                        Read MP3 metadata only when needed.
-                    */
-
                     for (
                         let i = 0;
                         i < SONG_NAMES.length;
@@ -1411,6 +1730,7 @@ for (const action of blockedActions) {
                             ) &&
                             durations[i] > 0
                         ) {
+
                             continue;
                         }
 
@@ -1431,7 +1751,9 @@ for (const action of blockedActions) {
                                 error
                             );
 
-                            durations[i] = 0;
+
+                            durations[i] =
+                                0;
                         }
                     }
 
@@ -1455,7 +1777,8 @@ for (const action of blockedActions) {
 
 
                     if (
-                        totalPlaylistDuration <= 0
+                        totalPlaylistDuration <=
+                        0
                     ) {
 
                         throw new Error(
@@ -1464,7 +1787,8 @@ for (const action of blockedActions) {
                     }
 
 
-                    metadataLoaded = true;
+                    metadataLoaded =
+                        true;
 
 
                     console.log(
@@ -1475,13 +1799,15 @@ for (const action of blockedActions) {
                     );
 
                 })()
-                .catch(error => {
+                .catch(
+                    error => {
 
-                    metadataLoadingPromise =
-                        null;
+                        metadataLoadingPromise =
+                            null;
 
-                    throw error;
-                });
+                        throw error;
+                    }
+                );
 
 
             return metadataLoadingPromise;
@@ -1517,13 +1843,6 @@ for (const action of blockedActions) {
                 ) / 1000;
 
 
-            /*
-                The playlist loops forever.
-
-                Modulo keeps the radio synchronized even when
-                RADIO_START is months or years in the past.
-            */
-
             elapsed =
                 (
                     elapsed %
@@ -1549,19 +1868,25 @@ for (const action of blockedActions) {
 
                 if (
                     elapsed <
-                    accumulated + duration
+                    accumulated +
+                    duration
                 ) {
 
                     return {
-                        index: i,
+
+                        index:
+                            i,
+
                         offset:
                             elapsed -
                             accumulated
+
                     };
                 }
 
 
-                accumulated += duration;
+                accumulated +=
+                    duration;
             }
 
 
@@ -1576,14 +1901,18 @@ for (const action of blockedActions) {
            DISPLAY CURRENT SONG
         ========================================================= */
 
-        function updateSongDisplay(index) {
+        function updateSongDisplay(
+            index
+        ) {
 
             if (
                 index >= 0 &&
-                index < SONG_NAMES.length
+                index <
+                    SONG_NAMES.length
             ) {
 
-                songNameElement.textContent =
+                songNameElement
+                    .textContent =
                     SONG_NAMES[index];
             }
         }
@@ -1607,6 +1936,7 @@ for (const action of blockedActions) {
                 currentSongIndex =
                     position.index;
 
+
                 currentSongOffset =
                     position.offset;
 
@@ -1615,11 +1945,6 @@ for (const action of blockedActions) {
                     currentSongIndex
                 );
 
-
-                /*
-                    Update Lock Screen immediately so
-                    the correct song is shown.
-                */
 
                 updateLiveMediaSession();
 
@@ -1651,12 +1976,9 @@ for (const action of blockedActions) {
                 }
 
 
-                /*
-                    Wait for metadata before seeking.
-                */
-
                 if (
-                    musicAudio.readyState < 1
+                    musicAudio.readyState <
+                    1
                 ) {
 
                     await new Promise(
@@ -1665,28 +1987,25 @@ for (const action of blockedActions) {
                             const onMetadata =
                                 () => {
 
-                                    musicAudio.removeEventListener(
-                                        "loadedmetadata",
-                                        onMetadata
-                                    );
+                                    musicAudio
+                                        .removeEventListener(
+                                            "loadedmetadata",
+                                            onMetadata
+                                        );
 
                                     resolve();
                                 };
 
 
-                            musicAudio.addEventListener(
-                                "loadedmetadata",
-                                onMetadata
-                            );
+                            musicAudio
+                                .addEventListener(
+                                    "loadedmetadata",
+                                    onMetadata
+                                );
                         }
                     );
                 }
 
-
-                /*
-                    Recalculate because loading the audio
-                    may have taken some time.
-                */
 
                 const targetOffset =
                     findCurrentSong();
@@ -1699,6 +2018,7 @@ for (const action of blockedActions) {
 
                     currentSongIndex =
                         targetOffset.index;
+
 
                     currentSongOffset =
                         targetOffset.offset;
@@ -1726,27 +2046,24 @@ for (const action of blockedActions) {
                             const onMetadata =
                                 () => {
 
-                                    musicAudio.removeEventListener(
-                                        "loadedmetadata",
-                                        onMetadata
-                                    );
+                                    musicAudio
+                                        .removeEventListener(
+                                            "loadedmetadata",
+                                            onMetadata
+                                        );
 
                                     resolve();
                                 };
 
 
-                            musicAudio.addEventListener(
-                                "loadedmetadata",
-                                onMetadata
-                            );
+                            musicAudio
+                                .addEventListener(
+                                    "loadedmetadata",
+                                    onMetadata
+                                );
                         }
                     );
 
-
-                    /*
-                        The song changed while loading,
-                        so refresh Lock Screen title.
-                    */
 
                     updateLiveMediaSession();
 
@@ -1771,10 +2088,20 @@ for (const action of blockedActions) {
                 }
 
 
+                /*
+                    Establish the initial real position
+                    before playback begins.
+                */
+
+                realPlaybackPosition =
+                    musicAudio.currentTime;
+
+
                 await musicAudio.play();
 
 
-                radioPlaying = true;
+                radioPlaying =
+                    true;
 
 
                 updatePlayButton();
@@ -1784,18 +2111,21 @@ for (const action of blockedActions) {
                     Date.now();
 
 
-                /*
-                    Keep the OS session marked as live.
-                */
+                realPlaybackPosition =
+                    musicAudio.currentTime;
+
 
                 updateLiveMediaSession();
 
 
-                if ("mediaSession" in navigator) {
+                if (
+                    "mediaSession" in navigator
+                ) {
 
                     try {
 
-                        navigator.mediaSession.playbackState =
+                        navigator.mediaSession
+                            .playbackState =
                             "playing";
 
                     } catch {}
@@ -1809,12 +2139,15 @@ for (const action of blockedActions) {
                 );
 
 
-                radioPlaying = false;
+                radioPlaying =
+                    false;
+
 
                 updatePlayButton();
 
 
-                songNameElement.textContent =
+                songNameElement
+                    .textContent =
                     "Tap Start Live Radio to begin";
             }
         }
@@ -1827,18 +2160,25 @@ for (const action of blockedActions) {
         function pauseRadio() {
 
             musicAudio.pause();
+
             speechAudio.pause();
 
-            radioPlaying = false;
+
+            radioPlaying =
+                false;
+
 
             updatePlayButton();
 
 
-            if ("mediaSession" in navigator) {
+            if (
+                "mediaSession" in navigator
+            ) {
 
                 try {
 
-                    navigator.mediaSession.playbackState =
+                    navigator.mediaSession
+                        .playbackState =
                         "paused";
 
                 } catch {}
@@ -1852,15 +2192,11 @@ for (const action of blockedActions) {
 
         async function resumeLive() {
 
-            /*
-                Never continue from the old position.
-
-                Recalculate where the LIVE broadcast is NOW.
-            */
-
             speechAudio.pause();
 
-            speechStarted = false;
+            speechStarted =
+                false;
+
 
             await playLive();
         }
@@ -1872,23 +2208,29 @@ for (const action of blockedActions) {
 
         function updatePlayButton() {
 
-            if (radioPlaying) {
+            if (
+                radioPlaying
+            ) {
 
                 playButton.textContent =
                     "⏸ Pause";
 
-                playButton.classList.remove(
-                    "paused"
-                );
+
+                playButton.classList
+                    .remove(
+                        "paused"
+                    );
 
             } else {
 
                 playButton.textContent =
                     "▶️ Play";
 
-                playButton.classList.add(
-                    "paused"
-                );
+
+                playButton.classList
+                    .add(
+                        "paused"
+                    );
             }
         }
 
@@ -1897,7 +2239,9 @@ for (const action of blockedActions) {
             "click",
             async () => {
 
-                if (radioPlaying) {
+                if (
+                    radioPlaying
+                ) {
 
                     pauseRadio();
 
@@ -1917,15 +2261,12 @@ for (const action of blockedActions) {
             "ended",
             async () => {
 
-                if (!radioPlaying) {
+                if (
+                    !radioPlaying
+                ) {
                     return;
                 }
 
-
-                /*
-                    Recalculate actual live position instead
-                    of simply advancing one track.
-                */
 
                 await playLive();
             }
@@ -1940,7 +2281,9 @@ for (const action of blockedActions) {
             "error",
             async () => {
 
-                if (!radioPlaying) {
+                if (
+                    !radioPlaying
+                ) {
                     return;
                 }
 
@@ -1953,7 +2296,10 @@ for (const action of blockedActions) {
                 setTimeout(
                     async () => {
 
-                        if (radioPlaying) {
+                        if (
+                            radioPlaying
+                        ) {
+
                             await playLive();
                         }
 
@@ -1980,7 +2326,9 @@ for (const action of blockedActions) {
                 }
 
 
-                if (!radioPlaying) {
+                if (
+                    !radioPlaying
+                ) {
                     return;
                 }
 
@@ -1994,6 +2342,7 @@ for (const action of blockedActions) {
                     lastSyncTime <
                     3000
                 ) {
+
                     return;
                 }
 
@@ -2022,6 +2371,7 @@ for (const action of blockedActions) {
                     const expected =
                         live.offset;
 
+
                     const actual =
                         musicAudio.currentTime;
 
@@ -2034,15 +2384,14 @@ for (const action of blockedActions) {
                     ) {
 
                         await playLive();
+
+                    } else {
+
+                        realPlaybackPosition =
+                            actual;
+
+                        updateLiveMediaSession();
                     }
-
-
-                    /*
-                        Refresh the current song title
-                        on the Lock Screen.
-                    */
-
-                    updateLiveMediaSession();
 
                 } catch (error) {
 
@@ -2062,7 +2411,9 @@ for (const action of blockedActions) {
         setInterval(
             async () => {
 
-                if (!radioPlaying) {
+                if (
+                    !radioPlaying
+                ) {
                     return;
                 }
 
@@ -2095,21 +2446,37 @@ for (const action of blockedActions) {
                         drift > 5
                     ) {
 
+                        correctingSeek =
+                            true;
+
+
                         musicAudio.currentTime =
                             live.offset;
+
+
+                        realPlaybackPosition =
+                            live.offset;
+
+
+                        requestAnimationFrame(
+                            () => {
+
+                                correctingSeek =
+                                    false;
+
+                            }
+                        );
+
+                    } else {
+
+                        realPlaybackPosition =
+                            musicAudio.currentTime;
                     }
 
 
                     lastSyncTime =
                         Date.now();
 
-
-                    /*
-                        Keep the OS informed that this is
-                        an indefinite live broadcast.
-
-                        No finite song duration is supplied.
-                    */
 
                     updateLiveMediaSession();
 
@@ -2135,14 +2502,23 @@ for (const action of blockedActions) {
             event => {
 
                 const blockedKeys = [
+
                     "ArrowLeft",
+
                     "ArrowRight",
+
                     "Home",
+
                     "End",
+
                     "MediaTrackNext",
+
                     "MediaTrackPrevious",
+
                     "MediaFastForward",
+
                     "MediaRewind"
+
                 ];
 
 
@@ -2182,44 +2558,40 @@ for (const action of blockedActions) {
             "Christmas Radio Ready";
 
 
-        /*
-            Load durations in the background.
-        */
-
         loadDurations()
-            .then(() => {
+            .then(
+                () => {
 
-                const live =
-                    findCurrentSong();
-
-
-                currentSongIndex =
-                    live.index;
-
-                currentSongOffset =
-                    live.offset;
+                    const live =
+                        findCurrentSong();
 
 
-                updateSongDisplay(
-                    live.index
-                );
+                    currentSongIndex =
+                        live.index;
 
 
-                /*
-                    Set the correct current song on the
-                    Lock Screen even before playback starts.
-                */
+                    currentSongOffset =
+                        live.offset;
 
-                updateLiveMediaSession();
 
-            })
-            .catch(error => {
+                    updateSongDisplay(
+                        live.index
+                    );
 
-                console.error(
-                    "Radio metadata initialization failed:",
-                    error
-                );
-            });
+
+                    updateLiveMediaSession();
+
+                }
+            )
+            .catch(
+                error => {
+
+                    console.error(
+                        "Radio metadata initialization failed:",
+                        error
+                    );
+                }
+            );
 
 
         /* =========================================================
@@ -2231,6 +2603,7 @@ for (const action of blockedActions) {
             () => {
 
                 musicAudio.pause();
+
                 speechAudio.pause();
 
             }
