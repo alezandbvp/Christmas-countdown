@@ -753,59 +753,38 @@
         ========================================================= */
 
         function updateLiveMediaSession() {
+    if (!("mediaSession" in navigator)) return;
 
-            if (!("mediaSession" in navigator)) {
-                return;
-            }
+    const currentSong =
+        SONG_NAMES[currentSongIndex] || "Christmas Countdown Radio";
 
-            try {
+    try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: currentSong,
+            artist: "Christmas Countdown Radio",
+            album: "Christmas Countdown",
+            artwork: [
+                {
+                    src: "./favicon.ico",
+                    sizes: "512x512",
+                    type: "image/x-icon"
+                }
+            ]
+        });
+    } catch (error) {
+        console.warn("Could not set Media Session metadata:", error);
+    }
 
-                navigator.mediaSession.metadata =
-                    new MediaMetadata({
-                        title: "🔴 LIVE",
-                        artist: "Christmas Countdown Radio",
-                        album: "Christmas Countdown",
-                        artwork: [
-                            {
-                                src: "./favicon.ico",
-                                sizes: "512x512",
-                                type: "image/x-icon"
-                            }
-                        ]
-                    });
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not set Media Session metadata:",
-                    error
-                );
-            }
-
-
-            /*
-                Tell the operating system that this is a live,
-                indefinite broadcast rather than a normal song.
-
-                Infinity means there is no known ending point.
-            */
-
-            try {
-
-                navigator.mediaSession.setPositionState({
-                    duration: Infinity,
-                    playbackRate: 1,
-                    position: 0
-                });
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not set live Media Session position:",
-                    error
-                );
-            }
-        }
+    try {
+        navigator.mediaSession.setPositionState({
+            duration: Infinity,
+            playbackRate: 1,
+            position: 0
+        });
+    } catch (error) {
+        console.warn("Could not set live Media Session position:", error);
+    }
+}
 
 
         function setupMediaSession() {
