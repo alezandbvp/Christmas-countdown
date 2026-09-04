@@ -1,1533 +1,2394 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-
-    <title>Christmas Countdown • Live Radio</title>
-
-    <link rel="icon" href="favicon.ico">
-
-    <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html,
-        body {
-            width: 100%;
-            min-height: 100%;
-            margin: 0;
-        }
-
-        html {
-            overflow-x: hidden;
-            background: #050713;
-        }
-
-        body {
-            min-height: 100dvh;
-            min-height: 100svh;
-            overflow-x: hidden;
-            overflow-y: auto;
-            font-family: "Segoe UI", Arial, sans-serif;
-            color: white;
-            background: #050713;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding:
-                max(20px, env(safe-area-inset-top))
-                max(20px, env(safe-area-inset-right))
-                max(20px, env(safe-area-inset-bottom))
-                max(20px, env(safe-area-inset-left));
-            position: relative;
-            isolation: isolate;
-        }
-
-        /* =========================
-           BACKGROUND
-        ========================= */
-
-        #bg {
-            position: fixed;
-            inset: 0;
-            z-index: -5;
-            background:
-                linear-gradient(
-                    rgba(2, 5, 20, .48),
-                    rgba(2, 5, 20, .68)
-                ),
-                url("christmas-background.jpg") center / cover no-repeat;
-            transform: scale(1.03);
-            transition: filter 1s ease, transform 1s ease;
-        }
-
-        #bg::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(
-                    circle at 50% 40%,
-                    rgba(255, 255, 255, .08),
-                    transparent 45%
-                ),
-                linear-gradient(
-                    to bottom,
-                    rgba(0, 0, 0, .05),
-                    rgba(0, 0, 0, .38)
-                );
-        }
-
-        /* =========================
-           SNOW
-        ========================= */
-
-        .snow-layer {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: -1;
-        }
-
-        .flake {
-            position: absolute;
-            top: -30px;
-            color: white;
-            user-select: none;
-            pointer-events: none;
-            animation-name: snowFall;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-            opacity: .8;
-            text-shadow: 0 0 8px rgba(255, 255, 255, .7);
-        }
-
-        @keyframes snowFall {
-            0% {
-                transform: translate3d(0, -40px, 0) rotate(0deg);
-            }
-
-            100% {
-                transform: translate3d(var(--drift), 110vh, 0) rotate(360deg);
-            }
-        }
-
-        /* =========================
-           MAIN CARD
-        ========================= */
-
-        #container {
-            width: min(100%, 760px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: clamp(8px, 2vw, 20px);
-        }
-
-        .card {
-            width: 100%;
-            padding: clamp(28px, 5vw, 58px) clamp(20px, 6vw, 60px);
-            border: 1px solid rgba(255, 255, 255, .18);
-            border-radius: clamp(22px, 4vw, 38px);
-            background: rgba(8, 13, 35, .54);
-            backdrop-filter: blur(18px) saturate(130%);
-            -webkit-backdrop-filter: blur(18px) saturate(130%);
-            box-shadow:
-                0 30px 80px rgba(0, 0, 0, .45),
-                inset 0 1px 0 rgba(255, 255, 255, .08);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(
-                    circle at 50% 0%,
-                    rgba(255, 255, 255, .12),
-                    transparent 45%
-                );
-        }
-
-        /* =========================
-           LIVE LABEL
-        ========================= */
-
-        .live {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 13px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, .08);
-            border: 1px solid rgba(255, 255, 255, .12);
-            font-size: clamp(11px, 2vw, 13px);
-            font-weight: 700;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin-bottom: clamp(16px, 3vw, 25px);
-        }
-
-        .live::before {
-            content: "";
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff3b3b;
-            box-shadow: 0 0 12px #ff3b3b;
-            animation: livePulse 1.4s ease-in-out infinite;
-        }
-
-        @keyframes livePulse {
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(.65);
-                opacity: .55;
-            }
-        }
-
-        /* =========================
-           TITLE
-        ========================= */
-
-        #title,
-        #subtitle {
-            position: relative;
-            margin: 0;
-            line-height: .92;
-            letter-spacing: -.045em;
-            text-wrap: balance;
-        }
-
-        #title {
-            font-size: clamp(48px, 10vw, 100px);
-            font-weight: 800;
-            text-shadow:
-                0 0 30px rgba(255, 255, 255, .16),
-                0 8px 30px rgba(0, 0, 0, .3);
-        }
-
-        #subtitle {
-            margin-top: clamp(3px, 1vw, 8px);
-            font-size: clamp(34px, 7vw, 72px);
-            font-weight: 700;
-            opacity: .88;
-        }
-
-        /* =========================
-           COUNTDOWN
-        ========================= */
-
-        #countdown {
-            position: relative;
-            margin-top: clamp(22px, 4vw, 38px);
-            font-size: clamp(25px, 5vw, 48px);
-            font-weight: 700;
-            line-height: 1.15;
-            letter-spacing: .02em;
-            text-shadow: 0 5px 25px rgba(0, 0, 0, .4);
-            min-height: 1.2em;
-        }
-
-        /* =========================
-           SONG
-        ========================= */
-
-        .song-wrapper {
-            position: relative;
-            margin-top: clamp(22px, 4vw, 35px);
-            padding: clamp(14px, 3vw, 20px);
-            border-radius: 20px;
-            background: rgba(255, 255, 255, .055);
-            border: 1px solid rgba(255, 255, 255, .1);
-        }
-
-        .song-label {
-            font-size: clamp(10px, 1.8vw, 12px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .16em;
-            opacity: .6;
-            margin-bottom: 7px;
-        }
-
-        #songName {
-            font-size: clamp(15px, 3vw, 21px);
-            line-height: 1.35;
-            font-weight: 600;
-            overflow-wrap: anywhere;
-        }
-
-        /* =========================
-           PLAY BUTTON
-        ========================= */
-
-        #playButton {
-            position: relative;
-            width: 100%;
-            min-height: 54px;
-            margin-top: clamp(18px, 3vw, 26px);
-            padding: 14px 20px;
-            border: 0;
-            border-radius: 17px;
-            background: rgba(255, 255, 255, .13);
-            color: white;
-            font: inherit;
-            font-size: clamp(14px, 2.5vw, 17px);
-            font-weight: 700;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, .16);
-            box-shadow:
-                0 10px 30px rgba(0, 0, 0, .2),
-                inset 0 1px 0 rgba(255, 255, 255, .08);
-            transition:
-                transform .18s ease,
-                background .18s ease,
-                box-shadow .18s ease;
-            touch-action: manipulation;
-        }
-
-        #playButton:hover {
-            background: rgba(255, 255, 255, .19);
-            transform: translateY(-2px);
-            box-shadow:
-                0 15px 35px rgba(0, 0, 0, .28),
-                inset 0 1px 0 rgba(255, 255, 255, .1);
-        }
-
-        #playButton:active {
-            transform: scale(.98);
-        }
-
-        #playButton.playing {
-            background: rgba(255, 255, 255, .16);
-        }
-
-        /* =========================
-           FOOTER
-        ========================= */
-
-        footer {
-            position: relative;
-            margin-top: clamp(20px, 4vw, 32px);
-            font-size: clamp(11px, 2vw, 14px);
-            opacity: .65;
-            letter-spacing: .05em;
-        }
-
-        /* =========================
-           CORNER STARS
-        ========================= */
-
-        .star {
-            position: absolute;
-            pointer-events: none;
-            opacity: .55;
-            font-size: clamp(18px, 3vw, 28px);
-            animation: starFloat 4s ease-in-out infinite;
-        }
-
-        .star.one {
-            top: 18px;
-            left: 22px;
-        }
-
-        .star.two {
-            top: 28px;
-            right: 25px;
-            animation-delay: 1.4s;
-        }
-
-        .star.three {
-            bottom: 28px;
-            left: 28px;
-            animation-delay: 2.3s;
-        }
-
-        .star.four {
-            bottom: 20px;
-            right: 30px;
-            animation-delay: .7s;
-        }
-
-        @keyframes starFloat {
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
-                opacity: .45;
-            }
-
-            50% {
-                transform: translateY(-7px) rotate(8deg);
-                opacity: .75;
-            }
-        }
-
-        /* =========================
-           TABLETS
-        ========================= */
-
-        @media (min-width: 600px) and (max-width: 1100px) {
-            #container {
-                width: min(92vw, 760px);
-            }
-
-            .card {
-                padding-left: clamp(35px, 7vw, 60px);
-                padding-right: clamp(35px, 7vw, 60px);
-            }
-        }
-
-        /* =========================
-           SMALL PHONES
-        ========================= */
-
-        @media (max-width: 430px) {
-            body {
-                padding:
-                    max(12px, env(safe-area-inset-top))
-                    max(12px, env(safe-area-inset-right))
-                    max(12px, env(safe-area-inset-bottom))
-                    max(12px, env(safe-area-inset-left));
-            }
-
-            #container {
-                padding: 5px;
-            }
-
-            .card {
-                padding: 25px 17px;
-                border-radius: 24px;
-            }
-
-            .live {
-                margin-bottom: 16px;
-            }
-
-            .song-wrapper {
-                border-radius: 17px;
-            }
-
-            #playButton {
-                min-height: 56px;
-            }
-
-            .star.one {
-                top: 12px;
-                left: 14px;
-            }
-
-            .star.two {
-                top: 15px;
-                right: 16px;
-            }
-
-            .star.three {
-                bottom: 18px;
-                left: 16px;
-            }
-
-            .star.four {
-                bottom: 14px;
-                right: 17px;
-            }
-        }
-
-        /* =========================
-           VERY SHORT SCREENS
-        ========================= */
-
-        @media (max-height: 650px) and (orientation: portrait) {
-            body {
-                align-items: flex-start;
-                padding-top: max(12px, env(safe-area-inset-top));
-                padding-bottom: max(12px, env(safe-area-inset-bottom));
-            }
-
-            #container {
-                margin: auto 0;
-            }
-
-            .card {
-                padding-top: 22px;
-                padding-bottom: 22px;
-            }
-
-            .live {
-                margin-bottom: 12px;
-            }
-
-            #countdown {
-                margin-top: 16px;
-            }
-
-            .song-wrapper {
-                margin-top: 16px;
-            }
-
-            footer {
-                margin-top: 17px;
-            }
-        }
-
-        /* =========================
-           LANDSCAPE PHONES
-        ========================= */
-
-        @media (orientation: landscape) and (max-height: 600px) {
-            body {
-                align-items: center;
-                padding:
-                    max(10px, env(safe-area-inset-top))
-                    max(18px, env(safe-area-inset-right))
-                    max(10px, env(safe-area-inset-bottom))
-                    max(18px, env(safe-area-inset-left));
-            }
-
-            #container {
-                width: min(900px, 96vw);
-                padding: 4px;
-            }
-
-            .card {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) minmax(230px, .7fr);
-                grid-template-areas:
-                    "header countdown"
-                    "song song"
-                    "button button"
-                    "footer footer";
-                column-gap: clamp(20px, 5vw, 50px);
-                align-items: center;
-                padding: 22px clamp(25px, 5vw, 50px);
-            }
-
-            .live {
-                grid-area: header;
-                justify-self: center;
-                margin-bottom: 8px;
-            }
-
-            #title {
-                grid-area: header;
-                margin-top: 40px;
-                font-size: clamp(38px, 8vw, 70px);
-            }
-
-            #subtitle {
-                grid-area: header;
-                margin-top: 4px;
-                font-size: clamp(27px, 6vw, 52px);
-            }
-
-            #countdown {
-                grid-area: countdown;
-                margin-top: 0;
-                font-size: clamp(22px, 4vw, 36px);
-            }
-
-            .song-wrapper {
-                grid-area: song;
-                margin-top: 15px;
-            }
-
-            #playButton {
-                grid-area: button;
-                margin-top: 14px;
-            }
-
-            footer {
-                grid-area: footer;
-                margin-top: 12px;
-            }
-
-            .star.one,
-            .star.two {
-                top: 10px;
-            }
-
-            .star.three,
-            .star.four {
-                bottom: 10px;
-            }
-        }
-
-        /* =========================
-           ULTRA-WIDE SCREENS
-        ========================= */
-
-        @media (min-width: 1400px) {
-            #container {
-                width: 820px;
-            }
-        }
-
-        /* =========================
-           REDUCED MOTION
-        ========================= */
-
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: .001ms !important;
-                animation-iteration-count: 1 !important;
-                scroll-behavior: auto !important;
-                transition-duration: .001ms !important;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+>
+
+<title>Christmas Countdown • Live Radio</title>
+
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+
+<style>
+
+:root {
+  --red: #e63946;
+  --red-bright: #ff5260;
+  --green: #19a974;
+  --green-dark: #075e3e;
+  --gold: #ffd76a;
+  --white: #ffffff;
+  --glass: rgba(0, 0, 0, 0.30);
+  --glass-border: rgba(255, 255, 255, 0.20);
+  --font: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #071b14;
+  font-family: var(--font);
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+}
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+#bg {
+  position: fixed;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+
+  background-image:
+    linear-gradient(
+      rgba(0, 0, 0, 0.22),
+      rgba(0, 0, 0, 0.42)
+    ),
+    url("christmas-background.jpg");
+
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  z-index: -10;
+  transform-origin: center center;
+  will-change: transform, filter;
+  transition: filter 0.12s linear;
+}
+
+#bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(0, 0, 0, 0.03),
+      rgba(0, 0, 0, 0.58)
+    );
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   AMBIENT LIGHT
+========================================================= */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -9;
+
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(255, 35, 50, 0.18),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 85% 80%,
+      rgba(20, 190, 100, 0.18),
+      transparent 28%
+    );
+}
+
+
+/* =========================================================
+   MAIN CONTAINER
+========================================================= */
+
+#container {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100vh;
+
+  padding:
+    max(18px, env(safe-area-inset-top))
+    18px
+    max(18px, env(safe-area-inset-bottom))
+    18px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  overflow: hidden;
+  z-index: 2;
+}
+
+
+/* =========================================================
+   GLASS CARD
+========================================================= */
+
+.card {
+  position: relative;
+  width: min(92vw, 900px);
+
+  padding:
+    clamp(25px, 5vw, 55px)
+    clamp(18px, 5vw, 55px);
+
+  border-radius: 30px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  overflow: visible;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+
+  width: 300px;
+  height: 300px;
+
+  top: -180px;
+  left: -100px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  filter: blur(35px);
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   LIVE LABEL
+========================================================= */
+
+.live-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 13px;
+
+  color:
+    rgba(255, 255, 255, 0.90);
+
+  font-size:
+    clamp(0.68rem, 2vw, 0.9rem);
+
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.live-dot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: #ff3344;
+
+  box-shadow:
+    0 0 6px #ff3344,
+    0 0 16px #ff3344;
+
+  animation:
+    livePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.65);
+  }
+
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+#title,
+#subtitle {
+  margin: 0;
+  line-height: 0.92;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  color: #ffffff;
+
+  transform-origin: center;
+  will-change: transform;
+
+  position: relative;
+  z-index: 3;
+}
+
+#title {
+  font-size:
+    clamp(3rem, 12vw, 7.5rem);
+
+  text-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(255, 30, 40, 0.95),
+    0 0 28px rgba(255, 30, 40, 0.60),
+    0 0 45px rgba(20, 170, 90, 0.45);
+}
+
+#subtitle {
+  margin-top: 4px;
+
+  font-size:
+    clamp(2.5rem, 10vw, 6rem);
+
+  background:
+    linear-gradient(
+      90deg,
+      #ffffff,
+      #ffe1e1,
+      #ffffff
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 12px rgba(30, 200, 110, 0.55);
+}
+
+
+/* =========================================================
+   COUNTDOWN
+========================================================= */
+
+#countdown {
+  position: relative;
+  z-index: 3;
+
+  margin-top:
+    clamp(20px, 4vw, 35px);
+
+  padding:
+    11px 22px;
+
+  border-radius: 18px;
+
+  background:
+    rgba(0, 0, 0, 0.27);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.14);
+
+  color: #ffffff;
+
+  font-size:
+    clamp(1.45rem, 6vw, 4rem);
+
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+
+  text-shadow:
+    0 0 8px rgba(255, 40, 50, 0.9),
+    0 0 18px rgba(20, 180, 100, 0.7);
+
+  transform-origin: center;
+  will-change: transform;
+}
+
+
+/* =========================================================
+   SONG
+========================================================= */
+
+.song-wrapper {
+  position: relative;
+  z-index: 3;
+
+  max-width: 90%;
+
+  margin-top: 17px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.song-label {
+  color:
+    rgba(255, 255, 255, 0.60);
+
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+
+  margin-bottom: 5px;
+}
+
+#songName {
+  color: #ffffff;
+
+  font-size:
+    clamp(0.9rem, 3vw, 1.5rem);
+
+  font-weight: 600;
+  line-height: 1.3;
+
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.85);
+
+  transform-origin: center;
+  will-change: transform;
+}
+
+
+/* =========================================================
+   PLAY / PAUSE BUTTON
+========================================================= */
+
+#playButton {
+  position: relative;
+  z-index: 3;
+
+  margin-top:
+    clamp(25px, 5vw, 40px);
+
+  min-width: 220px;
+
+  padding:
+    16px 30px;
+
+  border: none;
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #e63946,
+      #b91425
+    );
+
+  color: white;
+
+  font-size:
+    clamp(1rem, 3vw, 1.3rem);
+
+  font-weight: 800;
+  letter-spacing: 0.02em;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 25px rgba(190, 20, 40, 0.45),
+    0 0 20px rgba(255, 40, 50, 0.30);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+
+  touch-action: manipulation;
+}
+
+#playButton:hover {
+  transform:
+    translateY(-3px)
+    scale(1.03);
+
+  box-shadow:
+    0 12px 30px rgba(190, 20, 40, 0.55),
+    0 0 30px rgba(255, 40, 50, 0.50);
+
+  filter: brightness(1.1);
+}
+
+#playButton:active {
+  transform:
+    scale(0.96);
+}
+
+#playButton:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+
+/* =========================================================
+   SNOW
+========================================================= */
+
+.snow-layer {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#snowFar {
+  z-index: -5;
+}
+
+#snowMid {
+  z-index: 1;
+}
+
+#snowNear {
+  z-index: 10;
+}
+
+.snowflake {
+  position: absolute;
+  top: -50px;
+
+  color: #ffffff;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+
+  will-change:
+    transform,
+    opacity;
+
+  text-shadow:
+    0 0 4px rgba(255,255,255,0.8);
+
+  animation-name: snowfall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes snowfall {
+
+  0% {
+    transform:
+      translate3d(0, -50px, 0)
+      rotate(0deg);
+  }
+
+  25% {
+    transform:
+      translate3d(25px, 25vh, 0)
+      rotate(90deg);
+  }
+
+  50% {
+    transform:
+      translate3d(-20px, 50vh, 0)
+      rotate(180deg);
+  }
+
+  75% {
+    transform:
+      translate3d(30px, 75vh, 0)
+      rotate(270deg);
+  }
+
+  100% {
+    transform:
+      translate3d(-15px, 110vh, 0)
+      rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   CORNER STARS
+========================================================= */
+
+.corner-star {
+  position: fixed;
+  z-index: 4;
+
+  color:
+    rgba(255, 215, 106, 0.8);
+
+  font-size:
+    clamp(1.5rem, 5vw, 3rem);
+
+  pointer-events: none;
+
+  text-shadow:
+    0 0 8px var(--gold),
+    0 0 20px var(--gold);
+
+  animation:
+    twinkle 2.2s ease-in-out infinite;
+}
+
+.corner-star.one {
+  top: 7%;
+  left: 7%;
+}
+
+.corner-star.two {
+  right: 7%;
+  bottom: 7%;
+  animation-delay: 1.1s;
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer-decoration {
+  position: relative;
+  z-index: 3;
+
+  margin-top: 18px;
+
+  color:
+    rgba(255, 255, 255, 0.52);
+
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  #container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .card {
+    width: 94vw;
+    padding: 30px 14px;
+    border-radius: 24px;
+  }
+
+  #countdown {
+    max-width: 95vw;
+    overflow: hidden;
+
+    font-size:
+      clamp(1.2rem, 6vw, 2.5rem);
+
+    padding:
+      10px 14px;
+  }
+
+  #songName {
+    max-width: 85vw;
+  }
+
+  #playButton {
+    min-width: 200px;
+    padding:
+      15px 24px;
+  }
+}
+
+
+/* =========================================================
+   SHORT SCREENS
+========================================================= */
+
+@media (max-height: 650px) {
+
+  .card {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .live-label {
+    margin-bottom: 6px;
+  }
+
+  #countdown {
+    margin-top: 12px;
+  }
+
+  .song-wrapper {
+    margin-top: 9px;
+  }
+
+  #playButton {
+    margin-top: 15px;
+  }
+
+  .footer-decoration {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   LANDSCAPE PHONES
+========================================================= */
+
+@media (
+  orientation: landscape
+) and (
+  max-height: 600px
+) {
+
+  #container {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+  }
+
+  .card {
+    width: min(94vw, 900px);
+
+    padding:
+      18px
+      clamp(25px, 5vw, 50px);
+
+    border-radius: 24px;
+
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(230px, .75fr);
+
+    grid-template-areas:
+      "heading countdown"
+      "song song"
+      "button button"
+      "footer footer";
+
+    column-gap:
+      clamp(20px, 5vw, 50px);
+
+    align-items: center;
+  }
+
+  .live-label {
+    grid-area: heading;
+
+    margin-bottom: 6px;
+
+    justify-content: center;
+  }
+
+  #title {
+    grid-area: heading;
+
+    margin-top: 30px;
+
+    font-size:
+      clamp(3rem, 8vw, 5.5rem);
+  }
+
+  #subtitle {
+    grid-area: heading;
+
+    margin-top: 4px;
+
+    font-size:
+      clamp(2.2rem, 6vw, 4.5rem);
+  }
+
+  #countdown {
+    grid-area: countdown;
+
+    margin-top: 0;
+
+    font-size:
+      clamp(1.5rem, 4vw, 2.8rem);
+  }
+
+  .song-wrapper {
+    grid-area: song;
+
+    margin-top: 12px;
+  }
+
+  #playButton {
+    grid-area: button;
+
+    margin-top: 12px;
+  }
+
+  .footer-decoration {
+    grid-area: footer;
+
+    margin-top: 10px;
+  }
+
+  .corner-star.one {
+    top: 3%;
+  }
+
+  .corner-star.two {
+    bottom: 3%;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL LANDSCAPE
+========================================================= */
+
+@media (
+  orientation: landscape
+) and (
+  max-height: 430px
+) {
+
+  .card {
+    padding:
+      12px
+      25px;
+  }
+
+  #title {
+    font-size:
+      clamp(2.4rem, 7vw, 4rem);
+  }
+
+  #subtitle {
+    font-size:
+      clamp(1.8rem, 5vw, 3.2rem);
+  }
+
+  #countdown {
+    font-size:
+      clamp(1.2rem, 3.5vw, 2rem);
+
+    padding:
+      7px 14px;
+  }
+
+  .song-wrapper {
+    margin-top: 7px;
+  }
+
+  #playButton {
+    min-height: 44px;
+    padding: 10px 22px;
+    margin-top: 8px;
+  }
+}
+
+
+/* =========================================================
+   LARGE TABLETS / DESKTOP
+========================================================= */
+
+@media (min-width: 769px) {
+
+  .card {
+    width:
+      min(92vw, 900px);
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+
+    transition-duration:
+      0.01ms !important;
+  }
+}
+
+</style>
 </head>
+
 
 <body>
 
-    <div id="bg"></div>
+<div id="bg"></div>
 
-    <div id="snowFar" class="snow-layer"></div>
-    <div id="snowMid" class="snow-layer"></div>
+<div id="snowFar" class="snow-layer"></div>
 
-    <main id="container">
-        <section class="card">
+<main id="container">
 
-            <div class="star one">✦</div>
-            <div class="star two">✧</div>
-            <div class="star three">✦</div>
-            <div class="star four">✧</div>
+  <section class="card">
 
-            <div class="live">Christmas Radio</div>
+    <div class="live-label">
+      <span class="live-dot"></span>
+      Christmas Radio
+    </div>
 
-            <h1 id="title">Christmas</h1>
-            <h1 id="subtitle">Countdown</h1>
+    <h1 id="title">
+      Christmas
+    </h1>
 
-            <div id="countdown"></div>
+    <h1 id="subtitle">
+      Countdown
+    </h1>
 
-            <div class="song-wrapper">
-                <div class="song-label">Now Playing</div>
-                <div id="songName">Press Start Live Radio</div>
-            </div>
+    <div id="countdown">
+      00d 00h 00m 00s
+    </div>
 
-            <button id="playButton">
-                🎄 Start Live Radio
-            </button>
+    <div class="song-wrapper">
 
-            <footer>
-                ❄️ Merry Christmas ❄️
-            </footer>
+      <div class="song-label">
+        Now Playing
+      </div>
 
-        </section>
-    </main>
+      <div id="songName">
+        Ready to start the Christmas radio
+      </div>
 
-    <div id="snowNear" class="snow-layer"></div>
+    </div>
 
-    <audio id="radioAudio" preload="auto" playsinline></audio>
+    <button id="playButton">
+      🎄 Start Live Radio
+    </button>
 
-    <script>
-        (() => {
-            "use strict";
+    <div class="footer-decoration">
+      ❄️ Merry Christmas ❄️
+    </div>
 
-            /* ==========================================
-               CONFIG
-            ========================================== */
+  </section>
 
-            const RADIO_START =
-                new Date("Dec 1, 2025 00:00:00").getTime();
+</main>
 
-            const SONGS = [
-                "All I Want For Christmas Is You",
-                "Baby It's Cold Outside",
-                "Blue Christmas",
-                "Carol Of The Bells",
-                "Christmas (Baby Please Come Home)",
-                "Christmas Canon",
-                "Deck The Halls",
-                "Do You Want To Build A Snowman",
-                "Feliz Navidad",
-                "Frosty The Snowman",
-                "God Rest Ye Merry Gentlemen",
-                "Here Comes Santa Claus",
-                "Holly Jolly Christmas",
-                "I Want A Hippopotamus For Christmas",
-                "It's Beginning To Look A Lot Like Christmas",
-                "It's The Most Wonderful Time Of The Year",
-                "Jingle Bell Rock",
-                "Jingle Bells",
-                "Last Christmas",
-                "Let It Snow! Let It Snow!",
-                "Little Drummer Boy",
-                "Mistletoe",
-                "O Christmas Tree",
-                "Rockin Around The Christmas Tree",
-                "Rudolph The Red-Nosed Reindeer",
-                "Santa Baby",
-                "Santa Claus Is Comin' To Town",
-                "Silent Night",
-                "Sleigh Ride",
-                "The Christmas Song",
-                "Up On The Housetop",
-                "We Wish You A Merry Christmas",
-                "White Christmas",
-                "Winter Wonderland",
-                "Wonderful Christmastime",
-                "You're A Mean One, Mr. Grinch"
-            ];
+<div id="snowMid" class="snow-layer"></div>
 
-            const SONG_PATH =
-                name =>
-                    `songs/Music Now, Trap Music Now, Dance Music Now - ${name} (SPOTISAVER).mp3`;
+<div id="snowNear" class="snow-layer"></div>
 
-            const SPEECH_SRC = "songs/speech.mp3";
+<div class="corner-star one">
+  ✦
+</div>
 
-            /* ==========================================
-               DOM
-            ========================================== */
+<div class="corner-star two">
+  ✦
+</div>
 
-            const playButton =
-                document.getElementById("playButton");
 
-            const songName =
-                document.getElementById("songName");
+<script>
 
-            const countdown =
-                document.getElementById("countdown");
+/* =========================================================
+   CONFIG
+========================================================= */
 
-            const title =
-                document.getElementById("title");
+const RADIO_START =
+  new Date("Dec 1, 2025 00:00:00").getTime();
 
-            const subtitle =
-                document.getElementById("subtitle");
+const SONG_NAMES = [
+  "All I Want For Christmas Is You",
+  "Baby It's Cold Outside",
+  "Blue Christmas",
+  "Carol Of The Bells",
+  "Christmas (Baby Please Come Home)",
+  "Christmas Canon",
+  "Deck The Halls",
+  "Do You Want To Build A Snowman",
+  "Feliz Navidad",
+  "Frosty The Snowman",
+  "God Rest Ye Merry Gentlemen",
+  "Here Comes Santa Claus",
+  "Holly Jolly Christmas",
+  "I Want A Hippopotamus For Christmas",
+  "It's Beginning To Look A Lot Like Christmas",
+  "It's The Most Wonderful Time Of The Year",
+  "Jingle Bell Rock",
+  "Jingle Bells",
+  "Last Christmas",
+  "Let It Snow! Let It Snow!",
+  "Little Drummer Boy",
+  "Mistletoe",
+  "O Christmas Tree",
+  "Rockin Around The Christmas Tree",
+  "Rudolph The Red-Nosed Reindeer",
+  "Santa Baby",
+  "Santa Claus Is Comin' To Town",
+  "Silent Night",
+  "Sleigh Ride",
+  "The Christmas Song",
+  "Up On The Housetop",
+  "We Wish You A Merry Christmas",
+  "White Christmas",
+  "Winter Wonderland",
+  "Wonderful Christmastime",
+  "You're A Mean One, Mr. Grinch"
+];
 
-            const bg =
-                document.getElementById("bg");
+const PLAYLIST =
+  SONG_NAMES.map(
+    name =>
+      `songs/Music Now, Trap Music Now, Dance Music Now - ${name} (SPOTISAVER).mp3`
+  );
 
-            const radioAudio =
-                document.getElementById("radioAudio");
+const SPEECH_SRC =
+  "songs/speech.mp3";
 
-            /* ==========================================
-               STATE
-            ========================================== */
 
-            let audioContext = null;
-            let analyser = null;
-            let sourceNode = null;
-            let gainNode = null;
+/* =========================================================
+   ELEMENTS
+========================================================= */
 
-            let currentIndex = 0;
-            let currentStartTime = 0;
+const countdownEl =
+  document.getElementById("countdown");
 
-            let playing = false;
-            let starting = false;
+const titleEl =
+  document.getElementById("title");
 
-            let animationFrame = 0;
+const subtitleEl =
+  document.getElementById("subtitle");
 
-            const durationCache = new Map();
-            const durationPromises = new Map();
+const songNameEl =
+  document.getElementById("songName");
 
-            /* ==========================================
-               URL HELPERS
-            ========================================== */
+const bgEl =
+  document.getElementById("bg");
 
-            const getSongUrl = index =>
-                SONG_PATH(SONGS[index]);
+const playButton =
+  document.getElementById("playButton");
 
-            /* ==========================================
-               DURATION CACHE
-            ========================================== */
+const snowFar =
+  document.getElementById("snowFar");
 
-            function getDuration(index) {
-                if (durationCache.has(index)) {
-                    return Promise.resolve(
-                        durationCache.get(index)
-                    );
-                }
+const snowMid =
+  document.getElementById("snowMid");
 
-                if (durationPromises.has(index)) {
-                    return durationPromises.get(index);
-                }
+const snowNear =
+  document.getElementById("snowNear");
 
-                const promise = new Promise(resolve => {
-                    const audio = new Audio();
 
-                    audio.preload = "metadata";
+/* =========================================================
+   AUDIO STATE
+========================================================= */
 
-                    const cleanup = () => {
-                        audio.removeAttribute("src");
-                        audio.load();
-                    };
+let audioCtx = null;
+let analyser = null;
+let dataArray = null;
 
-                    const finish = duration => {
-                        const value =
-                            Number.isFinite(duration) &&
-                            duration > 0
-                                ? duration
-                                : 240;
+let radioStarted = false;
+let radioPaused = false;
+let starting = false;
 
-                        durationCache.set(index, value);
+let currentSource = null;
+let currentGain = null;
 
-                        cleanup();
-                        resolve(value);
-                    };
+let currentIndex = 0;
+let currentOffset = 0;
 
-                    audio.addEventListener(
-                        "loadedmetadata",
-                        () => finish(audio.duration),
-                        { once: true }
-                    );
+let songStartedAt = 0;
+let songDuration = 0;
 
-                    audio.addEventListener(
-                        "error",
-                        () => finish(240),
-                        { once: true }
-                    );
+let nextSongTimer = null;
+let speechTimer = null;
 
-                    audio.src = getSongUrl(index);
-                });
+const durationCache = new Map();
+const durationPromises = new Map();
 
-                durationPromises.set(index, promise);
+const bufferCache = new Map();
 
-                return promise;
-            }
+let speechBuffer = null;
 
-            /* ==========================================
-               FIND CURRENT SONG
-               
-               We progressively get durations and cache
-               them. This avoids blocking on every track
-               before the radio can begin.
-            ========================================== */
 
-            async function findCurrentSong() {
-                let elapsed =
-                    Math.max(
-                        0,
-                        Date.now() - RADIO_START
-                    ) / 1000;
+/* =========================================================
+   COUNTDOWN
+========================================================= */
 
-                const durations = [];
+function updateCountdown() {
 
-                for (let i = 0; i < SONGS.length; i++) {
-                    const duration =
-                        await getDuration(i);
+  const now = new Date();
 
-                    durations.push(duration);
-                }
+  const year =
+    now.getFullYear();
 
-                const total =
-                    durations.reduce(
-                        (sum, value) =>
-                            sum + value,
-                        0
-                    );
+  const christmas =
+    new Date(
+      year,
+      11,
+      25,
+      0,
+      0,
+      0
+    );
 
-                if (!total) {
-                    return {
-                        index: 0,
-                        offset: 0
-                    };
-                }
+  const nextChristmas =
+    now >= christmas
+      ? new Date(
+          year + 1,
+          11,
+          25,
+          0,
+          0,
+          0
+        )
+      : christmas;
 
-                elapsed =
-                    ((elapsed % total) + total) %
-                    total;
+  const newYear =
+    new Date(
+      year + 1,
+      0,
+      1,
+      0,
+      0,
+      0
+    );
 
-                for (let i = 0; i < durations.length; i++) {
-                    if (elapsed < durations[i]) {
-                        return {
-                            index: i,
-                            offset: elapsed
-                        };
-                    }
+  if (
+    now >= christmas &&
+    now < newYear
+  ) {
 
-                    elapsed -= durations[i];
-                }
+    titleEl.textContent =
+      "Merry";
 
-                return {
-                    index: 0,
-                    offset: 0
-                };
-            }
+    subtitleEl.textContent =
+      "Christmas";
 
-            /* ==========================================
-               PRELOAD NEXT SONG
-            ========================================== */
+    countdownEl.textContent =
+      "";
 
-            function preloadSong(index) {
+    return;
+  }
+
+  const difference =
+    nextChristmas.getTime() -
+    now.getTime();
+
+  const totalSeconds =
+    Math.max(
+      0,
+      Math.floor(
+        difference / 1000
+      )
+    );
+
+  const days =
+    Math.floor(
+      totalSeconds / 86400
+    );
+
+  const hours =
+    Math.floor(
+      (totalSeconds % 86400) / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (totalSeconds % 3600) / 60
+    );
+
+  const seconds =
+    totalSeconds % 60;
+
+  titleEl.textContent =
+    "Christmas";
+
+  subtitleEl.textContent =
+    "Countdown";
+
+  countdownEl.textContent =
+    `${days}d ` +
+    `${String(hours).padStart(2, "0")}h ` +
+    `${String(minutes).padStart(2, "0")}m ` +
+    `${String(seconds).padStart(2, "0")}s`;
+}
+
+updateCountdown();
+
+setInterval(
+  updateCountdown,
+  1000
+);
+
+
+/* =========================================================
+   SNOW
+========================================================= */
+
+function createSnowflake(
+  layer,
+  distance
+) {
+
+  const snow =
+    document.createElement("div");
+
+  snow.className =
+    "snowflake";
+
+  const characters = [
+    "❄",
+    "❅",
+    "❆",
+    "•",
+    "✦"
+  ];
+
+  snow.textContent =
+    characters[
+      Math.floor(
+        Math.random() *
+        characters.length
+      )
+    ];
+
+  snow.style.fontSize =
+    `${5 + distance * 25 + Math.random() * 8}px`;
+
+  snow.style.opacity =
+    0.16 + distance * 0.72;
+
+  snow.style.left =
+    `${Math.random() * 100}%`;
+
+  snow.style.animationDuration =
+    `${16 - distance * 9 + Math.random() * 5}s`;
+
+  snow.style.animationDelay =
+    `${Math.random() * -20}s`;
+
+  snow.style.filter =
+    `blur(${(1 - distance) * 2.8}px)`;
+
+  layer.appendChild(snow);
+}
+
+
+function createDistanceSnow() {
+
+  snowFar.innerHTML = "";
+  snowMid.innerHTML = "";
+  snowNear.innerHTML = "";
+
+  const width =
+    window.innerWidth;
+
+  const height =
+    window.innerHeight;
+
+  const mobile =
+    width < 768;
+
+  const landscape =
+    width > height;
+
+  let counts;
+
+  if (
+    mobile &&
+    landscape &&
+    height < 430
+  ) {
+
+    counts = [
+      14,
+      9,
+      5
+    ];
+
+  } else if (mobile) {
+
+    counts = [
+      25,
+      18,
+      10
+    ];
+
+  } else {
+
+    counts = [
+      50,
+      38,
+      22
+    ];
+  }
+
+  const layers = [
+    [snowFar, 0.12, 0.30],
+    [snowMid, 0.40, 0.60],
+    [snowNear, 0.80, 1]
+  ];
+
+  for (
+    let layerIndex = 0;
+    layerIndex < 3;
+    layerIndex++
+  ) {
+
+    const [
+      layer,
+      min,
+      max
+    ] = layers[layerIndex];
+
+    for (
+      let i = 0;
+      i < counts[layerIndex];
+      i++
+    ) {
+
+      createSnowflake(
+        layer,
+        min +
+        Math.random() *
+        (max - min)
+      );
+    }
+  }
+}
+
+createDistanceSnow();
+
+
+let resizeTimer;
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    clearTimeout(
+      resizeTimer
+    );
+
+    resizeTimer =
+      setTimeout(
+        createDistanceSnow,
+        250
+      );
+
+  },
+  {
+    passive: true
+  }
+);
+
+
+/* =========================================================
+   AUDIO CONTEXT
+========================================================= */
+
+function setupAudio() {
+
+  if (audioCtx) {
+    return;
+  }
+
+  audioCtx =
+    new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+
+  analyser =
+    audioCtx.createAnalyser();
+
+  analyser.fftSize =
+    64;
+
+  analyser.smoothingTimeConstant =
+    0.78;
+
+  dataArray =
+    new Uint8Array(
+      analyser.frequencyBinCount
+    );
+}
+
+
+/* =========================================================
+   LOAD BUFFER
+========================================================= */
+
+function loadBuffer(src) {
+
+  if (
+    bufferCache.has(src)
+  ) {
+    return bufferCache.get(src);
+  }
+
+  const promise =
+    fetch(
+      src,
+      {
+        cache:
+          "force-cache"
+      }
+    )
+      .then(response => {
+
+        if (!response.ok) {
+          throw new Error(
+            `Unable to load ${src}`
+          );
+        }
+
+        return response.arrayBuffer();
+      })
+      .then(data =>
+        audioCtx.decodeAudioData(
+          data
+        )
+      );
+
+  bufferCache.set(
+    src,
+    promise
+  );
+
+  promise.catch(
+    () =>
+      bufferCache.delete(src)
+  );
+
+  return promise;
+}
+
+
+/* =========================================================
+   GET DURATION
+========================================================= */
+
+function getDuration(index) {
+
+  if (
+    Number.isFinite(
+      durationCache.get(index)
+    )
+  ) {
+    return Promise.resolve(
+      durationCache.get(index)
+    );
+  }
+
+  if (
+    durationPromises.has(index)
+  ) {
+    return durationPromises.get(
+      index
+    );
+  }
+
+  const promise =
+    new Promise(resolve => {
+
+      const audio =
+        new Audio();
+
+      audio.preload =
+        "metadata";
+
+      audio.src =
+        PLAYLIST[index];
+
+      const finish =
+        duration => {
+
+          const value =
+            Number.isFinite(
+              duration
+            ) &&
+            duration > 0
+              ? duration
+              : 240;
+
+          durationCache.set(
+            index,
+            value
+          );
+
+          audio.removeAttribute(
+            "src"
+          );
+
+          audio.load();
+
+          resolve(value);
+        };
+
+      audio.addEventListener(
+        "loadedmetadata",
+        () =>
+          finish(
+            audio.duration
+          ),
+        {
+          once: true
+        }
+      );
+
+      audio.addEventListener(
+        "error",
+        () =>
+          finish(240),
+        {
+          once: true
+        }
+      );
+
+    });
+
+  durationPromises.set(
+    index,
+    promise
+  );
+
+  return promise;
+}
+
+
+/* =========================================================
+   FIND CURRENT RADIO POSITION
+========================================================= */
+
+async function findCurrentSong() {
+
+  let elapsed =
+    Math.max(
+      0,
+      Date.now() -
+      RADIO_START
+    ) / 1000;
+
+  const durations = [];
+
+  /*
+     Get durations.
+
+     They are cached, so once the browser
+     has done this once, future starts are
+     considerably faster.
+  */
+
+  for (
+    let i = 0;
+    i < PLAYLIST.length;
+    i++
+  ) {
+
+    const duration =
+      await getDuration(i);
+
+    durations.push(
+      duration
+    );
+  }
+
+  const total =
+    durations.reduce(
+      (sum, duration) =>
+        sum + duration,
+      0
+    );
+
+  if (!total) {
+
+    return {
+      index: 0,
+      offset: 0
+    };
+  }
+
+  /*
+     Correctly wrap the elapsed time
+     around the entire playlist.
+  */
+
+  elapsed =
+    (
+      elapsed % total +
+      total
+    ) % total;
+
+  for (
+    let i = 0;
+    i < durations.length;
+    i++
+  ) {
+
+    if (
+      elapsed <
+      durations[i]
+    ) {
+
+      return {
+        index: i,
+        offset: elapsed
+      };
+    }
+
+    elapsed -=
+      durations[i];
+  }
+
+  return {
+    index: 0,
+    offset: 0
+  };
+}
+
+
+/* =========================================================
+   PRELOAD NEXT SONG
+========================================================= */
+
+function preloadSong(index) {
+
+  if (!audioCtx) {
+    return;
+  }
+
+  loadBuffer(
+    PLAYLIST[index]
+  ).catch(
+    error =>
+      console.warn(
+        "Next song preload failed:",
+        error
+      )
+  );
+}
+
+
+/* =========================================================
+   PRELOAD SPEECH
+========================================================= */
+
+function preloadSpeech() {
+
+  if (
+    !audioCtx ||
+    speechBuffer
+  ) {
+    return;
+  }
+
+  loadBuffer(
+    SPEECH_SRC
+  )
+    .then(buffer => {
+      speechBuffer =
+        buffer;
+    })
+    .catch(
+      error =>
+        console.warn(
+          "Speech preload failed:",
+          error
+        )
+    );
+}
+
+
+/* =========================================================
+   CLEAR TIMERS
+========================================================= */
+
+function clearSongTimers() {
+
+  if (
+    nextSongTimer
+  ) {
+
+    clearTimeout(
+      nextSongTimer
+    );
+
+    nextSongTimer =
+      null;
+  }
+
+  if (
+    speechTimer
+  ) {
+
+    clearTimeout(
+      speechTimer
+    );
+
+    speechTimer =
+      null;
+  }
+}
+
+
+/* =========================================================
+   PLAY SONG
+========================================================= */
+
+async function playSong(
+  index,
+  offset = 0
+) {
+
+  if (!radioStarted) {
+    return;
+  }
+
+  clearSongTimers();
+
+  if (currentSource) {
+
+    try {
+      currentSource.stop();
+    } catch {}
+
+    currentSource =
+      null;
+  }
+
+  const buffer =
+    await loadBuffer(
+      PLAYLIST[index]
+    );
+
+  if (!radioStarted) {
+    return;
+  }
+
+  /*
+     If the calculated offset somehow
+     exceeds the real buffer duration,
+     continue into the next track.
+  */
+
+  if (
+    offset >=
+    buffer.duration
+  ) {
+
+    const next =
+      (
+        index + 1
+      ) %
+      PLAYLIST.length;
+
+    return playSong(
+      next,
+      offset -
+        buffer.duration
+    );
+  }
+
+  currentIndex =
+    index;
+
+  currentOffset =
+    offset;
+
+  songDuration =
+    buffer.duration;
+
+  songNameEl.textContent =
+    SONG_NAMES[index];
+
+
+  /* -----------------------------------------
+     CURRENT SOURCE
+  ----------------------------------------- */
+
+  const source =
+    audioCtx.createBufferSource();
+
+  const gain =
+    audioCtx.createGain();
+
+  source.buffer =
+    buffer;
+
+  source
+    .connect(gain)
+    .connect(analyser)
+    .connect(
+      audioCtx.destination
+    );
+
+  gain.gain.value =
+    1;
+
+  currentSource =
+    source;
+
+  currentGain =
+    gain;
+
+
+  /*
+     Start exactly at the synchronized
+     radio position.
+  */
+
+  source.start(
+    0,
+    Math.max(
+      0,
+      offset
+    )
+  );
+
+
+  /*
+     Record when this song actually
+     started so pause can calculate
+     the exact current position.
+  */
+
+  songStartedAt =
+    performance.now() -
+    offset * 1000;
+
+
+  /* -----------------------------------------
+     NEXT SONG PRELOAD
+  ----------------------------------------- */
+
+  const nextIndex =
+    (
+      index + 1
+    ) %
+    PLAYLIST.length;
+
+  preloadSong(
+    nextIndex
+  );
+
+
+  /* -----------------------------------------
+     SPEECH
+  ----------------------------------------- */
+
+  if (
+    (
+      index + 1
+    ) % 3 === 0
+  ) {
+
+    preloadSpeech();
+
+    const remaining =
+      Math.max(
+        0,
+        buffer.duration -
+        offset
+      );
+
+    const speechDelay =
+      Math.max(
+        0,
+        remaining - 5
+      );
+
+    speechTimer =
+      setTimeout(
+        () => {
+
+          if (
+            !radioStarted ||
+            radioPaused ||
+            !speechBuffer
+          ) {
+            return;
+          }
+
+          try {
+
+            gain.gain.setValueAtTime(
+              1,
+              audioCtx.currentTime
+            );
+
+            gain.gain.linearRampToValueAtTime(
+              0.55,
+              audioCtx.currentTime + 0.25
+            );
+
+            const speech =
+              audioCtx.createBufferSource();
+
+            speech.buffer =
+              speechBuffer;
+
+            speech.connect(
+              audioCtx.destination
+            );
+
+            speech.onended =
+              () => {
+
                 if (
-                    index < 0 ||
-                    index >= SONGS.length
+                  currentGain === gain
                 ) {
-                    return;
+
+                  gain.gain.linearRampToValueAtTime(
+                    1,
+                    audioCtx.currentTime + 0.3
+                  );
                 }
+              };
 
-                const audio = new Audio();
+            speech.start();
 
-                audio.preload = "auto";
-                audio.src = getSongUrl(index);
+          } catch (
+            error
+          ) {
 
-                audio.load();
-
-                setTimeout(() => {
-                    audio.removeAttribute("src");
-                    audio.load();
-                }, 30000);
-            }
-
-            /* ==========================================
-               AUDIO CONTEXT
-            ========================================== */
-
-            function setupAudioContext() {
-                if (audioContext) {
-                    return;
-                }
-
-                audioContext =
-                    new (
-                        window.AudioContext ||
-                        window.webkitAudioContext
-                    )();
-
-                sourceNode =
-                    audioContext.createMediaElementSource(
-                        radioAudio
-                    );
-
-                gainNode =
-                    audioContext.createGain();
-
-                analyser =
-                    audioContext.createAnalyser();
-
-                analyser.fftSize = 128;
-                analyser.smoothingTimeConstant = .82;
-
-                sourceNode
-                    .connect(gainNode)
-                    .connect(analyser)
-                    .connect(
-                        audioContext.destination
-                    );
-
-                gainNode.gain.value = 1;
-            }
-
-            /* ==========================================
-               START SONG
-            ========================================== */
-
-            async function playSong(
-                index,
-                offset = 0
-            ) {
-                if (!audioContext) {
-                    setupAudioContext();
-                }
-
-                if (
-                    audioContext.state ===
-                    "suspended"
-                ) {
-                    await audioContext.resume();
-                }
-
-                currentIndex = index;
-
-                const src =
-                    getSongUrl(index);
-
-                radioAudio.pause();
-
-                radioAudio.src = src;
-
-                radioAudio.load();
-
-                const seekAndPlay = () => {
-                    try {
-                        if (
-                            Number.isFinite(offset) &&
-                            offset > 0
-                        ) {
-                            radioAudio.currentTime =
-                                offset;
-                        }
-                    } catch {}
-
-                    return radioAudio.play();
-                };
-
-                try {
-                    await seekAndPlay();
-                } catch {
-                    await new Promise(resolve => {
-                        const handler = () => {
-                            radioAudio.removeEventListener(
-                                "canplay",
-                                handler
-                            );
-
-                            resolve();
-                        };
-
-                        radioAudio.addEventListener(
-                            "canplay",
-                            handler,
-                            { once: true }
-                        );
-                    });
-
-                    await seekAndPlay();
-                }
-
-                playing = true;
-
-                currentStartTime =
-                    performance.now() -
-                    offset * 1000;
-
-                songName.textContent =
-                    SONGS[index];
-
-                playButton.textContent =
-                    "⏸ Live Radio Playing";
-
-                playButton.classList.add(
-                    "playing"
-                );
-
-                /* Start loading the next song
-                   without blocking playback. */
-                const nextIndex =
-                    (index + 1) % SONGS.length;
-
-                preloadSong(nextIndex);
-
-                startVisualizer();
-            }
-
-            /* ==========================================
-               NEXT SONG
-            ========================================== */
-
-            radioAudio.addEventListener(
-                "ended",
-                async () => {
-                    if (!playing) {
-                        return;
-                    }
-
-                    const nextIndex =
-                        (currentIndex + 1) %
-                        SONGS.length;
-
-                    try {
-                        await playSong(
-                            nextIndex,
-                            0
-                        );
-                    } catch {
-                        setTimeout(() => {
-                            if (playing) {
-                                playSong(
-                                    nextIndex,
-                                    0
-                                );
-                            }
-                        }, 1000);
-                    }
-                }
+            console.warn(
+              "Speech playback error:",
+              error
             );
 
-            /* ==========================================
-               PLAY / PAUSE
-            ========================================== */
-
-            playButton.addEventListener(
-                "click",
-                async () => {
-                    if (starting) {
-                        return;
-                    }
-
-                    if (playing) {
-                        radioAudio.pause();
-
-                        playing = false;
-
-                        playButton.textContent =
-                            "▶️ Resume Live Radio";
-
-                        playButton.classList.remove(
-                            "playing"
-                        );
-
-                        return;
-                    }
-
-                    starting = true;
-
-                    playButton.disabled = true;
-                    playButton.textContent =
-                        "🎄 Starting Radio...";
-
-                    try {
-                        setupAudioContext();
-
-                        if (
-                            audioContext.state ===
-                            "suspended"
-                        ) {
-                            await audioContext.resume();
-                        }
-
-                        /*
-                         * Find the exact song/offset.
-                         *
-                         * Durations are cached as they are
-                         * discovered, so subsequent starts
-                         * are much faster.
-                         */
-                        const position =
-                            await findCurrentSong();
-
-                        await playSong(
-                            position.index,
-                            position.offset
-                        );
-
-                    } catch (error) {
-                        console.error(
-                            "Radio failed to start:",
-                            error
-                        );
-
-                        playButton.textContent =
-                            "🎄 Try Starting Again";
-
-                    } finally {
-                        starting = false;
-                        playButton.disabled = false;
-                    }
-                }
-            );
-
-            /* ==========================================
-               VISUALIZER
-            ========================================== */
-
-            function startVisualizer() {
-                if (
-                    animationFrame ||
-                    !analyser
-                ) {
-                    return;
-                }
-
-                const data =
-                    new Uint8Array(
-                        analyser.frequencyBinCount
-                    );
-
-                const animate = () => {
-                    animationFrame =
-                        requestAnimationFrame(
-                            animate
-                        );
-
-                    if (!playing) {
-                        return;
-                    }
-
-                    analyser.getByteFrequencyData(
-                        data
-                    );
-
-                    let total = 0;
-
-                    for (
-                        let i = 0;
-                        i < data.length;
-                        i++
-                    ) {
-                        total += data[i];
-                    }
-
-                    const average =
-                        total / data.length;
-
-                    const intensity =
-                        Math.min(
-                            1,
-                            average / 180
-                        );
-
-                    bg.style.filter =
-                        `brightness(${1 + intensity * .12})`;
-
-                    title.style.transform =
-                        `scale(${1 + intensity * .012})`;
-
-                    countdown.style.transform =
-                        `scale(${1 + intensity * .006})`;
-                };
-                
-                animate();
-            }
-
-            /* ==========================================
-               COUNTDOWN
-            ========================================== */
-
-            function updateCountdown() {
-                const now = new Date();
-
-                const christmas =
-                    new Date(
-                        now.getFullYear(),
-                        11,
-                        25,
-                        0,
-                        0,
-                        0
-                    );
-
-                const newYear =
-                    new Date(
-                        now.getFullYear() + 1,
-                        0,
-                        1,
-                        0,
-                        0,
-                        0
-                    );
-
-                if (
-                    now >= christmas &&
-                    now < newYear
-                ) {
-                    title.textContent =
-                        "Merry";
-
-                    subtitle.textContent =
-                        "Christmas";
-
-                    countdown.textContent =
-                        "";
-
-                    return;
-                }
-
-                const difference =
-                    christmas - now;
-
-                if (difference <= 0) {
-                    return;
-                }
-
-                const seconds =
-                    Math.floor(
-                        difference / 1000
-                    );
-
-                const days =
-                    Math.floor(
-                        seconds / 86400
-                    );
-
-                const hours =
-                    Math.floor(
-                        (seconds % 86400) / 3600
-                    );
-
-                const minutes =
-                    Math.floor(
-                        (seconds % 3600) / 60
-                    );
-
-                const secs =
-                    seconds % 60;
-
-                countdown.textContent =
-                    `${days}d ${hours}h ${minutes}m ${secs}s`;
-            }
-
-            updateCountdown();
-
-            setInterval(
-                updateCountdown,
-                1000
-            );
-
-            /* ==========================================
-               SNOW
-            ========================================== */
-
-            function createSnow(
-                container,
-                amount,
-                minSize,
-                maxSize,
-                minDuration,
-                maxDuration
-            ) {
-                const fragment =
-                    document.createDocumentFragment();
-
-                for (
-                    let i = 0;
-                    i < amount;
-                    i++
-                ) {
-                    const flake =
-                        document.createElement("span");
-
-                    flake.className =
-                        "flake";
-
-                    flake.textContent =
-                        Math.random() > .5
-                            ? "•"
-                            : "❄";
-
-                    const size =
-                        minSize +
-                        Math.random() *
-                        (maxSize - minSize);
-
-                    const duration =
-                        minDuration +
-                        Math.random() *
-                        (maxDuration - minDuration);
-
-                    const delay =
-                        Math.random() *
-                        duration;
-
-                    const drift =
-                        `${-80 + Math.random() * 160}px`;
-
-                    flake.style.left =
-                        `${Math.random() * 100}%`;
-
-                    flake.style.fontSize =
-                        `${size}px`;
-
-                    flake.style.animationDuration =
-                        `${duration}s`;
-
-                    flake.style.animationDelay =
-                        `-${delay}s`;
-
-                    flake.style.setProperty(
-                        "--drift",
-                        drift
-                    );
-
-                    fragment.appendChild(
-                        flake
-                    );
-                }
-
-                container.appendChild(
-                    fragment
-                );
-            }
-
-            function setupSnow() {
-                const width =
-                    window.innerWidth;
-
-                const height =
-                    window.innerHeight;
-
-                const area =
-                    width * height;
-
-                const isSmall =
-                    width <= 430;
-
-                const isLandscape =
-                    width > height;
-
-                let far;
-                let mid;
-                let near;
-
-                if (isSmall) {
-                    far = 18;
-                    mid = 12;
-                    near = 7;
-                } else if (
-                    isLandscape &&
-                    height < 600
-                ) {
-                    far = 20;
-                    mid = 13;
-                    near = 8;
-                } else if (area < 500000) {
-                    far = 28;
-                    mid = 18;
-                    near = 10;
-                } else {
-                    far = 50;
-                    mid = 38;
-                    near = 22;
-                }
-
-                createSnow(
-                    document.getElementById(
-                        "snowFar"
-                    ),
-                    far,
-                    2,
-                    5,
-                    12,
-                    25
-                );
-
-                createSnow(
-                    document.getElementById(
-                        "snowMid"
-                    ),
-                    mid,
-                    3,
-                    7,
-                    9,
-                    18
-                );
-
-                createSnow(
-                    document.getElementById(
-                        "snowNear"
-                    ),
-                    near,
-                    4,
-                    10,
-                    6,
-                    14
-                );
-            }
-
-            setupSnow();
-
-            /* Rebuild snow only when the
-               viewport changes significantly. */
-            let resizeTimer;
-
-            window.addEventListener(
-                "resize",
-                () => {
-                    clearTimeout(resizeTimer);
-
-                    resizeTimer =
-                        setTimeout(() => {
-                            document
-                                .querySelectorAll(
-                                    ".snow-layer"
-                                )
-                                .forEach(
-                                    layer =>
-                                        layer.replaceChildren()
-                                );
-
-                            setupSnow();
-                        }, 250);
-                },
-                { passive: true }
-            );
-
-            /* ==========================================
-               MOBILE / SAFARI ZOOM PREVENTION
-            ========================================== */
-
-            document.addEventListener(
-                "gesturestart",
-                e => e.preventDefault(),
-                { passive: false }
-            );
-
-            document.addEventListener(
-                "gesturechange",
-                e => e.preventDefault(),
-                { passive: false }
-            );
-
-            document.addEventListener(
-                "gestureend",
-                e => e.preventDefault(),
-                { passive: false }
-            );
-
-            document.addEventListener(
-                "wheel",
-                e => {
-                    if (
-                        e.ctrlKey ||
-                        e.metaKey
-                    ) {
-                        e.preventDefault();
-                    }
-                },
-                { passive: false }
-            );
-
-            document.addEventListener(
-                "keydown",
-                e => {
-                    if (
-                        (e.ctrlKey ||
-                            e.metaKey) &&
-                        [
-                            "+",
-                            "-",
-                            "=",
-                            "0"
-                        ].includes(e.key)
-                    ) {
-                        e.preventDefault();
-                    }
-                }
-            );
-
-            /* Prevent accidental double-tap zoom
-               without interfering with normal scrolling. */
-            let lastTouchEnd = 0;
-
-            document.addEventListener(
-                "touchend",
-                e => {
-                    const now =
-                        Date.now();
-
-                    if (
-                        now - lastTouchEnd <=
-                        300
-                    ) {
-                        e.preventDefault();
-                    }
-
-                    lastTouchEnd = now;
-                },
-                { passive: false }
-            );
-
-        })();
-    </script>
+            gain.gain.value =
+              1;
+          }
+
+        },
+        speechDelay * 1000
+      );
+  }
+
+
+  /* -----------------------------------------
+     NEXT SONG
+  ----------------------------------------- */
+
+  const remaining =
+    Math.max(
+      0,
+      buffer.duration -
+      offset
+    );
+
+  nextSongTimer =
+    setTimeout(
+      () => {
+
+        if (
+          !radioStarted ||
+          radioPaused
+        ) {
+          return;
+        }
+
+        playSong(
+          nextIndex,
+          0
+        );
+
+      },
+      remaining * 1000
+    );
+}
+
+
+/* =========================================================
+   PAUSE RADIO
+========================================================= */
+
+function pauseRadio() {
+
+  if (
+    !radioStarted ||
+    radioPaused
+  ) {
+    return;
+  }
+
+  /*
+     Calculate exactly where the
+     current song is right now.
+  */
+
+  currentOffset =
+    (
+      performance.now() -
+      songStartedAt
+    ) / 1000;
+
+  currentOffset =
+    Math.max(
+      0,
+      Math.min(
+        currentOffset,
+        songDuration
+      )
+    );
+
+  radioPaused =
+    true;
+
+  clearSongTimers();
+
+
+  /*
+     Stop the BufferSource.
+  */
+
+  if (currentSource) {
+
+    try {
+      currentSource.stop();
+    } catch {}
+
+    currentSource =
+      null;
+  }
+
+
+  /*
+     Pause the visual effects.
+  */
+
+  playButton.textContent =
+    "▶️ Resume Live Radio";
+}
+
+
+/* =========================================================
+   RESUME RADIO
+========================================================= */
+
+async function resumeRadio() {
+
+  if (
+    !radioStarted ||
+    !radioPaused
+  ) {
+    return;
+  }
+
+  radioPaused =
+    false;
+
+  playButton.textContent =
+    "⏸️ Pause Live Radio";
+
+  await playSong(
+    currentIndex,
+    currentOffset
+  );
+}
+
+
+/* =========================================================
+   PLAY BUTTON
+========================================================= */
+
+playButton.addEventListener(
+  "click",
+  async () => {
+
+    if (starting) {
+      return;
+    }
+
+
+    /* -----------------------------------------
+       PAUSE
+    ----------------------------------------- */
+
+    if (
+      radioStarted &&
+      !radioPaused
+    ) {
+
+      pauseRadio();
+
+      return;
+    }
+
+
+    /* -----------------------------------------
+       RESUME
+    ----------------------------------------- */
+
+    if (
+      radioStarted &&
+      radioPaused
+    ) {
+
+      await resumeRadio();
+
+      return;
+    }
+
+
+    /* -----------------------------------------
+       FIRST START
+    ----------------------------------------- */
+
+    starting =
+      true;
+
+    playButton.disabled =
+      true;
+
+    playButton.textContent =
+      "🎄 Starting Radio...";
+
+    try {
+
+      radioStarted =
+        true;
+
+      radioPaused =
+        false;
+
+
+      setupAudio();
+
+
+      if (
+        audioCtx.state ===
+        "suspended"
+      ) {
+
+        await audioCtx.resume();
+      }
+
+
+      /*
+         Calculate the live radio position.
+      */
+
+      const position =
+        await findCurrentSong();
+
+
+      currentIndex =
+        position.index;
+
+      currentOffset =
+        position.offset;
+
+
+      /*
+         Start the synchronized song.
+      */
+
+      await playSong(
+        position.index,
+        position.offset
+      );
+
+
+      playButton.textContent =
+        "⏸️ Pause Live Radio";
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "Radio startup error:",
+        error
+      );
+
+      radioStarted =
+        false;
+
+      radioPaused =
+        false;
+
+      playButton.textContent =
+        "🎄 Start Live Radio";
+
+      songNameEl.textContent =
+        "Unable to start radio";
+
+    } finally {
+
+      starting =
+        false;
+
+      playButton.disabled =
+        false;
+    }
+
+  }
+);
+
+
+/* =========================================================
+   VISUALIZER
+========================================================= */
+
+let visualizerRunning =
+  false;
+
+function animateEffects() {
+
+  requestAnimationFrame(
+    animateEffects
+  );
+
+  if (
+    !radioStarted ||
+    radioPaused ||
+    !analyser ||
+    !dataArray
+  ) {
+    return;
+  }
+
+  analyser.getByteFrequencyData(
+    dataArray
+  );
+
+  let total = 0;
+
+  for (
+    let i = 0;
+    i < dataArray.length;
+    i++
+  ) {
+
+    total +=
+      dataArray[i];
+  }
+
+  const average =
+    total /
+    dataArray.length;
+
+
+  /*
+     Background pulse.
+  */
+
+  const bgScale =
+    1 +
+    average / 12000;
+
+  bgEl.style.transform =
+    `scale(${bgScale})`;
+
+
+  /*
+     Background brightness.
+  */
+
+  const brightness =
+    1 -
+    Math.min(
+      average / 450,
+      0.35
+    );
+
+  bgEl.style.filter =
+    `brightness(${brightness})`;
+
+
+  /*
+     Title pulse.
+  */
+
+  const titleScale =
+    1 +
+    average / 5000;
+
+  titleEl.style.transform =
+    `scale(${titleScale})`;
+
+  subtitleEl.style.transform =
+    `scale(${titleScale})`;
+
+
+  /*
+     Countdown pulse.
+  */
+
+  countdownEl.style.transform =
+    `scale(${1 + average / 7000})`;
+
+
+  /*
+     Song pulse.
+  */
+
+  songNameEl.style.transform =
+    `scale(${1 + average / 9000})`;
+}
+
+animateEffects();
+
+
+/* =========================================================
+   NO ZOOM
+========================================================= */
+
+document.addEventListener(
+  "gesturestart",
+  event =>
+    event.preventDefault(),
+  {
+    passive: false
+  }
+);
+
+document.addEventListener(
+  "gesturechange",
+  event =>
+    event.preventDefault(),
+  {
+    passive: false
+  }
+);
+
+document.addEventListener(
+  "gestureend",
+  event =>
+    event.preventDefault(),
+  {
+    passive: false
+  }
+);
+
+document.addEventListener(
+  "wheel",
+  event => {
+
+    if (
+      event.ctrlKey ||
+      event.metaKey
+    ) {
+
+      event.preventDefault();
+    }
+
+  },
+  {
+    passive: false
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      (
+        event.ctrlKey ||
+        event.metaKey
+      ) &&
+      [
+        "+",
+        "-",
+        "=",
+        "0"
+      ].includes(
+        event.key
+      )
+    ) {
+
+      event.preventDefault();
+    }
+
+  }
+);
+
+let lastTouchEnd =
+  0;
+
+document.addEventListener(
+  "touchend",
+  event => {
+
+    const now =
+      Date.now();
+
+    if (
+      now -
+      lastTouchEnd <=
+      300
+    ) {
+
+      event.preventDefault();
+    }
+
+    lastTouchEnd =
+      now;
+
+  },
+  {
+    passive: false
+  }
+);
+
+</script>
 
 </body>
-
 </html>
