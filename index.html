@@ -633,7 +633,6 @@
         id="musicAudio"
         preload="auto"
         playsinline
-        disableRemotePlayback
         controlslist="nodownload noplaybackrate noremoteplayback">
     </audio>
 
@@ -641,10 +640,8 @@
         id="speechAudio"
         preload="auto"
         playsinline
-        disableRemotePlayback
         controlslist="nodownload noplaybackrate noremoteplayback">
     </audio>
-
 
     <script>
         /* =========================================================
@@ -655,9 +652,7 @@
             new Date("Dec 1, 2025 00:00:00").getTime();
 
         const SONG_FOLDER = "./songs/";
-
-        const SPEECH_SRC =
-            "./songs/speech.mp3";
+        const SPEECH_SRC = "./songs/speech.mp3";
 
         const DURATION_MANIFEST =
             "./songs/durations.json";
@@ -714,7 +709,7 @@
 
 
         /* =========================================================
-           ELEMENTS
+           AUDIO
         ========================================================= */
 
         const musicAudio =
@@ -733,992 +728,24 @@
             document.getElementById("countdown");
 
 
-        /*
-            Explicitly disable remote playback.
-
-            This is particularly important for the Managed
-            Media Source path on iPhone Safari.
-        */
-
-        try {
-            musicAudio.disableRemotePlayback = true;
-            speechAudio.disableRemotePlayback = true;
-        } catch {}
-
-
         /* =========================================================
            STATE
         ========================================================= */
 
         let durations = [];
-
         let totalPlaylistDuration = 0;
 
         let radioPlaying = false;
 
         let currentSongIndex = 0;
-
         let currentSongOffset = 0;
 
         let metadataLoaded = false;
-
         let metadataLoadingPromise = null;
 
         let lastSyncTime = 0;
 
         let speechStarted = false;
-
-
-        /*
-            Prevent overlapping playLive() calls.
-
-            This is important because the visibility handler,
-            periodic sync, ended event, and Media Session can
-            all potentially request a resync at nearly the
-            same time.
-        */
-
-        let radioLoadToken = 0;
-
-        let radioPlayPromise = null;
-
-
-        /* =========================================================
-           MANAGED MEDIA SOURCE STATE
-        ========================================================= */
-
-        let mediaSource = null;
-
-        let sourceBuffer = null;
-
-        let mediaSourceObjectURL = null;
-
-        let usingManagedMediaSource = false;
-
-        let usingMediaSource = false;
-
-
-        /* =========================================================
-           MEDIA SOURCE SUPPORT
-        ========================================================= */
-
-        function getMediaSourceClass() {
-
-            /*
-                iPhone Safari uses ManagedMediaSource for
-                Media Source Extensions.
-
-                Regular MediaSource remains as a fallback.
-            */
-
-            if (
-                typeof window.ManagedMediaSource ===
-                "function"
-            ) {
-
-                return window.ManagedMediaSource;
-            }
-
-
-            if (
-                typeof window.MediaSource ===
-                "function"
-            ) {
-
-                return window.MediaSource;
-            }
-
-
-            return null;
-        }
-
-
-        function getSupportedMSECodec() {
-
-            const MediaSourceClass =
-                getMediaSourceClass();
-
-
-            if (!MediaSourceClass) {
-                return null;
-            }
-
-
-            const codecs = [
-                "audio/mpeg",
-                'audio/mp4; codecs="mp4a.40.2"',
-                'audio/mp4; codecs="mp4a.40.5"'
-            ];
-
-
-            for (
-                const codec of codecs
-            ) {
-
-                try {
-
-                    if (
-                        typeof MediaSourceClass.isTypeSupported ===
-                        "function" &&
-                        MediaSourceClass.isTypeSupported(
-                            codec
-                        )
-                    ) {
-
-                        return codec;
-                    }
-
-                } catch (error) {
-
-                    console.warn(
-                        "MSE codec check failed:",
-                        codec,
-                        error
-                    );
-                }
-            }
-
-
-            return null;
-        }
-
-
-        function canUseManagedMediaSource() {
-
-            const MediaSourceClass =
-                getMediaSourceClass();
-
-
-            if (!MediaSourceClass) {
-                return false;
-            }
-
-
-            const codec =
-                getSupportedMSECodec();
-
-
-            if (!codec) {
-                return false;
-            }
-
-
-            /*
-                Only call this the Managed Media Source path
-                when the browser actually exposes it.
-            */
-
-            if (
-                typeof window.ManagedMediaSource ===
-                "function"
-            ) {
-
-                return true;
-            }
-
-
-            return false;
-        }
-
-
-        /* =========================================================
-           CLEAN UP MEDIA SOURCE
-        ========================================================= */
-
-        function destroyMediaSource() {
-
-            sourceBuffer = null;
-
-            mediaSource = null;
-
-            usingManagedMediaSource = false;
-
-            usingMediaSource = false;
-
-
-            if (mediaSourceObjectURL) {
-
-                try {
-
-                    URL.revokeObjectURL(
-                        mediaSourceObjectURL
-                    );
-
-                } catch {}
-
-                mediaSourceObjectURL = null;
-            }
-        }
-
-
-        /* =========================================================
-           CREATE MEDIA SOURCE
-        ========================================================= */
-
-        function createMediaSource() {
-
-            const MediaSourceClass =
-                getMediaSourceClass();
-
-
-            if (!MediaSourceClass) {
-
-                throw new Error(
-                    "Media Source Extensions are unavailable."
-                );
-            }
-
-
-            const codec =
-                getSupportedMSECodec();
-
-
-            if (!codec) {
-
-                throw new Error(
-                    "No supported MSE audio codec was found."
-                );
-            }
-
-
-            destroyMediaSource();
-
-
-            mediaSource =
-                new MediaSourceClass();
-
-
-            usingManagedMediaSource =
-                typeof window.ManagedMediaSource ===
-                "function" &&
-                mediaSource instanceof
-                window.ManagedMediaSource;
-
-
-            usingMediaSource = true;
-
-
-            /*
-                Managed Media Source can expose streaming
-                lifecycle events.
-
-                We do not depend on them for basic playback,
-                but registering them allows Safari to resume
-                streaming when it asks the source to do so.
-            */
-
-            if (
-                usingManagedMediaSource
-            ) {
-
-                try {
-
-                    mediaSource.addEventListener(
-                        "startstreaming",
-                        () => {
-
-                            console.log(
-                                "Managed Media Source started streaming."
-                            );
-
-                        }
-                    );
-
-                } catch {}
-
-                try {
-
-                    mediaSource.addEventListener(
-                        "endstreaming",
-                        () => {
-
-                            console.log(
-                                "Managed Media Source ended streaming."
-                            );
-
-                        }
-                    );
-
-                } catch {}
-            }
-
-
-            /*
-                Prefer srcObject when the browser supports
-                assigning the MediaSource directly.
-            */
-
-            let connected =
-                false;
-
-
-            if (
-                "srcObject" in musicAudio
-            ) {
-
-                try {
-
-                    musicAudio.srcObject =
-                        mediaSource;
-
-                    connected = true;
-
-                } catch (error) {
-
-                    console.warn(
-                        "Could not attach MediaSource through srcObject:",
-                        error
-                    );
-                }
-            }
-
-
-            /*
-                Fallback to an object URL.
-            */
-
-            if (!connected) {
-
-                mediaSourceObjectURL =
-                    URL.createObjectURL(
-                        mediaSource
-                    );
-
-                musicAudio.src =
-                    mediaSourceObjectURL;
-            }
-
-
-            return new Promise(
-                (resolve, reject) => {
-
-                    let finished = false;
-
-
-                    const cleanup =
-                        () => {
-
-                            mediaSource.removeEventListener(
-                                "sourceopen",
-                                onOpen
-                            );
-
-                            mediaSource.removeEventListener(
-                                "error",
-                                onError
-                            );
-                        };
-
-
-                    const onOpen =
-                        () => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            cleanup();
-
-                            try {
-
-                                sourceBuffer =
-                                    mediaSource.addSourceBuffer(
-                                        codec
-                                    );
-
-                                resolve();
-
-                            } catch (error) {
-
-                                reject(error);
-                            }
-                        };
-
-
-                    const onError =
-                        event => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            cleanup();
-
-                            reject(
-                                new Error(
-                                    "MediaSource error"
-                                )
-                            );
-                        };
-
-
-                    mediaSource.addEventListener(
-                        "sourceopen",
-                        onOpen
-                    );
-
-                    mediaSource.addEventListener(
-                        "error",
-                        onError
-                    );
-
-
-                    /*
-                        sourceopen may already have happened.
-                    */
-
-                    if (
-                        mediaSource.readyState ===
-                        "open"
-                    ) {
-
-                        onOpen();
-                    }
-                }
-            );
-        }
-
-
-        /* =========================================================
-           APPEND BUFFER
-        ========================================================= */
-
-        function appendBuffer(
-            buffer
-        ) {
-
-            return new Promise(
-                (resolve, reject) => {
-
-                    if (!sourceBuffer) {
-
-                        reject(
-                            new Error(
-                                "SourceBuffer is unavailable."
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    const onUpdateEnd =
-                        () => {
-
-                            sourceBuffer.removeEventListener(
-                                "updateend",
-                                onUpdateEnd
-                            );
-
-                            sourceBuffer.removeEventListener(
-                                "error",
-                                onError
-                            );
-
-                            resolve();
-                        };
-
-
-                    const onError =
-                        error => {
-
-                            sourceBuffer.removeEventListener(
-                                "updateend",
-                                onUpdateEnd
-                            );
-
-                            sourceBuffer.removeEventListener(
-                                "error",
-                                onError
-                            );
-
-                            reject(
-                                error
-                            );
-                        };
-
-
-                    sourceBuffer.addEventListener(
-                        "updateend",
-                        onUpdateEnd
-                    );
-
-                    sourceBuffer.addEventListener(
-                        "error",
-                        onError
-                    );
-
-
-                    try {
-
-                        sourceBuffer.appendBuffer(
-                            buffer
-                        );
-
-                    } catch (error) {
-
-                        sourceBuffer.removeEventListener(
-                            "updateend",
-                            onUpdateEnd
-                        );
-
-                        sourceBuffer.removeEventListener(
-                            "error",
-                            onError
-                        );
-
-                        reject(error);
-                    }
-                }
-            );
-        }
-
-
-        /* =========================================================
-           LOAD CURRENT SONG THROUGH MSE
-        ========================================================= */
-
-        async function loadSongThroughMSE(
-            songName,
-            offset
-        ) {
-
-            /*
-                Make sure the browser can actually use MSE.
-            */
-
-            if (
-                !getMediaSourceClass() ||
-                !getSupportedMSECodec()
-            ) {
-
-                throw new Error(
-                    "MSE is not supported for this audio format."
-                );
-            }
-
-
-            const token =
-                radioLoadToken;
-
-
-            const response =
-                await fetch(
-                    getSongURL(songName),
-                    {
-                        cache: "no-store"
-                    }
-                );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    `Could not fetch song: ${response.status}`
-                );
-            }
-
-
-            const audioData =
-                await response.arrayBuffer();
-
-
-            if (
-                token !== radioLoadToken
-            ) {
-
-                throw new Error(
-                    "Radio load was superseded."
-                );
-            }
-
-
-            await createMediaSource();
-
-
-            if (
-                !mediaSource ||
-                !sourceBuffer
-            ) {
-
-                throw new Error(
-                    "MediaSource failed to initialize."
-                );
-            }
-
-
-            /*
-                Set the duration to Infinity.
-
-                This is the important part for treating the
-                media as an indefinite/live source.
-            */
-
-            try {
-
-                mediaSource.duration =
-                    Infinity;
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not set MediaSource duration to Infinity:",
-                    error
-                );
-            }
-
-
-            await appendBuffer(
-                audioData
-            );
-
-
-            if (
-                token !== radioLoadToken
-            ) {
-
-                throw new Error(
-                    "Radio load was superseded."
-                );
-            }
-
-
-            /*
-                Set the live duration again after the data
-                has been appended.
-            */
-
-            try {
-
-                if (
-                    mediaSource.readyState ===
-                    "open"
-                ) {
-
-                    mediaSource.duration =
-                        Infinity;
-                }
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not maintain infinite MediaSource duration:",
-                    error
-                );
-            }
-
-
-            /*
-                Wait until the audio element knows that the
-                MediaSource is attached.
-            */
-
-            if (
-                musicAudio.readyState < 1
-            ) {
-
-                await new Promise(
-                    resolve => {
-
-                        const onLoadedMetadata =
-                            () => {
-
-                                musicAudio.removeEventListener(
-                                    "loadedmetadata",
-                                    onLoadedMetadata
-                                );
-
-                                resolve();
-                            };
-
-
-                        musicAudio.addEventListener(
-                            "loadedmetadata",
-                            onLoadedMetadata
-                        );
-
-
-                        setTimeout(
-                            () => {
-
-                                musicAudio.removeEventListener(
-                                    "loadedmetadata",
-                                    onLoadedMetadata
-                                );
-
-                                resolve();
-
-                            },
-                            3000
-                        );
-                    }
-                );
-            }
-
-
-            /*
-                The source starts at 0 because every MSE
-                MediaSource represents one current song.
-
-                Seeking inside the buffered song is therefore
-                safe.
-            */
-
-            try {
-
-                musicAudio.currentTime =
-                    Math.max(
-                        0,
-                        offset
-                    );
-
-            } catch (error) {
-
-                console.warn(
-                    "MSE seek failed:",
-                    error
-                );
-            }
-
-
-            return true;
-        }
-
-
-        /* =========================================================
-           DIRECT MP3 FALLBACK
-        ========================================================= */
-
-        async function loadSongDirectly(
-            songName,
-            offset
-        ) {
-
-            /*
-                Destroy any previous MediaSource first.
-            */
-
-            try {
-
-                if (
-                    musicAudio.srcObject
-                ) {
-
-                    musicAudio.srcObject =
-                        null;
-                }
-
-            } catch {}
-
-
-            destroyMediaSource();
-
-
-            const url =
-                getSongURL(
-                    songName
-                );
-
-
-            const absoluteURL =
-                new URL(
-                    url,
-                    location.href
-                ).href;
-
-
-            if (
-                musicAudio.src !==
-                absoluteURL
-            ) {
-
-                musicAudio.src =
-                    url;
-
-                musicAudio.load();
-            }
-
-
-            if (
-                musicAudio.readyState < 1
-            ) {
-
-                await new Promise(
-                    (resolve, reject) => {
-
-                        let finished = false;
-
-
-                        const cleanup =
-                            () => {
-
-                                musicAudio.removeEventListener(
-                                    "loadedmetadata",
-                                    onMetadata
-                                );
-
-                                musicAudio.removeEventListener(
-                                    "error",
-                                    onError
-                                );
-                            };
-
-
-                        const onMetadata =
-                            () => {
-
-                                if (finished) {
-                                    return;
-                                }
-
-                                finished = true;
-
-                                cleanup();
-
-                                resolve();
-                            };
-
-
-                        const onError =
-                            () => {
-
-                                if (finished) {
-                                    return;
-                                }
-
-                                finished = true;
-
-                                cleanup();
-
-                                reject(
-                                    new Error(
-                                        "Could not load MP3 metadata."
-                                    )
-                                );
-                            };
-
-
-                        musicAudio.addEventListener(
-                            "loadedmetadata",
-                            onMetadata
-                        );
-
-                        musicAudio.addEventListener(
-                            "error",
-                            onError
-                        );
-                    }
-                );
-            }
-
-
-            try {
-
-                musicAudio.currentTime =
-                    Math.max(
-                        0,
-                        offset
-                    );
-
-            } catch (error) {
-
-                console.warn(
-                    "Direct MP3 seek failed:",
-                    error
-                );
-            }
-
-
-            return true;
-        }
-
-
-        /* =========================================================
-           LOAD SONG
-        ========================================================= */
-
-        async function loadCurrentSong(
-            songName,
-            offset
-        ) {
-
-            /*
-                Prefer Managed Media Source.
-
-                If that path isn't available or fails,
-                automatically fall back to the normal MP3
-                element.
-            */
-
-            const managedSupported =
-                canUseManagedMediaSource();
-
-
-            if (managedSupported) {
-
-                try {
-
-                    console.log(
-                        "Attempting Managed Media Source playback..."
-                    );
-
-
-                    await loadSongThroughMSE(
-                        songName,
-                        offset
-                    );
-
-
-                    console.log(
-                        "Managed Media Source playback active."
-                    );
-
-
-                    return "mse";
-
-                } catch (error) {
-
-                    console.warn(
-                        "Managed Media Source failed. Falling back to direct MP3:",
-                        error
-                    );
-
-
-                    try {
-
-                        if (
-                            musicAudio.srcObject
-                        ) {
-
-                            musicAudio.srcObject =
-                                null;
-                        }
-
-                    } catch {}
-
-
-                    destroyMediaSource();
-                }
-            }
-
-
-            await loadSongDirectly(
-                songName,
-                offset
-            );
-
-
-            console.log(
-                "Direct MP3 playback active."
-            );
-
-
-            return "direct";
-        }
 
 
         /* =========================================================
@@ -1727,17 +754,18 @@
 
         function updateLiveMediaSession() {
 
-            if (
-                !("mediaSession" in navigator)
-            ) {
+            if (!("mediaSession" in navigator)) {
                 return;
             }
 
 
+            /*
+                The Lock Screen title is always the song currently
+                playing on the live radio.
+            */
+
             const currentSong =
-                SONG_NAMES[
-                    currentSongIndex
-                ] ||
+                SONG_NAMES[currentSongIndex] ||
                 "Christmas Countdown Radio";
 
 
@@ -1745,28 +773,14 @@
 
                 navigator.mediaSession.metadata =
                     new MediaMetadata({
-                        title:
-                            currentSong,
-
-                        artist:
-                            "Christmas Countdown Radio",
-
-                        album:
-                            "Christmas Countdown",
-
+                        title: currentSong,
+                        artist: "Christmas Countdown Radio",
+                        album: "Christmas Countdown",
                         artwork: [
                             {
-                                src:
-                                    new URL(
-                                        "./favicon.ico",
-                                        location.href
-                                    ).href,
-
-                                sizes:
-                                    "512x512",
-
-                                type:
-                                    "image/x-icon"
+                                src: "./favicon.ico",
+                                sizes: "512x512",
+                                type: "image/x-icon"
                             }
                         ]
                     });
@@ -1781,67 +795,26 @@
 
 
             /*
-                For the MSE live path, use an indefinite
-                duration.
+                Tell the operating system that this is a
+                LIVE / INDEFINITE broadcast.
 
-                Some Safari versions may still display a
-                timeline depending on the underlying media
-                implementation. The MediaSource Infinity
-                duration is the browser-supported mechanism
-                for indicating indefinite media.
+                Infinity means there is no finite duration.
+                This prevents the Media Session from being
+                treated like a normal song with a known end.
             */
 
             try {
 
-                if (
-                    Number.isFinite(
-                        musicAudio.duration
-                    )
-                ) {
-
-                    /*
-                        Do not lie about the MP3 duration in
-                        the fallback path.
-                    */
-
-                    navigator.mediaSession.setPositionState({
-                        duration:
-                            musicAudio.duration,
-
-                        playbackRate:
-                            musicAudio.playbackRate || 1,
-
-                        position:
-                            Math.min(
-                                Math.max(
-                                    0,
-                                    musicAudio.currentTime || 0
-                                ),
-                                Math.max(
-                                    0.001,
-                                    musicAudio.duration
-                                )
-                            )
-                    });
-
-                } else {
-
-                    navigator.mediaSession.setPositionState({
-                        duration:
-                            Infinity,
-
-                        playbackRate:
-                            musicAudio.playbackRate || 1,
-
-                        position:
-                            0
-                    });
-                }
+                navigator.mediaSession.setPositionState({
+                    duration: Infinity,
+                    playbackRate: 1,
+                    position: 0
+                });
 
             } catch (error) {
 
                 console.warn(
-                    "Could not update Media Session position:",
+                    "Could not set live Media Session position:",
                     error
                 );
             }
@@ -1850,9 +823,7 @@
 
         function setupMediaSession() {
 
-            if (
-                !("mediaSession" in navigator)
-            ) {
+            if (!("mediaSession" in navigator)) {
                 return;
             }
 
@@ -1871,6 +842,7 @@
                     async () => {
 
                         await resumeLive();
+
                     }
                 );
 
@@ -1888,6 +860,7 @@
                     () => {
 
                         pauseRadio();
+
                     }
                 );
 
@@ -1895,14 +868,25 @@
 
 
             /*
-                Do not allow lock-screen track skipping.
+                BLOCK ALL TRACK SKIPPING
             */
 
             const blockedActions = [
                 "nexttrack",
                 "previoustrack",
+
+                /*
+                    iOS can expose these as the
+                    15-second backward/forward buttons.
+                */
+
                 "seekbackward",
                 "seekforward",
+
+                /*
+                    Blocks direct seeking.
+                */
+
                 "seekto"
             ];
 
@@ -1915,11 +899,33 @@
 
                     navigator.mediaSession.setActionHandler(
                         action,
-                        () => {}
+                        () => {
+
+                            /*
+                                Intentionally empty.
+
+                                The Lock Screen cannot move
+                                the live broadcast backward,
+                                forward, or to another track.
+                            */
+
+                        }
                     );
 
                 } catch {}
             }
+
+
+            /*
+                Mark the session as live playback.
+            */
+
+            try {
+
+                navigator.mediaSession.playbackState =
+                    "none";
+
+            } catch {}
         }
 
 
@@ -1930,9 +936,7 @@
            HELPERS
         ========================================================= */
 
-        function getSongFilename(
-            songName
-        ) {
+        function getSongFilename(songName) {
 
             return (
                 PLAYLIST_PREFIX +
@@ -1942,32 +946,22 @@
         }
 
 
-        function getSongURL(
-            songName
-        ) {
+        function getSongURL(songName) {
 
             return (
                 SONG_FOLDER +
                 encodeURIComponent(
-                    getSongFilename(
-                        songName
-                    )
+                    getSongFilename(songName)
                 )
             );
         }
 
 
-        function formatTime(
-            seconds
-        ) {
+        function formatTime(seconds) {
 
-            if (
-                !Number.isFinite(seconds)
-            ) {
-
+            if (!Number.isFinite(seconds)) {
                 return "0:00";
             }
-
 
             seconds =
                 Math.max(
@@ -1975,21 +969,13 @@
                     Math.floor(seconds)
                 );
 
-
             const minutes =
-                Math.floor(
-                    seconds / 60
-                );
-
+                Math.floor(seconds / 60);
 
             const secs =
                 String(
                     seconds % 60
-                ).padStart(
-                    2,
-                    "0"
-                );
-
+                ).padStart(2, "0");
 
             return `${minutes}:${secs}`;
         }
@@ -2003,7 +989,6 @@
 
             const now =
                 new Date();
-
 
             let christmas =
                 new Date(
@@ -2051,28 +1036,18 @@
                     totalSeconds / 86400
                 );
 
-
             const hours =
                 Math.floor(
-                    (
-                        totalSeconds %
-                        86400
-                    ) / 3600
+                    (totalSeconds % 86400) / 3600
                 );
-
 
             const minutes =
                 Math.floor(
-                    (
-                        totalSeconds %
-                        3600
-                    ) / 60
+                    (totalSeconds % 3600) / 60
                 );
 
-
             const seconds =
-                totalSeconds %
-                60;
+                totalSeconds % 60;
 
 
             countdownElement.textContent =
@@ -2081,7 +1056,6 @@
 
 
         updateCountdown();
-
 
         setInterval(
             updateCountdown,
@@ -2105,54 +1079,43 @@
             ) {
 
                 const snowflake =
-                    document.createElement(
-                        "div"
-                    );
-
+                    document.createElement("div");
 
                 snowflake.className =
                     "snowflake";
-
 
                 snowflake.textContent =
                     Math.random() > 0.5
                         ? "❄"
                         : "•";
 
-
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
-
 
                 snowflake.style.setProperty(
                     "--size",
                     `${8 + Math.random() * 14}px`
                 );
 
-
                 snowflake.style.setProperty(
                     "--opacity",
                     `${0.25 + Math.random() * 0.65}`
                 );
-
 
                 snowflake.style.setProperty(
                     "--duration",
                     `${7 + Math.random() * 12}s`
                 );
 
-
                 snowflake.style.setProperty(
                     "--drift",
                     `${2 + Math.random() * 4}s`
                 );
 
-
                 snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * 15}s`
                 );
-
 
                 container.appendChild(
                     snowflake
@@ -2162,25 +1125,17 @@
 
 
         createSnowflakes(
-            document.getElementById(
-                "snowFar"
-            ),
+            document.getElementById("snowFar"),
             20
         );
 
-
         createSnowflakes(
-            document.getElementById(
-                "snowMid"
-            ),
+            document.getElementById("snowMid"),
             15
         );
 
-
         createSnowflakes(
-            document.getElementById(
-                "snowNear"
-            ),
+            document.getElementById("snowNear"),
             10
         );
 
@@ -2197,15 +1152,12 @@
                     await fetch(
                         DURATION_MANIFEST,
                         {
-                            cache:
-                                "no-store"
+                            cache: "no-store"
                         }
                     );
 
 
-                if (
-                    !response.ok
-                ) {
+                if (!response.ok) {
 
                     throw new Error(
                         "Duration manifest unavailable"
@@ -2219,9 +1171,7 @@
 
                 if (
                     !data ||
-                    !Array.isArray(
-                        data.songs
-                    )
+                    !Array.isArray(data.songs)
                 ) {
 
                     throw new Error(
@@ -2239,7 +1189,6 @@
                     error
                 );
 
-
                 return null;
             }
         }
@@ -2249,34 +1198,23 @@
            FALLBACK METADATA READER
         ========================================================= */
 
-        function getAudioDuration(
-            url
-        ) {
+        function getAudioDuration(url) {
 
             return new Promise(
-                (
-                    resolve,
-                    reject
-                ) => {
+                (resolve, reject) => {
 
                     const audio =
-                        document.createElement(
-                            "audio"
-                        );
+                        document.createElement("audio");
 
-
-                    let finished =
-                        false;
+                    let finished = false;
 
 
                     const cleanup =
                         () => {
 
-                            audio.removeAttribute(
-                                "src"
-                            );
-
+                            audio.removeAttribute("src");
                             audio.load();
+
                         };
 
 
@@ -2284,19 +1222,13 @@
                         setTimeout(
                             () => {
 
-                                if (
-                                    finished
-                                ) {
+                                if (finished) {
                                     return;
                                 }
 
-
-                                finished =
-                                    true;
-
+                                finished = true;
 
                                 cleanup();
-
 
                                 reject(
                                     new Error(
@@ -2317,9 +1249,7 @@
                         "loadedmetadata",
                         () => {
 
-                            if (
-                                finished
-                            ) {
+                            if (finished) {
                                 return;
                             }
 
@@ -2329,23 +1259,17 @@
 
 
                             if (
-                                Number.isFinite(
-                                    duration
-                                ) &&
+                                Number.isFinite(duration) &&
                                 duration > 0
                             ) {
 
-                                finished =
-                                    true;
-
+                                finished = true;
 
                                 clearTimeout(
                                     timeout
                                 );
 
-
                                 cleanup();
-
 
                                 resolve(
                                     duration
@@ -2353,17 +1277,13 @@
 
                             } else {
 
-                                finished =
-                                    true;
-
+                                finished = true;
 
                                 clearTimeout(
                                     timeout
                                 );
 
-
                                 cleanup();
-
 
                                 reject(
                                     new Error(
@@ -2374,8 +1294,7 @@
 
                         },
                         {
-                            once:
-                                true
+                            once: true
                         }
                     );
 
@@ -2384,24 +1303,17 @@
                         "error",
                         () => {
 
-                            if (
-                                finished
-                            ) {
+                            if (finished) {
                                 return;
                             }
 
-
-                            finished =
-                                true;
-
+                            finished = true;
 
                             clearTimeout(
                                 timeout
                             );
 
-
                             cleanup();
-
 
                             reject(
                                 new Error(
@@ -2411,14 +1323,12 @@
 
                         },
                         {
-                            once:
-                                true
+                            once: true
                         }
                     );
 
 
-                    audio.src =
-                        url;
+                    audio.src = url;
                 }
             );
         }
@@ -2430,18 +1340,12 @@
 
         async function loadDurations() {
 
-            if (
-                metadataLoaded
-            ) {
-
+            if (metadataLoaded) {
                 return;
             }
 
 
-            if (
-                metadataLoadingPromise
-            ) {
-
+            if (metadataLoadingPromise) {
                 return metadataLoadingPromise;
             }
 
@@ -2463,9 +1367,7 @@
                         First use durations.json.
                     */
 
-                    if (
-                        manifest
-                    ) {
+                    if (manifest) {
 
                         for (
                             let i = 0;
@@ -2481,8 +1383,7 @@
                                 manifest.find(
                                     item =>
                                         item &&
-                                        item.name ===
-                                            songName
+                                        item.name === songName
                                 );
 
 
@@ -2508,8 +1409,8 @@
 
 
                     /*
-                        Read MP3 metadata only when the
-                        manifest does not contain a value.
+                        Fallback:
+                        Read MP3 metadata only when needed.
                     */
 
                     for (
@@ -2524,7 +1425,6 @@
                             ) &&
                             durations[i] > 0
                         ) {
-
                             continue;
                         }
 
@@ -2538,18 +1438,14 @@
                                     )
                                 );
 
-                        } catch (
-                            error
-                        ) {
+                        } catch (error) {
 
                             console.error(
                                 `Could not get duration for ${SONG_NAMES[i]}`,
                                 error
                             );
 
-
-                            durations[i] =
-                                0;
+                            durations[i] = 0;
                         }
                     }
 
@@ -2573,8 +1469,7 @@
 
 
                     if (
-                        totalPlaylistDuration <=
-                        0
+                        totalPlaylistDuration <= 0
                     ) {
 
                         throw new Error(
@@ -2583,8 +1478,7 @@
                     }
 
 
-                    metadataLoaded =
-                        true;
+                    metadataLoaded = true;
 
 
                     console.log(
@@ -2595,15 +1489,13 @@
                     );
 
                 })()
-                .catch(
-                    error => {
+                .catch(error => {
 
-                        metadataLoadingPromise =
-                            null;
+                    metadataLoadingPromise =
+                        null;
 
-                        throw error;
-                    }
-                );
+                    throw error;
+                });
 
 
             return metadataLoadingPromise;
@@ -2622,11 +1514,8 @@
             ) {
 
                 return {
-                    index:
-                        0,
-
-                    offset:
-                        0
+                    index: 0,
+                    offset: 0
                 };
             }
 
@@ -2643,15 +1532,16 @@
 
 
             /*
-                Loop the entire playlist forever.
+                The playlist loops forever.
+
+                Modulo keeps the radio synchronized even when
+                RADIO_START is months or years in the past.
             */
 
             elapsed =
                 (
-                    (
-                        elapsed %
-                        totalPlaylistDuration
-                    ) +
+                    elapsed %
+                    totalPlaylistDuration +
                     totalPlaylistDuration
                 ) %
                 totalPlaylistDuration;
@@ -2668,20 +1558,16 @@
             ) {
 
                 const duration =
-                    durations[i] ||
-                    0;
+                    durations[i] || 0;
 
 
                 if (
                     elapsed <
-                    accumulated +
-                    duration
+                    accumulated + duration
                 ) {
 
                     return {
-                        index:
-                            i,
-
+                        index: i,
                         offset:
                             elapsed -
                             accumulated
@@ -2689,17 +1575,13 @@
                 }
 
 
-                accumulated +=
-                    duration;
+                accumulated += duration;
             }
 
 
             return {
-                index:
-                    0,
-
-                offset:
-                    0
+                index: 0,
+                offset: 0
             };
         }
 
@@ -2708,14 +1590,11 @@
            DISPLAY CURRENT SONG
         ========================================================= */
 
-        function updateSongDisplay(
-            index
-        ) {
+        function updateSongDisplay(index) {
 
             if (
                 index >= 0 &&
-                index <
-                    SONG_NAMES.length
+                index < SONG_NAMES.length
             ) {
 
                 songNameElement.textContent =
@@ -2730,272 +1609,227 @@
 
         async function playLive() {
 
-            /*
-                Increment the token so an older asynchronous
-                load cannot take control of the player after
-                a newer load has started.
-            */
+            try {
 
-            const token =
-                ++radioLoadToken;
+                await loadDurations();
 
 
-            /*
-                If another playLive call is already running,
-                wait for it to finish before continuing.
-            */
+                const position =
+                    findCurrentSong();
 
-            if (
-                radioPlayPromise
-            ) {
+
+                currentSongIndex =
+                    position.index;
+
+                currentSongOffset =
+                    position.offset;
+
+
+                updateSongDisplay(
+                    currentSongIndex
+                );
+
+
+                /*
+                    Update Lock Screen immediately so
+                    the correct song is shown.
+                */
+
+                updateLiveMediaSession();
+
+
+                const url =
+                    getSongURL(
+                        SONG_NAMES[
+                            currentSongIndex
+                        ]
+                    );
+
+
+                const absoluteURL =
+                    new URL(
+                        url,
+                        location.href
+                    ).href;
+
+
+                if (
+                    musicAudio.src !==
+                    absoluteURL
+                ) {
+
+                    musicAudio.src =
+                        url;
+
+                    musicAudio.load();
+                }
+
+
+                /*
+                    Wait for metadata before seeking.
+                */
+
+                if (
+                    musicAudio.readyState < 1
+                ) {
+
+                    await new Promise(
+                        resolve => {
+
+                            const onMetadata =
+                                () => {
+
+                                    musicAudio.removeEventListener(
+                                        "loadedmetadata",
+                                        onMetadata
+                                    );
+
+                                    resolve();
+                                };
+
+
+                            musicAudio.addEventListener(
+                                "loadedmetadata",
+                                onMetadata
+                            );
+                        }
+                    );
+                }
+
+
+                /*
+                    Recalculate because loading the audio
+                    may have taken some time.
+                */
+
+                const targetOffset =
+                    findCurrentSong();
+
+
+                if (
+                    targetOffset.index !==
+                    currentSongIndex
+                ) {
+
+                    currentSongIndex =
+                        targetOffset.index;
+
+                    currentSongOffset =
+                        targetOffset.offset;
+
+
+                    updateSongDisplay(
+                        currentSongIndex
+                    );
+
+
+                    musicAudio.src =
+                        getSongURL(
+                            SONG_NAMES[
+                                currentSongIndex
+                            ]
+                        );
+
+
+                    musicAudio.load();
+
+
+                    await new Promise(
+                        resolve => {
+
+                            const onMetadata =
+                                () => {
+
+                                    musicAudio.removeEventListener(
+                                        "loadedmetadata",
+                                        onMetadata
+                                    );
+
+                                    resolve();
+                                };
+
+
+                            musicAudio.addEventListener(
+                                "loadedmetadata",
+                                onMetadata
+                            );
+                        }
+                    );
+
+
+                    /*
+                        The song changed while loading,
+                        so refresh Lock Screen title.
+                    */
+
+                    updateLiveMediaSession();
+
+                } else {
+
+                    currentSongOffset =
+                        targetOffset.offset;
+                }
+
 
                 try {
-                    await radioPlayPromise;
-                } catch {}
-            }
+
+                    musicAudio.currentTime =
+                        currentSongOffset;
+
+                } catch (error) {
+
+                    console.warn(
+                        "Could not seek immediately:",
+                        error
+                    );
+                }
 
 
-            const operation =
-                (async () => {
+                await musicAudio.play();
+
+
+                radioPlaying = true;
+
+
+                updatePlayButton();
+
+
+                lastSyncTime =
+                    Date.now();
+
+
+                /*
+                    Keep the OS session marked as live.
+                */
+
+                updateLiveMediaSession();
+
+
+                if ("mediaSession" in navigator) {
 
                     try {
 
-                        await loadDurations();
+                        navigator.mediaSession.playbackState =
+                            "playing";
 
-
-                        if (
-                            token !==
-                            radioLoadToken
-                        ) {
-
-                            return;
-                        }
-
-
-                        /*
-                            Determine the actual live position
-                            immediately before loading.
-                        */
-
-                        let live =
-                            findCurrentSong();
-
-
-                        currentSongIndex =
-                            live.index;
-
-
-                        currentSongOffset =
-                            live.offset;
-
-
-                        updateSongDisplay(
-                            currentSongIndex
-                        );
-
-
-                        updateLiveMediaSession();
-
-
-                        /*
-                            Load through Managed Media Source
-                            when possible.
-                        */
-
-                        let playbackMode =
-                            await loadCurrentSong(
-                                SONG_NAMES[
-                                    currentSongIndex
-                                ],
-                                currentSongOffset
-                            );
-
-
-                        if (
-                            token !==
-                            radioLoadToken
-                        ) {
-
-                            return;
-                        }
-
-
-                        /*
-                            Loading takes time.
-
-                            Recalculate the live position once
-                            more before starting playback.
-                        */
-
-                        live =
-                            findCurrentSong();
-
-
-                        if (
-                            live.index !==
-                            currentSongIndex
-                        ) {
-
-                            currentSongIndex =
-                                live.index;
-
-                            currentSongOffset =
-                                live.offset;
-
-
-                            updateSongDisplay(
-                                currentSongIndex
-                            );
-
-
-                            playbackMode =
-                                await loadCurrentSong(
-                                    SONG_NAMES[
-                                        currentSongIndex
-                                    ],
-                                    currentSongOffset
-                                );
-
-                        } else {
-
-                            currentSongOffset =
-                                live.offset;
-
-
-                            /*
-                                The MSE source begins at zero
-                                for the current song, so seeking
-                                again here is safe.
-                            */
-
-                            try {
-
-                                musicAudio.currentTime =
-                                    Math.max(
-                                        0,
-                                        live.offset
-                                    );
-
-                            } catch {}
-                        }
-
-
-                        if (
-                            token !==
-                            radioLoadToken
-                        ) {
-
-                            return;
-                        }
-
-
-                        await musicAudio.play();
-
-
-                        if (
-                            token !==
-                            radioLoadToken
-                        ) {
-
-                            return;
-                        }
-
-
-                        radioPlaying =
-                            true;
-
-
-                        updatePlayButton();
-
-
-                        lastSyncTime =
-                            Date.now();
-
-
-                        updateLiveMediaSession();
-
-
-                        if (
-                            "mediaSession" in
-                            navigator
-                        ) {
-
-                            try {
-
-                                navigator.mediaSession.playbackState =
-                                    "playing";
-
-                            } catch {}
-                        }
-
-
-                        console.log(
-                            "Radio playing:",
-                            SONG_NAMES[
-                                currentSongIndex
-                            ],
-                            "| offset:",
-                            currentSongOffset,
-                            "| mode:",
-                            playbackMode
-                        );
-
-                    } catch (
-                        error
-                    ) {
-
-                        /*
-                            Ignore an old operation that was
-                            deliberately superseded.
-                        */
-
-                        if (
-                            token !==
-                            radioLoadToken
-                        ) {
-
-                            return;
-                        }
-
-
-                        console.error(
-                            "Could not start live radio:",
-                            error
-                        );
-
-
-                        radioPlaying =
-                            false;
-
-
-                        updatePlayButton();
-
-
-                        songNameElement.textContent =
-                            "Tap Start Live Radio to begin";
-                    }
-
-                })();
-
-
-            radioPlayPromise =
-                operation;
-
-
-            try {
-
-                await operation;
-
-            } finally {
-
-                if (
-                    radioPlayPromise ===
-                    operation
-                ) {
-
-                    radioPlayPromise =
-                        null;
+                    } catch {}
                 }
+
+            } catch (error) {
+
+                console.error(
+                    "Could not start live radio:",
+                    error
+                );
+
+
+                radioPlaying = false;
+
+                updatePlayButton();
+
+
+                songNameElement.textContent =
+                    "Tap Start Live Radio to begin";
             }
         }
 
@@ -3006,33 +1840,15 @@
 
         function pauseRadio() {
 
-            /*
-                Invalidate any in-progress asynchronous load.
-            */
-
-            radioLoadToken++;
-
-
             musicAudio.pause();
-
             speechAudio.pause();
 
-
-            radioPlaying =
-                false;
-
-
-            speechStarted =
-                false;
-
+            radioPlaying = false;
 
             updatePlayButton();
 
 
-            if (
-                "mediaSession" in
-                navigator
-            ) {
+            if ("mediaSession" in navigator) {
 
                 try {
 
@@ -3051,16 +1867,14 @@
         async function resumeLive() {
 
             /*
-                Resume always jumps to the actual current
-                live position instead of continuing from the
-                old song position.
+                Never continue from the old position.
+
+                Recalculate where the LIVE broadcast is NOW.
             */
 
             speechAudio.pause();
 
-            speechStarted =
-                false;
-
+            speechStarted = false;
 
             await playLive();
         }
@@ -3072,13 +1886,10 @@
 
         function updatePlayButton() {
 
-            if (
-                radioPlaying
-            ) {
+            if (radioPlaying) {
 
                 playButton.textContent =
-                    "⏸ Pause Radio";
-
+                    "⏸ Pause";
 
                 playButton.classList.remove(
                     "paused"
@@ -3087,8 +1898,7 @@
             } else {
 
                 playButton.textContent =
-                    "▶️ Resume Live Radio";
-
+                    "▶️ Play";
 
                 playButton.classList.add(
                     "paused"
@@ -3101,9 +1911,7 @@
             "click",
             async () => {
 
-                if (
-                    radioPlaying
-                ) {
+                if (radioPlaying) {
 
                     pauseRadio();
 
@@ -3123,19 +1931,14 @@
             "ended",
             async () => {
 
-                if (
-                    !radioPlaying
-                ) {
-
+                if (!radioPlaying) {
                     return;
                 }
 
 
                 /*
-                    Never simply advance one track.
-
-                    Recalculate the actual live position so
-                    the radio remains synchronized.
+                    Recalculate actual live position instead
+                    of simply advancing one track.
                 */
 
                 await playLive();
@@ -3149,12 +1952,9 @@
 
         musicAudio.addEventListener(
             "error",
-            () => {
+            async () => {
 
-                if (
-                    !radioPlaying
-                ) {
-
+                if (!radioPlaying) {
                     return;
                 }
 
@@ -3167,80 +1967,13 @@
                 setTimeout(
                     async () => {
 
-                        if (
-                            radioPlaying
-                        ) {
-
+                        if (radioPlaying) {
                             await playLive();
                         }
 
                     },
                     1000
                 );
-            }
-        );
-
-
-        /* =========================================================
-           MEDIA EVENTS
-        ========================================================= */
-
-        musicAudio.addEventListener(
-            "play",
-            () => {
-
-                if (
-                    !radioPlaying
-                ) {
-
-                    radioPlaying =
-                        true;
-
-                    updatePlayButton();
-                }
-
-
-                if (
-                    "mediaSession" in
-                    navigator
-                ) {
-
-                    try {
-
-                        navigator.mediaSession.playbackState =
-                            "playing";
-
-                    } catch {}
-                }
-            }
-        );
-
-
-        musicAudio.addEventListener(
-            "pause",
-            () => {
-
-                /*
-                    Do not force radioPlaying=false here during
-                    an internal source replacement.
-
-                    The application controls the actual radio
-                    state.
-                */
-
-                if (
-                    "mediaSession" in
-                    navigator &&
-                    !radioPlaying
-                ) {
-
-                    try {
-
-                        navigator.mediaSession.playbackState =
-                            "paused";
-
-                    } catch {}
-                }
             }
         );
 
@@ -3257,15 +1990,11 @@
                     document.visibilityState !==
                     "visible"
                 ) {
-
                     return;
                 }
 
 
-                if (
-                    !radioPlaying
-                ) {
-
+                if (!radioPlaying) {
                     return;
                 }
 
@@ -3279,7 +2008,6 @@
                     lastSyncTime <
                     3000
                 ) {
-
                     return;
                 }
 
@@ -3293,11 +2021,6 @@
                     const live =
                         findCurrentSong();
 
-
-                    /*
-                        Different song means we must rebuild
-                        the current source.
-                    */
 
                     if (
                         live.index !==
@@ -3313,7 +2036,6 @@
                     const expected =
                         live.offset;
 
-
                     const actual =
                         musicAudio.currentTime;
 
@@ -3326,21 +2048,17 @@
                     ) {
 
                         await playLive();
-
-                        return;
                     }
 
 
                     /*
-                        Refresh OS-level metadata after returning
-                        from background/Lock Screen.
+                        Refresh the current song title
+                        on the Lock Screen.
                     */
 
                     updateLiveMediaSession();
 
-                } catch (
-                    error
-                ) {
+                } catch (error) {
 
                     console.warn(
                         "Resync failed:",
@@ -3358,10 +2076,7 @@
         setInterval(
             async () => {
 
-                if (
-                    !radioPlaying
-                ) {
-
+                if (!radioPlaying) {
                     return;
                 }
 
@@ -3371,11 +2086,6 @@
                     const live =
                         findCurrentSong();
 
-
-                    /*
-                        Song changed according to the master
-                        clock.
-                    */
 
                     if (
                         live.index !==
@@ -3388,44 +2098,19 @@
                     }
 
 
-                    const actual =
-                        musicAudio.currentTime;
-
-
                     const drift =
                         Math.abs(
-                            actual -
+                            musicAudio.currentTime -
                             live.offset
                         );
-
-
-                    /*
-                        A small drift can simply be corrected
-                        with a seek.
-
-                        A large drift rebuilds the live source.
-                    */
-
-                    if (
-                        drift > 15
-                    ) {
-
-                        await playLive();
-
-                        return;
-                    }
 
 
                     if (
                         drift > 5
                     ) {
 
-                        try {
-
-                            musicAudio.currentTime =
-                                live.offset;
-
-                        } catch {}
+                        musicAudio.currentTime =
+                            live.offset;
                     }
 
 
@@ -3433,11 +2118,16 @@
                         Date.now();
 
 
+                    /*
+                        Keep the OS informed that this is
+                        an indefinite live broadcast.
+
+                        No finite song duration is supplied.
+                    */
+
                     updateLiveMediaSession();
 
-                } catch (
-                    error
-                ) {
+                } catch (error) {
 
                     console.warn(
                         "Periodic sync failed:",
@@ -3464,7 +2154,9 @@
                     "Home",
                     "End",
                     "MediaTrackNext",
-                    "MediaTrackPrevious"
+                    "MediaTrackPrevious",
+                    "MediaFastForward",
+                    "MediaRewind"
                 ];
 
 
@@ -3494,55 +2186,6 @@
 
 
         /* =========================================================
-           PREVENT MANUAL SEEK
-        ========================================================= */
-
-        /*
-            If the browser exposes a media timeline, force the
-            playback position back to the live position whenever
-            the user attempts to seek away from it.
-        */
-
-        musicAudio.addEventListener(
-            "seeking",
-            () => {
-
-                if (
-                    !radioPlaying ||
-                    !metadataLoaded
-                ) {
-
-                    return;
-                }
-
-
-                const live =
-                    findCurrentSong();
-
-
-                /*
-                    Do not fight a seek during the initial load.
-                */
-
-                if (
-                    Math.abs(
-                        musicAudio.currentTime -
-                        live.offset
-                    ) > 8
-                ) {
-
-                    try {
-
-                        musicAudio.currentTime =
-                            live.offset;
-
-                    } catch {}
-                }
-            }
-        );
-
-
-        /* =========================================================
            INITIAL STATE
         ========================================================= */
 
@@ -3558,38 +2201,39 @@
         */
 
         loadDurations()
-            .then(
-                () => {
+            .then(() => {
 
-                    const live =
-                        findCurrentSong();
-
-
-                    updateSongDisplay(
-                        live.index
-                    );
+                const live =
+                    findCurrentSong();
 
 
-                    currentSongIndex =
-                        live.index;
+                currentSongIndex =
+                    live.index;
+
+                currentSongOffset =
+                    live.offset;
 
 
-                    currentSongOffset =
-                        live.offset;
+                updateSongDisplay(
+                    live.index
+                );
 
 
-                    updateLiveMediaSession();
-                }
-            )
-            .catch(
-                error => {
+                /*
+                    Set the correct current song on the
+                    Lock Screen even before playback starts.
+                */
 
-                    console.error(
-                        "Radio metadata initialization failed:",
-                        error
-                    );
-                }
-            );
+                updateLiveMediaSession();
+
+            })
+            .catch(error => {
+
+                console.error(
+                    "Radio metadata initialization failed:",
+                    error
+                );
+            });
 
 
         /* =========================================================
@@ -3600,58 +2244,10 @@
             "beforeunload",
             () => {
 
-                radioLoadToken++;
-
-
                 musicAudio.pause();
-
                 speechAudio.pause();
 
-
-                try {
-
-                    if (
-                        musicAudio.srcObject
-                    ) {
-
-                        musicAudio.srcObject =
-                            null;
-                    }
-
-                } catch {}
-
-
-                destroyMediaSource();
             }
-        );
-
-
-        /* =========================================================
-           DEBUG INFORMATION
-        ========================================================= */
-
-        console.log(
-            "Christmas Radio initialized."
-        );
-
-
-        console.log(
-            "Managed Media Source available:",
-            typeof window.ManagedMediaSource ===
-                "function"
-        );
-
-
-        console.log(
-            "MediaSource available:",
-            typeof window.MediaSource ===
-                "function"
-        );
-
-
-        console.log(
-            "Supported MSE codec:",
-            getSupportedMSECodec()
         );
 
     </script>
