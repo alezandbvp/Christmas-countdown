@@ -23,7 +23,6 @@
             --green-dark: #063d25;
             --gold: #ffd76a;
             --white: #ffffff;
-
             --glass: rgba(15, 5, 10, 0.48);
             --glass-border: rgba(255, 255, 255, 0.18);
         }
@@ -331,8 +330,7 @@
 
             transition:
                 transform 0.18s ease,
-                box-shadow 0.18s ease,
-                opacity 0.18s ease;
+                box-shadow 0.18s ease;
         }
 
         #playButton:active {
@@ -667,75 +665,40 @@
         const SONG_NAMES = [
 
             "All I Want For Christmas Is You",
-
             "Baby It's Cold Outside",
-
             "Blue Christmas",
-
             "Carol Of The Bells",
-
             "Christmas (Baby Please Come Home)",
-
             "Christmas Canon",
-
             "Deck The Halls",
-
             "Do You Want To Build A Snowman",
-
             "Feliz Navidad",
-
             "Frosty The Snowman",
-
             "God Rest Ye Merry Gentlemen",
-
             "Here Comes Santa Claus",
-
             "Holly Jolly Christmas",
-
             "I Want A Hippopotamus For Christmas",
-
             "It's Beginning To Look A Lot Like Christmas",
-
             "It's The Most Wonderful Time Of The Year",
-
             "Jingle Bell Rock",
-
             "Jingle Bells",
-
             "Last Christmas",
-
             "Let It Snow! Let It Snow!",
-
             "Little Drummer Boy",
-
             "Mistletoe",
-
             "O Christmas Tree",
-
             "Rockin Around The Christmas Tree",
-
             "Rudolph The Red-Nosed Reindeer",
-
             "Santa Baby",
-
             "Santa Claus Is Comin' To Town",
-
             "Silent Night",
-
             "Sleigh Ride",
-
             "The Christmas Song",
-
             "Up On The Housetop",
-
             "We Wish You A Merry Christmas",
-
             "White Christmas",
-
             "Winter Wonderland",
-
             "Wonderful Christmastime",
-
             "You're A Mean One, Mr. Grinch"
 
         ];
@@ -778,138 +741,6 @@
         let metadataLoaded = false;
 
         let metadataLoadingPromise = null;
-
-        let lastSyncTime = 0;
-
-
-        /*
-            This stores the actual position that the audio
-            is playing at.
-
-            IMPORTANT:
-            This is NOT changed when the Lock Screen slider
-            is dragged.
-        */
-
-        let realPlaybackPosition = 0;
-
-
-        /*
-            Used only while we are correcting the visual
-            Media Session position.
-        */
-
-        let correctingSeek = false;
-
-
-        /* =========================================================
-           REAL AUDIO POSITION TRACKING
-        ========================================================= */
-
-        function rememberRealPosition() {
-
-            if (
-                correctingSeek ||
-                !radioPlaying
-            ) {
-                return;
-            }
-
-
-            const position =
-                musicAudio.currentTime;
-
-
-            if (
-                Number.isFinite(
-                    position
-                )
-            ) {
-
-                realPlaybackPosition =
-                    position;
-            }
-        }
-
-
-        musicAudio.addEventListener(
-            "timeupdate",
-            rememberRealPosition
-        );
-
-
-        /*
-            DO NOT restore currentTime here.
-
-            The audio should never be moved because of
-            a Lock Screen slider interaction.
-
-            This listener only remembers what the real
-            position was before iOS processes the seek.
-        */
-
-        musicAudio.addEventListener(
-            "seeking",
-            () => {
-
-                if (
-                    correctingSeek
-                ) {
-                    return;
-                }
-
-
-                /*
-                    If iOS changes the actual audio position
-                    internally, restore it immediately.
-
-                    This is a safety net for Safari versions
-                    that apply the seek to the HTMLAudioElement.
-                */
-
-                if (
-                    !radioPlaying
-                ) {
-                    return;
-                }
-
-
-                const target =
-                    realPlaybackPosition;
-
-
-                if (
-                    !Number.isFinite(
-                        target
-                    )
-                ) {
-                    return;
-                }
-
-
-                correctingSeek =
-                    true;
-
-
-                try {
-
-                    musicAudio.currentTime =
-                        target;
-
-                } catch {}
-
-
-                setTimeout(
-                    () => {
-
-                        correctingSeek =
-                            false;
-
-                    },
-                    100
-                );
-            }
-        );
 
 
         /* =========================================================
@@ -1695,7 +1526,6 @@
                             "Christmas Countdown",
 
                         artwork: [
-
                             {
                                 src:
                                     "./favicon.ico",
@@ -1706,7 +1536,6 @@
                                 type:
                                     "image/x-icon"
                             }
-
                         ]
 
                     });
@@ -1717,10 +1546,9 @@
             /*
                 IMPORTANT:
 
-                The Lock Screen gets the CURRENT REAL AUDIO
-                POSITION.
+                This reads the actual audio position.
 
-                We are NOT changing musicAudio.currentTime here.
+                It does NOT change musicAudio.currentTime.
             */
 
             try {
@@ -1764,6 +1592,17 @@
         }
 
 
+        /*
+            Called when the user RELEASES the Lock Screen
+            slider.
+
+            We do NOT touch the audio.
+
+            We only tell Media Session what the real
+            position is, causing the visual slider to
+            return to the real position.
+        */
+
         function restoreVisualPosition() {
 
             if (
@@ -1773,19 +1612,13 @@
             }
 
 
-            /*
-                Tell iOS what the REAL position is.
-
-                We intentionally do NOT modify the audio.
-            */
-
             updateLiveMediaSession();
 
 
             /*
-                iOS can visually keep the dragged position
-                for a short moment, so send the real state
-                again several times.
+                iOS may continue displaying the dragged
+                position for a short time, so refresh the
+                visual position a few times.
             */
 
             setTimeout(
@@ -1944,10 +1777,13 @@
             /*
                 LOCK SCREEN SLIDER
 
-                DO NOT SEEK AUDIO.
+                IMPORTANT:
+                NO AUDIO SEEKING HAPPENS HERE.
 
-                Only restore the visual Media Session
-                position to where the song actually is.
+                iOS sends "seekto" after the user releases
+                the slider.
+
+                We simply restore the visual position.
             */
 
             try {
@@ -2065,7 +1901,7 @@
 
 
                 /*
-                    Recalculate the live position AFTER
+                    Recalculate the live position after
                     the audio has loaded.
                 */
 
@@ -2129,31 +1965,17 @@
 
 
                 /*
-                    Initial live seek.
+                    This is the INITIAL live synchronization.
 
-                    This is NOT a Lock Screen seek.
-                    This is the initial synchronization
-                    when starting the radio.
+                    It is intentionally allowed because we need
+                    to start the correct song at the correct
+                    live position.
+
+                    It is NOT connected to Lock Screen seeking.
                 */
 
-                correctingSeek =
-                    true;
-
-
-                try {
-
-                    musicAudio.currentTime =
-                        currentSongOffset;
-
-                } catch {}
-
-
-                correctingSeek =
-                    false;
-
-
-                realPlaybackPosition =
-                    musicAudio.currentTime;
+                musicAudio.currentTime =
+                    currentSongOffset;
 
 
                 await musicAudio.play();
@@ -2161,14 +1983,6 @@
 
                 radioPlaying =
                     true;
-
-
-                realPlaybackPosition =
-                    musicAudio.currentTime;
-
-
-                lastSyncTime =
-                    Date.now();
 
 
                 updatePlayButton();
@@ -2243,9 +2057,8 @@
 
             speechAudio.pause();
 
-
             /*
-                Resume always jumps to the CURRENT LIVE
+                Resume always returns to the current LIVE
                 position instead of resuming an old position.
             */
 
@@ -2372,6 +2185,11 @@
                         findCurrentSong();
 
 
+                    /*
+                        If the live playlist has moved to
+                        another song, load that song.
+                    */
+
                     if (
                         live.index !==
                         currentSongIndex
@@ -2382,6 +2200,13 @@
                         return;
                     }
 
+
+                    /*
+                        Normal live drift correction.
+
+                        This is radio synchronization, NOT a
+                        Lock Screen seek.
+                    */
 
                     const actual =
                         musicAudio.currentTime;
@@ -2398,34 +2223,9 @@
                         drift > 5
                     ) {
 
-                        correctingSeek =
-                            true;
-
-
-                        try {
-
-                            musicAudio.currentTime =
-                                live.offset;
-
-                        } catch {}
-
-
-                        correctingSeek =
-                            false;
-
-
-                        realPlaybackPosition =
-                            musicAudio.currentTime;
-
-                    } else {
-
-                        realPlaybackPosition =
-                            actual;
+                        musicAudio.currentTime =
+                            live.offset;
                     }
-
-
-                    lastSyncTime =
-                        Date.now();
 
 
                     updateLiveMediaSession();
@@ -2496,9 +2296,6 @@
 
                 } else {
 
-                    realPlaybackPosition =
-                        musicAudio.currentTime;
-
                     updateLiveMediaSession();
                 }
 
@@ -2517,19 +2314,12 @@
                 const blockedKeys = [
 
                     "ArrowLeft",
-
                     "ArrowRight",
-
                     "Home",
-
                     "End",
-
                     "MediaTrackNext",
-
                     "MediaTrackPrevious",
-
                     "MediaFastForward",
-
                     "MediaRewind"
 
                 ];
