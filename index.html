@@ -41,7 +41,14 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            touch-action: none;
+
+            /* Prevent browser gesture zooming */
+            touch-action: manipulation;
+
+            /* Prevent iOS text from resizing */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+
             overscroll-behavior: none;
         }
 
@@ -293,6 +300,9 @@
             transition:
                 transform 0.18s ease,
                 box-shadow 0.18s ease;
+
+            /* Prevent browser gesture interpretation */
+            touch-action: manipulation;
         }
 
         #playButton:active {
@@ -582,6 +592,31 @@
     </audio>
 
     <script>
+        /*
+         * DOUBLE-TAP ZOOM PROTECTION
+         *
+         * iOS Safari can still interpret two fast taps
+         * as a zoom gesture. Ignore the second touchend
+         * when two taps happen within 300ms.
+         */
+        let lastTouchEnd = 0;
+
+        document.addEventListener(
+            "touchend",
+            event => {
+                const now = Date.now();
+
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+
+                lastTouchEnd = now;
+            },
+            {
+                passive: false
+            }
+        );
+
         const musicAudio = document.getElementById("musicAudio");
         const speechAudio = document.getElementById("speechAudio");
         const playButton = document.getElementById("playButton");
@@ -1000,12 +1035,6 @@
             upNextElement.textContent =
                 SONG_NAMES[next];
         }
-
-        /* =========================
-           MEDIA SESSION
-           Lock screen DOES display
-           the break.
-        ========================= */
 
         function updateLiveMediaSession() {
             if (!("mediaSession" in navigator)) return;
