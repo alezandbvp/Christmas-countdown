@@ -302,6 +302,39 @@
                 0 2px 12px rgba(0, 0, 0, 0.45);
         }
 
+        /* =========================================================
+           UP NEXT
+        ========================================================= */
+
+        .up-next-wrapper {
+            margin-top: 14px;
+            margin-bottom: 4px;
+        }
+
+        .up-next-label {
+            font-size: 0.62rem;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+
+            opacity: 0.52;
+
+            margin-bottom: 5px;
+        }
+
+        #upNext {
+            min-height: 1.3em;
+
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+
+            color: rgba(255, 255, 255, 0.78);
+
+            text-shadow:
+                0 2px 10px rgba(0, 0, 0, 0.35);
+        }
+
         #playButton {
             border: 0;
             outline: none;
@@ -531,6 +564,10 @@
                 font-size: 0.95rem;
             }
 
+            #upNext {
+                font-size: 0.8rem;
+            }
+
             #playButton {
                 font-size: 0.9rem;
                 padding: 13px 20px;
@@ -590,6 +627,18 @@
 
                 <div id="songName">
                     Loading radio...
+                </div>
+
+                <div class="up-next-wrapper">
+
+                    <div class="up-next-label">
+                        Up Next
+                    </div>
+
+                    <div id="upNext">
+                        Loading...
+                    </div>
+
                 </div>
 
             </div>
@@ -657,6 +706,13 @@
         const PLAYLIST_SUFFIX =
             " (SPOTISAVER).mp3";
 
+        /*
+            Speech happens after every 4 songs
+            on the GLOBAL radio timeline.
+        */
+
+        const SONGS_PER_SPEECH = 4;
+
 
         /* =========================================================
            SONGS
@@ -718,6 +774,11 @@
                 "songName"
             );
 
+        const upNextElement =
+            document.getElementById(
+                "upNext"
+            );
+
         const countdownElement =
             document.getElementById(
                 "countdown"
@@ -730,6 +791,8 @@
 
         let durations = [];
 
+        let speechDuration = 0;
+
         let totalPlaylistDuration = 0;
 
         let radioPlaying = false;
@@ -738,9 +801,15 @@
 
         let currentSongOffset = 0;
 
+        let currentSegmentType = "song";
+
         let metadataLoaded = false;
 
         let metadataLoadingPromise = null;
+
+        let currentTimelinePosition = 0;
+
+        let isChangingTrack = false;
 
 
         /* =========================================================
@@ -1002,67 +1071,7 @@
 
 
         /* =========================================================
-           DURATION MANIFEST
-        ========================================================= */
-
-        async function loadDurationManifest() {
-
-            try {
-
-                const response =
-                    await fetch(
-                        DURATION_MANIFEST,
-                        {
-                            cache:
-                                "no-store"
-                        }
-                    );
-
-
-                if (
-                    !response.ok
-                ) {
-
-                    throw new Error(
-                        "Duration manifest unavailable"
-                    );
-                }
-
-
-                const data =
-                    await response.json();
-
-
-                if (
-                    !data ||
-                    !Array.isArray(
-                        data.songs
-                    )
-                ) {
-
-                    throw new Error(
-                        "Invalid duration manifest"
-                    );
-                }
-
-
-                return data.songs;
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not load durations.json.",
-                    error
-                );
-
-
-                return null;
-            }
-        }
-
-
-        /* =========================================================
-           FALLBACK AUDIO DURATION
+           AUDIO DURATION
         ========================================================= */
 
         function getAudioDuration(
@@ -1241,7 +1250,67 @@
 
 
         /* =========================================================
-           LOAD DURATIONS
+           DURATION MANIFEST
+        ========================================================= */
+
+        async function loadDurationManifest() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        DURATION_MANIFEST,
+                        {
+                            cache:
+                                "no-store"
+                        }
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+                        "Duration manifest unavailable"
+                    );
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    !data ||
+                    !Array.isArray(
+                        data.songs
+                    )
+                ) {
+
+                    throw new Error(
+                        "Invalid duration manifest"
+                    );
+                }
+
+
+                return data.songs;
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not load durations.json.",
+                    error
+                );
+
+
+                return null;
+            }
+        }
+
+
+        /* =========================================================
+           LOAD ALL DURATIONS
         ========================================================= */
 
         async function loadDurations() {
@@ -1274,6 +1343,10 @@
                             SONG_NAMES.length
                         );
 
+
+                    /*
+                        Load song durations from manifest.
+                    */
 
                     if (
                         manifest
@@ -1315,6 +1388,10 @@
                     }
 
 
+                    /*
+                        Fallback for missing song durations.
+                    */
+
                     for (
                         let i = 0;
                         i < SONG_NAMES.length;
@@ -1354,22 +1431,68 @@
                     }
 
 
-                    totalPlaylistDuration =
-                        durations.reduce(
-                            (
-                                total,
-                                duration
-                            ) =>
-                                total +
-                                (
-                                    Number.isFinite(
-                                        duration
-                                    )
-                                        ? duration
-                                        : 0
-                                ),
-                            0
+                    /*
+                        Speech duration is also part of
+                        the global radio timeline.
+                    */
+
+                    try {
+
+                        speechDuration =
+                            await getAudioDuration(
+                                SPEECH_SRC
+                            );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Could not get speech duration:",
+                            error
                         );
+
+                        speechDuration =
+                            0;
+                    }
+
+
+                    /*
+                        Build total duration INCLUDING
+                        speech after every 4 songs.
+                    */
+
+                    totalPlaylistDuration =
+                        0;
+
+
+                    for (
+                        let i = 0;
+                        i < SONG_NAMES.length;
+                        i++
+                    ) {
+
+                        totalPlaylistDuration +=
+                            durations[i] || 0;
+
+
+                        /*
+                            Speech happens after every
+                            fourth song.
+
+                            The final song also gets speech
+                            before the playlist loops.
+                        */
+
+                        if (
+                            (
+                                (i + 1) %
+                                SONGS_PER_SPEECH
+                            ) === 0
+                        ) {
+
+                            totalPlaylistDuration +=
+                                speechDuration || 0;
+                        }
+                    }
 
 
                     if (
@@ -1378,7 +1501,7 @@
                     ) {
 
                         throw new Error(
-                            "No valid song durations were found."
+                            "No valid audio durations were found."
                         );
                     }
 
@@ -1388,9 +1511,17 @@
 
 
                     console.log(
-                        "Total playlist duration:",
+                        "Radio timeline duration:",
                         formatTime(
                             totalPlaylistDuration
+                        )
+                    );
+
+
+                    console.log(
+                        "Speech duration:",
+                        formatTime(
+                            speechDuration
                         )
                     );
 
@@ -1411,10 +1542,10 @@
 
 
         /* =========================================================
-           FIND CURRENT LIVE SONG
+           FIND LIVE RADIO POSITION
         ========================================================= */
 
-        function findCurrentSong() {
+        function findLiveSegment() {
 
             if (
                 !metadataLoaded ||
@@ -1422,6 +1553,7 @@
             ) {
 
                 return {
+                    type: "song",
                     index: 0,
                     offset: 0
                 };
@@ -1430,20 +1562,24 @@
 
             const elapsed =
                 (
-                    (
-                        Date.now() -
-                        RADIO_START
-                    ) / 1000
-                );
+                    Date.now() -
+                    RADIO_START
+                ) / 1000;
 
 
             const position =
                 (
-                    elapsed %
-                    totalPlaylistDuration +
+                    (
+                        elapsed %
+                        totalPlaylistDuration
+                    ) +
                     totalPlaylistDuration
                 ) %
                 totalPlaylistDuration;
+
+
+            currentTimelinePosition =
+                position;
 
 
             let accumulated =
@@ -1452,7 +1588,7 @@
 
             for (
                 let i = 0;
-                i < durations.length;
+                i < SONG_NAMES.length;
                 i++
             ) {
 
@@ -1468,6 +1604,9 @@
 
                     return {
 
+                        type:
+                            "song",
+
                         index:
                             i,
 
@@ -1481,13 +1620,183 @@
 
                 accumulated +=
                     duration;
+
+
+                /*
+                    Speech after every 4 songs.
+                */
+
+                if (
+                    (
+                        (i + 1) %
+                        SONGS_PER_SPEECH
+                    ) === 0 &&
+                    speechDuration > 0
+                ) {
+
+                    if (
+                        position <
+                        accumulated +
+                        speechDuration
+                    ) {
+
+                        return {
+
+                            type:
+                                "speech",
+
+                            index:
+                                i,
+
+                            offset:
+                                position -
+                                accumulated
+
+                        };
+                    }
+
+
+                    accumulated +=
+                        speechDuration;
+                }
             }
 
 
             return {
-                index: 0,
-                offset: 0
+
+                type:
+                    "song",
+
+                index:
+                    0,
+
+                offset:
+                    0
+
             };
+        }
+
+
+        /* =========================================================
+           GET NEXT ITEM
+        ========================================================= */
+
+        function getNextSegment(
+            segment
+        ) {
+
+            if (
+                segment.type ===
+                "speech"
+            ) {
+
+                const nextIndex =
+                    (
+                        segment.index +
+                        1
+                    ) %
+                    SONG_NAMES.length;
+
+
+                return {
+
+                    type:
+                        "song",
+
+                    index:
+                        nextIndex
+
+                };
+            }
+
+
+            /*
+                If this is the fourth song,
+                speech comes next.
+            */
+
+            if (
+                (
+                    (segment.index + 1) %
+                    SONGS_PER_SPEECH
+                ) === 0 &&
+                speechDuration > 0
+            ) {
+
+                return {
+
+                    type:
+                        "speech",
+
+                    index:
+                        segment.index
+
+                };
+            }
+
+
+            return {
+
+                type:
+                    "song",
+
+                index:
+                    (
+                        segment.index +
+                        1
+                    ) %
+                    SONG_NAMES.length
+
+            };
+        }
+
+
+        /* =========================================================
+           UPDATE NOW PLAYING / UP NEXT
+        ========================================================= */
+
+        function updateRadioUI(
+            segment
+        ) {
+
+            if (
+                segment.type ===
+                "speech"
+            ) {
+
+                songNameElement.textContent =
+                    "Christmas Radio Announcement";
+
+            } else {
+
+                songNameElement.textContent =
+                    SONG_NAMES[
+                        segment.index
+                    ];
+            }
+
+
+            const next =
+                getNextSegment(
+                    segment
+                );
+
+
+            if (
+                next.type ===
+                "speech"
+            ) {
+
+                upNextElement.textContent =
+                    "Christmas Radio Announcement";
+
+            } else {
+
+                upNextElement.textContent =
+                    SONG_NAMES[
+                        next.index
+                    ];
+            }
         }
 
 
@@ -1504,11 +1813,29 @@
             }
 
 
-            const currentSong =
-                SONG_NAMES[
-                    currentSongIndex
-                ] ||
-                "Christmas Countdown Radio";
+            const segment =
+                findLiveSegment();
+
+
+            let title;
+
+
+            if (
+                segment.type ===
+                "speech"
+            ) {
+
+                title =
+                    "Christmas Radio Announcement";
+
+            } else {
+
+                title =
+                    SONG_NAMES[
+                        segment.index
+                    ] ||
+                    "Christmas Countdown Radio";
+            }
 
 
             try {
@@ -1517,7 +1844,7 @@
                     new MediaMetadata({
 
                         title:
-                            currentSong,
+                            title,
 
                         artist:
                             "Christmas Countdown Radio",
@@ -1546,19 +1873,27 @@
             /*
                 IMPORTANT:
 
-                This reads the actual audio position.
+                The lock-screen slider represents the
+                currently playing audio segment.
 
-                It does NOT change musicAudio.currentTime.
+                We do not allow seeking.
             */
 
             try {
 
+                const audio =
+                    segment.type ===
+                    "speech"
+                        ? speechAudio
+                        : musicAudio;
+
+
                 const duration =
-                    musicAudio.duration;
+                    audio.duration;
 
 
                 const position =
-                    musicAudio.currentTime;
+                    audio.currentTime;
 
 
                 if (
@@ -1580,7 +1915,7 @@
                                 duration,
 
                             playbackRate:
-                                musicAudio.playbackRate || 1,
+                                audio.playbackRate || 1,
 
                             position:
                                 position
@@ -1592,16 +1927,9 @@
         }
 
 
-        /*
-            Called when the user RELEASES the Lock Screen
-            slider.
-
-            We do NOT touch the audio.
-
-            We only tell Media Session what the real
-            position is, causing the visual slider to
-            return to the real position.
-        */
+        /* =========================================================
+           RESTORE LOCK SCREEN VISUAL POSITION
+        ========================================================= */
 
         function restoreVisualPosition() {
 
@@ -1614,12 +1942,6 @@
 
             updateLiveMediaSession();
 
-
-            /*
-                iOS may continue displaying the dragged
-                position for a short time, so refresh the
-                visual position a few times.
-            */
 
             setTimeout(
                 () => {
@@ -1667,6 +1989,10 @@
         }
 
 
+        /* =========================================================
+           MEDIA SESSION
+        ========================================================= */
+
         function setupMediaSession() {
 
             if (
@@ -1675,10 +2001,6 @@
                 return;
             }
 
-
-            /*
-                PLAY
-            */
 
             try {
 
@@ -1695,10 +2017,6 @@
             } catch {}
 
 
-            /*
-                PAUSE
-            */
-
             try {
 
                 navigator.mediaSession
@@ -1714,10 +2032,6 @@
             } catch {}
 
 
-            /*
-                PREVIOUS
-            */
-
             try {
 
                 navigator.mediaSession
@@ -1728,10 +2042,6 @@
 
             } catch {}
 
-
-            /*
-                NEXT
-            */
 
             try {
 
@@ -1744,10 +2054,6 @@
             } catch {}
 
 
-            /*
-                15 SECOND BACK
-            */
-
             try {
 
                 navigator.mediaSession
@@ -1758,10 +2064,6 @@
 
             } catch {}
 
-
-            /*
-                15 SECOND FORWARD
-            */
 
             try {
 
@@ -1774,24 +2076,17 @@
             } catch {}
 
 
-            /*
-                LOCK SCREEN SLIDER
-
-                IMPORTANT:
-                NO AUDIO SEEKING HAPPENS HERE.
-
-                iOS sends "seekto" after the user releases
-                the slider.
-
-                We simply restore the visual position.
-            */
-
             try {
 
                 navigator.mediaSession
                     .setActionHandler(
                         "seekto",
                         () => {
+
+                            /*
+                                Never actually seek.
+                                Restore the real live position.
+                            */
 
                             restoreVisualPosition();
 
@@ -1811,178 +2106,334 @@
 
 
         setupMediaSession();
-setInterval(() => {
-    if (!radioPlaying) return;
 
-    updateLiveMediaSession();
-}, 3000);
 
         /* =========================================================
-           PLAY LIVE
+           LOAD A SONG
+        ========================================================= */
+
+        async function loadSong(
+            index,
+            offset
+        ) {
+
+            const url =
+                getSongURL(
+                    SONG_NAMES[index]
+                );
+
+
+            const absoluteURL =
+                new URL(
+                    url,
+                    location.href
+                ).href;
+
+
+            if (
+                musicAudio.src !==
+                absoluteURL
+            ) {
+
+                musicAudio.src =
+                    url;
+
+                musicAudio.load();
+
+
+                await new Promise(
+                    (
+                        resolve,
+                        reject
+                    ) => {
+
+                        const onMetadata =
+                            () => {
+
+                                cleanup();
+
+                                resolve();
+
+                            };
+
+
+                        const onError =
+                            () => {
+
+                                cleanup();
+
+                                reject(
+                                    new Error(
+                                        "Could not load song"
+                                    )
+                                );
+
+                            };
+
+
+                        const cleanup =
+                            () => {
+
+                                musicAudio
+                                    .removeEventListener(
+                                        "loadedmetadata",
+                                        onMetadata
+                                    );
+
+                                musicAudio
+                                    .removeEventListener(
+                                        "error",
+                                        onError
+                                    );
+                            };
+
+
+                        musicAudio
+                            .addEventListener(
+                                "loadedmetadata",
+                                onMetadata,
+                                {
+                                    once:
+                                        true
+                                }
+                            );
+
+
+                        musicAudio
+                            .addEventListener(
+                                "error",
+                                onError,
+                                {
+                                    once:
+                                        true
+                                }
+                            );
+
+                    }
+                );
+            }
+
+
+            /*
+                Initial synchronization to the
+                global radio timeline.
+            */
+
+            if (
+                Number.isFinite(
+                    offset
+                ) &&
+                offset >= 0 &&
+                Number.isFinite(
+                    musicAudio.duration
+                ) &&
+                offset <
+                musicAudio.duration
+            ) {
+
+                musicAudio.currentTime =
+                    offset;
+            }
+        }
+
+
+        /* =========================================================
+           LOAD SPEECH
+        ========================================================= */
+
+        async function loadSpeech(
+            offset
+        ) {
+
+            const absoluteURL =
+                new URL(
+                    SPEECH_SRC,
+                    location.href
+                ).href;
+
+
+            if (
+                speechAudio.src !==
+                absoluteURL
+            ) {
+
+                speechAudio.src =
+                    SPEECH_SRC;
+
+                speechAudio.load();
+
+
+                await new Promise(
+                    (
+                        resolve,
+                        reject
+                    ) => {
+
+                        const onMetadata =
+                            () => {
+
+                                cleanup();
+
+                                resolve();
+
+                            };
+
+
+                        const onError =
+                            () => {
+
+                                cleanup();
+
+                                reject(
+                                    new Error(
+                                        "Could not load speech"
+                                    )
+                                );
+
+                            };
+
+
+                        const cleanup =
+                            () => {
+
+                                speechAudio
+                                    .removeEventListener(
+                                        "loadedmetadata",
+                                        onMetadata
+                                    );
+
+                                speechAudio
+                                    .removeEventListener(
+                                        "error",
+                                        onError
+                                    );
+                            };
+
+
+                        speechAudio
+                            .addEventListener(
+                                "loadedmetadata",
+                                onMetadata,
+                                {
+                                    once:
+                                        true
+                                }
+                            );
+
+
+                        speechAudio
+                            .addEventListener(
+                                "error",
+                                onError,
+                                {
+                                    once:
+                                        true
+                                }
+                            );
+
+                    }
+                );
+            }
+
+
+            if (
+                Number.isFinite(
+                    offset
+                ) &&
+                offset >= 0 &&
+                Number.isFinite(
+                    speechAudio.duration
+                ) &&
+                offset <
+                speechAudio.duration
+            ) {
+
+                speechAudio.currentTime =
+                    offset;
+            }
+        }
+
+
+        /* =========================================================
+           PLAY CURRENT LIVE SEGMENT
         ========================================================= */
 
         async function playLive() {
+
+            if (
+                isChangingTrack
+            ) {
+                return;
+            }
+
+
+            isChangingTrack =
+                true;
+
 
             try {
 
                 await loadDurations();
 
 
-                const live =
-                    findCurrentSong();
+                const segment =
+                    findLiveSegment();
 
 
                 currentSongIndex =
-                    live.index;
+                    segment.index;
 
 
                 currentSongOffset =
-                    live.offset;
+                    segment.offset;
 
 
-                songNameElement.textContent =
-                    SONG_NAMES[
-                        currentSongIndex
-                    ];
+                currentSegmentType =
+                    segment.type;
 
 
-                const url =
-                    getSongURL(
-                        SONG_NAMES[
-                            currentSongIndex
-                        ]
-                    );
-
-
-                const absoluteURL =
-                    new URL(
-                        url,
-                        location.href
-                    ).href;
-
-
-                if (
-                    musicAudio.src !==
-                    absoluteURL
-                ) {
-
-                    musicAudio.src =
-                        url;
-
-                    musicAudio.load();
-                }
-
-
-                if (
-                    musicAudio.readyState <
-                    1
-                ) {
-
-                    await new Promise(
-                        resolve => {
-
-                            const onMetadata =
-                                () => {
-
-                                    musicAudio
-                                        .removeEventListener(
-                                            "loadedmetadata",
-                                            onMetadata
-                                        );
-
-                                    resolve();
-                                };
-
-
-                            musicAudio
-                                .addEventListener(
-                                    "loadedmetadata",
-                                    onMetadata
-                                );
-                        }
-                    );
-                }
+                updateRadioUI(
+                    segment
+                );
 
 
                 /*
-                    Recalculate the live position after
-                    the audio has loaded.
+                    SPEECH
                 */
 
-                const recalculated =
-                    findCurrentSong();
-
-
                 if (
-                    recalculated.index !==
-                    currentSongIndex
+                    segment.type ===
+                    "speech"
                 ) {
 
-                    currentSongIndex =
-                        recalculated.index;
+                    musicAudio.pause();
 
 
-                    currentSongOffset =
-                        recalculated.offset;
-
-
-                    musicAudio.src =
-                        getSongURL(
-                            SONG_NAMES[
-                                currentSongIndex
-                            ]
-                        );
-
-
-                    musicAudio.load();
-
-
-                    await new Promise(
-                        resolve => {
-
-                            const onMetadata =
-                                () => {
-
-                                    musicAudio
-                                        .removeEventListener(
-                                            "loadedmetadata",
-                                            onMetadata
-                                        );
-
-                                    resolve();
-                                };
-
-
-                            musicAudio
-                                .addEventListener(
-                                    "loadedmetadata",
-                                    onMetadata
-                                );
-                        }
+                    await loadSpeech(
+                        segment.offset
                     );
+
+
+                    await speechAudio.play();
+
+
+                /*
+                    SONG
+                */
 
                 } else {
 
-                    currentSongOffset =
-                        recalculated.offset;
+                    speechAudio.pause();
+
+
+                    await loadSong(
+                        segment.index,
+                        segment.offset
+                    );
+
+
+                    await musicAudio.play();
                 }
-
-
-                /*
-                    This is the INITIAL live synchronization.
-
-                    It is intentionally allowed because we need
-                    to start the correct song at the correct
-                    live position.
-
-                    It is NOT connected to Lock Screen seeking.
-                */
-
-                musicAudio.currentTime =
-                    currentSongOffset;
-
-
-                await musicAudio.play();
 
 
                 radioPlaying =
@@ -2003,7 +2454,6 @@ setInterval(() => {
 
                 } catch {}
 
-
             } catch (error) {
 
                 console.error(
@@ -2021,6 +2471,11 @@ setInterval(() => {
 
                 songNameElement.textContent =
                     "Could not start radio";
+
+            } finally {
+
+                isChangingTrack =
+                    false;
             }
         }
 
@@ -2059,12 +2514,15 @@ setInterval(() => {
 
         async function resumeLive() {
 
+            /*
+                Resume always reconnects to the
+                actual global radio timeline.
+            */
+
+            musicAudio.pause();
+
             speechAudio.pause();
 
-            /*
-                Resume always returns to the current LIVE
-                position instead of resuming an old position.
-            */
 
             await playLive();
         }
@@ -2120,7 +2578,7 @@ setInterval(() => {
 
 
         /* =========================================================
-           SONG ENDED
+           MUSIC ENDED
         ========================================================= */
 
         musicAudio.addEventListener(
@@ -2128,11 +2586,44 @@ setInterval(() => {
             async () => {
 
                 if (
-                    radioPlaying
+                    !radioPlaying
                 ) {
-
-                    await playLive();
+                    return;
                 }
+
+
+                /*
+                    Do NOT simply advance one song.
+
+                    Recalculate from the global radio clock.
+                */
+
+                await playLive();
+            }
+        );
+
+
+        /* =========================================================
+           SPEECH ENDED
+        ========================================================= */
+
+        speechAudio.addEventListener(
+            "ended",
+            async () => {
+
+                if (
+                    !radioPlaying
+                ) {
+                    return;
+                }
+
+
+                /*
+                    Speech is part of the global timeline,
+                    so find exactly what should be playing now.
+                */
+
+                await playLive();
             }
         );
 
@@ -2169,8 +2660,47 @@ setInterval(() => {
         );
 
 
+        speechAudio.addEventListener(
+            "error",
+            () => {
+
+                if (
+                    !radioPlaying
+                ) {
+                    return;
+                }
+
+
+                console.error(
+                    "Speech audio error."
+                );
+
+
+                /*
+                    If speech fails to load, reconnect
+                    to the radio timeline rather than
+                    getting stuck.
+                */
+
+                setTimeout(
+                    async () => {
+
+                        if (
+                            radioPlaying
+                        ) {
+
+                            await playLive();
+                        }
+
+                    },
+                    1000
+                );
+            }
+        );
+
+
         /* =========================================================
-           PERIODIC LIVE SYNC
+           PERIODIC GLOBAL SYNC
         ========================================================= */
 
         setInterval(
@@ -2186,17 +2716,24 @@ setInterval(() => {
                 try {
 
                     const live =
-                        findCurrentSong();
+                        findLiveSegment();
 
 
                     /*
-                        If the live playlist has moved to
-                        another song, load that song.
+                        If the timeline says we should
+                        be in a different type or track,
+                        switch immediately.
                     */
 
                     if (
-                        live.index !==
-                        currentSongIndex
+                        live.type !==
+                        currentSegmentType ||
+                        (
+                            live.type ===
+                            "song" &&
+                            live.index !==
+                            currentSongIndex
+                        )
                     ) {
 
                         await playLive();
@@ -2205,31 +2742,36 @@ setInterval(() => {
                     }
 
 
-                    /*
-                        Normal live drift correction.
-
-                        This is radio synchronization, NOT a
-                        Lock Screen seek.
-                    */
-
-                    const actual =
-                        musicAudio.currentTime;
+                    const audio =
+                        live.type ===
+                        "speech"
+                            ? speechAudio
+                            : musicAudio;
 
 
                     const drift =
                         Math.abs(
-                            actual -
+                            audio.currentTime -
                             live.offset
                         );
 
 
+                    /*
+                        Correct significant drift.
+                    */
+
                     if (
-                        drift > 5
+                        drift > 3
                     ) {
 
-                        musicAudio.currentTime =
+                        audio.currentTime =
                             live.offset;
                     }
+
+
+                    updateRadioUI(
+                        live
+                    );
 
 
                     updateLiveMediaSession();
@@ -2244,6 +2786,27 @@ setInterval(() => {
 
             },
             5000
+        );
+
+
+        /* =========================================================
+           MEDIA SESSION POSITION UPDATE
+        ========================================================= */
+
+        setInterval(
+            () => {
+
+                if (
+                    !radioPlaying
+                ) {
+                    return;
+                }
+
+
+                updateLiveMediaSession();
+
+            },
+            3000
         );
 
 
@@ -2270,37 +2833,64 @@ setInterval(() => {
                 }
 
 
-                const live =
-                    findCurrentSong();
+                try {
+
+                    const live =
+                        findLiveSegment();
 
 
-                if (
-                    live.index !==
-                    currentSongIndex
-                ) {
+                    if (
+                        live.type !==
+                        currentSegmentType ||
+                        (
+                            live.type ===
+                            "song" &&
+                            live.index !==
+                            currentSongIndex
+                        )
+                    ) {
 
-                    await playLive();
+                        await playLive();
 
-                    return;
-                }
+                        return;
+                    }
 
 
-                const drift =
-                    Math.abs(
-                        musicAudio.currentTime -
-                        live.offset
+                    const audio =
+                        live.type ===
+                        "speech"
+                            ? speechAudio
+                            : musicAudio;
+
+
+                    const drift =
+                        Math.abs(
+                            audio.currentTime -
+                            live.offset
+                        );
+
+
+                    if (
+                        drift > 3
+                    ) {
+
+                        await playLive();
+
+                    } else {
+
+                        updateRadioUI(
+                            live
+                        );
+
+                        updateLiveMediaSession();
+                    }
+
+                } catch (error) {
+
+                    console.warn(
+                        "Visibility sync failed:",
+                        error
                     );
-
-
-                if (
-                    drift > 3
-                ) {
-
-                    await playLive();
-
-                } else {
-
-                    updateLiveMediaSession();
                 }
 
             }
@@ -2365,12 +2955,16 @@ setInterval(() => {
             "Christmas Radio Ready";
 
 
+        upNextElement.textContent =
+            "Loading...";
+
+
         loadDurations()
             .then(
                 () => {
 
                     const live =
-                        findCurrentSong();
+                        findLiveSegment();
 
 
                     currentSongIndex =
@@ -2381,10 +2975,13 @@ setInterval(() => {
                         live.offset;
 
 
-                    songNameElement.textContent =
-                        SONG_NAMES[
-                            live.index
-                        ];
+                    currentSegmentType =
+                        live.type;
+
+
+                    updateRadioUI(
+                        live
+                    );
 
 
                     updateLiveMediaSession();
@@ -2398,6 +2995,13 @@ setInterval(() => {
                         "Radio metadata initialization failed:",
                         error
                     );
+
+
+                    songNameElement.textContent =
+                        "Radio unavailable";
+
+                    upNextElement.textContent =
+                        "Please try again";
                 }
             );
 
