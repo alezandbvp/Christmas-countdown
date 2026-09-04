@@ -1,29 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>Christmas Radio • JSON Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Radio • Duration Generator</title>
 
     <style>
         * {
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
 
         html,
         body {
             margin: 0;
             min-height: 100%;
-            background: #080b14;
-            color: #fff;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: Arial, sans-serif;
+            background: #10131a;
+            color: white;
         }
 
         body {
-            padding: 20px;
+            padding: 30px 15px;
         }
 
         .container {
@@ -32,141 +29,102 @@
         }
 
         .card {
-            padding: 28px;
-            background: rgba(18, 24, 39, .96);
-            border: 1px solid rgba(255, 255, 255, .1);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 22px;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, .4);
+            padding: 28px;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
         }
 
         h1 {
-            margin: 0;
-            font-size: clamp(28px, 7vw, 46px);
+            margin: 0 0 8px;
+            font-size: clamp(28px, 6vw, 44px);
         }
 
-        p {
-            color: #aab3c5;
+        .subtitle {
+            margin: 0 0 25px;
+            opacity: 0.7;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            margin-bottom: 20px;
             line-height: 1.5;
-        }
-
-        button {
-            width: 100%;
-            min-height: 52px;
-            margin-top: 12px;
-            border: 0;
-            border-radius: 14px;
-            background: #6366f1;
-            color: #fff;
-            font: inherit;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            opacity: .5;
-            cursor: default;
-        }
-
-        #download {
-            display: none;
-            background: #16a34a;
         }
 
         .progress {
             width: 100%;
-            height: 9px;
-            margin-top: 22px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
             overflow: hidden;
-            border-radius: 99px;
-            background: rgba(255, 255, 255, .08);
+            margin: 15px 0;
         }
 
-        #bar {
-            width: 0;
+        .progress-bar {
+            width: 0%;
             height: 100%;
-            background: #6366f1;
-            transition: width .2s ease;
+            background: #fff;
+            transition: width 0.2s ease;
         }
 
-        #status {
-            margin-top: 14px;
-            color: #aab3c5;
-            font-size: 14px;
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 14px;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: white;
+            color: #10131a;
         }
 
-        #songs {
-            margin-top: 22px;
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .song-list {
+            margin-top: 25px;
+            display: grid;
+            gap: 8px;
         }
 
         .song {
-            display: grid;
-            grid-template-columns: 45px 1fr auto;
-            gap: 12px;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, .07);
-        }
-
-        .number {
-            color: #707b91;
-            font-size: 13px;
-        }
-
-        .name {
-            overflow-wrap: anywhere;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.04);
             font-size: 14px;
         }
 
-        .duration {
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
+        .song-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .success {
-            color: #4ade80;
+        .duration {
+            opacity: 0.65;
+            white-space: nowrap;
         }
 
         .error {
-            color: #f87171;
+            color: #ff8c8c;
         }
 
-        .json {
+        .success {
+            color: #8cffb0;
+        }
+
+        .hidden {
             display: none;
-            margin-top: 20px;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 280px;
-            padding: 14px;
-            border: 1px solid rgba(255, 255, 255, .1);
-            border-radius: 12px;
-            outline: none;
-            resize: vertical;
-            background: #050810;
-            color: #dbe4ff;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 12px;
-            }
-
-            .card {
-                padding: 20px 16px;
-                border-radius: 18px;
-            }
-
-            .song {
-                grid-template-columns: 30px 1fr;
-            }
-
-            .duration {
-                grid-column: 2;
-                font-size: 13px;
-            }
         }
     </style>
 </head>
@@ -174,176 +132,196 @@
 <body>
 
 <div class="container">
-
     <div class="card">
 
-        <h1>🎄 Radio JSON Generator</h1>
+        <h1>Christmas Radio</h1>
+        <p class="subtitle">Generate the hosted song duration manifest</p>
 
-        <p>
-            Scans <strong>./songs/</strong>, finds the Christmas
-            MP3 files, automatically extracts their names,
-            reads their exact durations, and generates
-            <strong>./songs/durations.json</strong>.
-        </p>
+        <div id="status" class="status">
+            Ready to scan the 36 Christmas songs.
+        </div>
 
-        <button id="generate">
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <button id="generateButton">
             Generate durations.json
         </button>
 
-        <button id="download">
-            Download durations.json
-        </button>
-
-        <div class="progress">
-            <div id="bar"></div>
-        </div>
-
-        <div id="status">
-            Ready.
-        </div>
-
-        <div id="songs"></div>
-
-        <div id="json" class="json">
-            <textarea id="output" readonly></textarea>
-        </div>
+        <div id="songList" class="song-list"></div>
 
     </div>
-
 </div>
 
 <script>
-"use strict";
+    /*
+        The songs are already hosted on the website.
 
-/* =========================================================
-   CONFIG
-========================================================= */
+        The generator does NOT try to open ./songs/.
+        It directly checks each known MP3 URL.
+    */
 
-const SONG_FOLDER = "./songs/";
+    const SONG_FOLDER = "./songs/";
 
-const FILE_PREFIX =
-    "Music Now, Trap Music Now, Dance Music Now - ";
+    const FILE_PREFIX =
+        "Music Now, Trap Music Now, Dance Music Now - ";
 
-const FILE_SUFFIX =
-    " (SPOTISAVER).mp3";
+    const FILE_SUFFIX =
+        " (SPOTISAVER).mp3";
 
-/* =========================================================
-   DOM
-========================================================= */
 
-const generateButton =
-    document.getElementById("generate");
+    const SONG_NAMES = [
+        "All I Want For Christmas Is You",
+        "Baby It's Cold Outside",
+        "Blue Christmas",
+        "Carol Of The Bells",
+        "Christmas (Baby Please Come Home)",
+        "Christmas Canon",
+        "Deck The Halls",
+        "Do You Want To Build A Snowman",
+        "Feliz Navidad",
+        "Frosty The Snowman",
+        "God Rest Ye Merry Gentlemen",
+        "Here Comes Santa Claus",
+        "Holly Jolly Christmas",
+        "I Want A Hippopotamus For Christmas",
+        "It's Beginning To Look A Lot Like Christmas",
+        "It's The Most Wonderful Time Of The Year",
+        "Jingle Bell Rock",
+        "Jingle Bells",
+        "Last Christmas",
+        "Let It Snow! Let It Snow!",
+        "Little Drummer Boy",
+        "Mistletoe",
+        "O Christmas Tree",
+        "Rockin Around The Christmas Tree",
+        "Rudolph The Red-Nosed Reindeer",
+        "Santa Baby",
+        "Santa Claus Is Comin' To Town",
+        "Silent Night",
+        "Sleigh Ride",
+        "The Christmas Song",
+        "Up On The Housetop",
+        "We Wish You A Merry Christmas",
+        "White Christmas",
+        "Winter Wonderland",
+        "Wonderful Christmastime",
+        "You're A Mean One, Mr. Grinch"
+    ];
 
-const downloadButton =
-    document.getElementById("download");
 
-const bar =
-    document.getElementById("bar");
+    const statusElement =
+        document.getElementById("status");
 
-const status =
-    document.getElementById("status");
+    const progressBar =
+        document.getElementById("progressBar");
 
-const songsElement =
-    document.getElementById("songs");
+    const generateButton =
+        document.getElementById("generateButton");
 
-const jsonElement =
-    document.getElementById("json");
+    const songList =
+        document.getElementById("songList");
 
-const output =
-    document.getElementById("output");
 
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function escapeHtml(value) {
-    return value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function formatDuration(seconds) {
-    const total =
-        Math.round(seconds);
-
-    const minutes =
-        Math.floor(total / 60);
-
-    const secondsLeft =
-        total % 60;
-
-    return (
-        `${minutes}:${String(secondsLeft).padStart(2, "0")}`
-    );
-}
-
-function extractSongName(filename) {
-    let name = filename;
-
-    if (name.startsWith(FILE_PREFIX)) {
-        name =
-            name.slice(FILE_PREFIX.length);
+    function getFilename(songName) {
+        return FILE_PREFIX + songName + FILE_SUFFIX;
     }
 
-    if (name.endsWith(FILE_SUFFIX)) {
-        name =
-            name.slice(
-                0,
-                -FILE_SUFFIX.length
-            );
+
+    function getSongURL(songName) {
+        return SONG_FOLDER +
+            encodeURIComponent(getFilename(songName));
     }
 
-    try {
-        name =
-            decodeURIComponent(name);
-    } catch {}
 
-    return name.trim();
-}
+    function formatDuration(seconds) {
+        if (!Number.isFinite(seconds)) {
+            return "--:--";
+        }
 
-/* =========================================================
-   AUDIO DURATION
-========================================================= */
+        const totalSeconds = Math.floor(seconds);
 
-function getDuration(url) {
-    return new Promise(
-        (resolve, reject) => {
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = totalSeconds % 60;
 
-            const audio =
-                document.createElement("audio");
+        return (
+            String(minutes).padStart(2, "0") +
+            ":" +
+            String(remainingSeconds).padStart(2, "0")
+        );
+    }
+
+
+    function createSongElement(songName) {
+        const element = document.createElement("div");
+
+        element.className = "song";
+
+        element.innerHTML = `
+            <span class="song-name">
+                ${escapeHTML(songName)}
+            </span>
+
+            <span
+                class="duration"
+                id="duration-${SONG_NAMES.indexOf(songName)}"
+            >
+                Waiting...
+            </span>
+        `;
+
+        songList.appendChild(element);
+    }
+
+
+    function escapeHTML(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+
+    function getDuration(songName) {
+        return new Promise((resolve, reject) => {
+
+            const audio = document.createElement("audio");
 
             audio.preload = "metadata";
-            audio.src = url;
 
             let finished = false;
 
-            function cleanup() {
-                audio.removeEventListener(
-                    "loadedmetadata",
-                    loaded
-                );
+            const timeout = setTimeout(() => {
 
-                audio.removeEventListener(
-                    "error",
-                    failed
-                );
-
-                audio.removeAttribute("src");
-                audio.load();
-            }
-
-            function loaded() {
-                if (finished) return;
+                if (finished) {
+                    return;
+                }
 
                 finished = true;
 
-                const duration =
-                    audio.duration;
+                audio.src = "";
 
-                cleanup();
+                reject(
+                    new Error("Timed out while loading audio")
+                );
+
+            }, 20000);
+
+
+            audio.onloadedmetadata = () => {
+
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
+
+                clearTimeout(timeout);
+
+                const duration = audio.duration;
+
+                audio.removeAttribute("src");
+                audio.load();
 
                 if (
                     Number.isFinite(duration) &&
@@ -352,441 +330,213 @@ function getDuration(url) {
                     resolve(duration);
                 } else {
                     reject(
-                        new Error(
-                            "Invalid duration"
-                        )
+                        new Error("Invalid duration")
                     );
                 }
-            }
+            };
 
-            function failed() {
-                if (finished) return;
+
+            audio.onerror = () => {
+
+                if (finished) {
+                    return;
+                }
 
                 finished = true;
 
-                cleanup();
+                clearTimeout(timeout);
+
+                audio.removeAttribute("src");
+                audio.load();
 
                 reject(
-                    new Error(
-                        "Could not load audio"
-                    )
+                    new Error("Could not load MP3")
                 );
-            }
+            };
 
-            audio.addEventListener(
-                "loadedmetadata",
-                loaded
-            );
 
-            audio.addEventListener(
-                "error",
-                failed
-            );
-
-            audio.load();
-
-            setTimeout(() => {
-                if (!finished) {
-                    failed();
-                }
-            }, 15000);
-        }
-    );
-}
-
-/* =========================================================
-   FIND SONGS IN ./songs/
-========================================================= */
-
-async function findSongs() {
-
-    const response =
-        await fetch(
-            SONG_FOLDER,
-            {
-                cache: "no-store"
-            }
-        );
-
-    if (!response.ok) {
-        throw new Error(
-            "Could not open ./songs/"
-        );
-    }
-
-    const html =
-        await response.text();
-
-    const documentHTML =
-        new DOMParser().parseFromString(
-            html,
-            "text/html"
-        );
-
-    const links =
-        [
-            ...documentHTML.querySelectorAll(
-                "a[href]"
-            )
-        ];
-
-    const files = [];
-
-    for (const link of links) {
-
-        const href =
-            link.getAttribute("href");
-
-        if (!href) continue;
-
-        let filename;
-
-        try {
-            filename =
-                decodeURIComponent(
-                    href.split("/").pop()
-                );
-        } catch {
-            filename =
-                href.split("/").pop();
-        }
-
-        if (!filename) continue;
-
-        if (
-            !filename
-                .toLowerCase()
-                .endsWith(".mp3")
-        ) {
-            continue;
-        }
-
-        if (
-            !filename.startsWith(
-                FILE_PREFIX
-            )
-        ) {
-            continue;
-        }
-
-        if (
-            !filename.endsWith(
-                FILE_SUFFIX
-            )
-        ) {
-            continue;
-        }
-
-        files.push({
-            filename,
-            url:
-                SONG_FOLDER +
-                encodeURIComponent(
-                    filename
-                ),
-            name:
-                extractSongName(
-                    filename
-                )
+            audio.src = getSongURL(songName);
         });
     }
 
-    /*
-     * Keep the radio playlist
-     * alphabetically ordered.
-     */
-    files.sort(
-        (a, b) =>
-            a.name.localeCompare(
-                b.name
-            )
-    );
 
-    return files;
-}
+    async function generateDurations() {
 
-/* =========================================================
-   UI ROW
-========================================================= */
+        generateButton.disabled = true;
 
-function addSongRow(index, name) {
+        songList.innerHTML = "";
 
-    const row =
-        document.createElement("div");
+        SONG_NAMES.forEach(createSongElement);
 
-    row.className =
-        "song";
+        const songs = [];
 
-    row.innerHTML = `
-        <div class="number">
-            ${index + 1}
-        </div>
+        let completed = 0;
 
-        <div class="name">
-            ${escapeHtml(name)}
-        </div>
+        const total = SONG_NAMES.length;
 
-        <div
-            class="duration"
-            id="duration-${index}"
-        >
-            Waiting...
-        </div>
-    `;
+        statusElement.className = "status";
 
-    songsElement.appendChild(row);
-}
+        statusElement.textContent =
+            `Checking ${total} hosted songs...`;
 
-/* =========================================================
-   GENERATE JSON
-========================================================= */
+        progressBar.style.width = "0%";
 
-async function generate() {
 
-    generateButton.disabled = true;
+        for (let i = 0; i < SONG_NAMES.length; i++) {
 
-    downloadButton.style.display =
-        "none";
+            const name = SONG_NAMES[i];
 
-    songsElement.innerHTML =
-        "";
-
-    jsonElement.style.display =
-        "none";
-
-    output.value =
-        "";
-
-    bar.style.width =
-        "0%";
-
-    status.textContent =
-        "Scanning ./songs/...";
-
-    let files;
-
-    try {
-
-        files =
-            await findSongs();
-
-    } catch (error) {
-
-        status.innerHTML =
-            `<span class="error">
-                ${escapeHtml(
-                    error.message
-                )}
-            </span>`;
-
-        generateButton.disabled =
-            false;
-
-        return;
-    }
-
-    if (!files.length) {
-
-        status.innerHTML =
-            `<span class="error">
-                No matching MP3 files were found in ./songs/.
-            </span>`;
-
-        generateButton.disabled =
-            false;
-
-        return;
-    }
-
-    status.textContent =
-        `Found ${files.length} song(s).`;
-
-    files.forEach(
-        (file, index) => {
-            addSongRow(
-                index,
-                file.name
-            );
-        }
-    );
-
-    const songs = [];
-
-    for (
-        let i = 0;
-        i < files.length;
-        i++
-    ) {
-
-        const file =
-            files[i];
-
-        const durationElement =
-            document.getElementById(
-                `duration-${i}`
-            );
-
-        status.textContent =
-            `Reading ${i + 1} of ${files.length}: ${file.name}`;
-
-        try {
-
-            const duration =
-                await getDuration(
-                    file.url
+            const durationElement =
+                document.getElementById(
+                    `duration-${i}`
                 );
 
-            const rounded =
-                Number(
-                    duration.toFixed(3)
+
+            statusElement.textContent =
+                `Checking ${i + 1} of ${total}: ${name}`;
+
+
+            try {
+
+                const duration =
+                    await getDuration(name);
+
+
+                songs.push({
+                    name: name,
+                    file: getFilename(name),
+                    duration: Number(
+                        duration.toFixed(3)
+                    )
+                });
+
+
+                durationElement.textContent =
+                    formatDuration(duration);
+
+
+                durationElement.classList.add(
+                    "success"
                 );
 
-            songs.push({
-                name:
-                    file.name,
 
-                duration:
-                    rounded
-            });
+            } catch (error) {
 
-            durationElement.textContent =
-                formatDuration(
-                    duration
+                console.error(
+                    "Failed:",
+                    name,
+                    error
                 );
 
-            durationElement.classList.add(
-                "success"
-            );
 
-        } catch (error) {
+                durationElement.textContent =
+                    "FAILED";
 
-            durationElement.textContent =
-                "FAILED";
+                durationElement.classList.add(
+                    "error"
+                );
 
-            durationElement.classList.add(
-                "error"
-            );
 
-            status.innerHTML =
-                `<span class="error">
-                    Failed to read ${escapeHtml(
-                        file.name
-                    )}
-                </span>`;
+                songs.push({
+                    name: name,
+                    file: getFilename(name),
+                    duration: null,
+                    error: true
+                });
+            }
 
-            generateButton.disabled =
-                false;
 
-            return;
+            completed++;
+
+            progressBar.style.width =
+                `${(completed / total) * 100}%`;
         }
 
-        bar.style.width =
-            `${(
-                ((i + 1) /
-                files.length) *
-                100
-            )}%`;
-    }
 
-    /* =====================================================
-       FINAL JSON
-    ===================================================== */
+        const successfulSongs =
+            songs.filter(
+                song =>
+                    Number.isFinite(song.duration)
+            );
 
-    const json = {
-        songs
-    };
 
-    const jsonText =
-        JSON.stringify(
-            json,
-            null,
-            2
-        );
+        const failedSongs =
+            songs.filter(
+                song =>
+                    !Number.isFinite(song.duration)
+            );
 
-    output.value =
-        jsonText;
 
-    jsonElement.style.display =
-        "block";
+        const output = {
+            songs: songs
+        };
 
-    downloadButton.style.display =
-        "block";
 
-    const totalDuration =
-        songs.reduce(
-            (total, song) =>
-                total + song.duration,
-            0
-        );
+        const json =
+            JSON.stringify(
+                output,
+                null,
+                2
+            );
 
-    status.innerHTML =
-        `<span class="success">
-            Complete! ${songs.length} songs generated.
-            Total playlist time:
-            ${formatDuration(
-                totalDuration
-            )}.
-        </span>`;
-
-    generateButton.disabled =
-        false;
-}
-
-/* =========================================================
-   DOWNLOAD
-========================================================= */
-
-downloadButton.addEventListener(
-    "click",
-    () => {
 
         const blob =
             new Blob(
-                [output.value],
+                [json],
                 {
-                    type:
-                        "application/json"
+                    type: "application/json"
                 }
             );
 
+
         const url =
-            URL.createObjectURL(
-                blob
-            );
+            URL.createObjectURL(blob);
+
 
         const link =
             document.createElement("a");
 
-        link.href =
-            url;
 
-        link.download =
-            "durations.json";
+        link.href = url;
 
-        document.body.appendChild(
-            link
-        );
+        link.download = "durations.json";
+
+        document.body.appendChild(link);
 
         link.click();
 
         link.remove();
 
-        URL.revokeObjectURL(
-            url
-        );
+        URL.revokeObjectURL(url);
+
+
+        if (failedSongs.length === 0) {
+
+            statusElement.className =
+                "status success";
+
+            statusElement.textContent =
+                `Done! ${successfulSongs.length} songs were processed. durations.json has been downloaded.`;
+
+        } else {
+
+            statusElement.className =
+                "status error";
+
+            statusElement.textContent =
+                `Finished with ${successfulSongs.length} successful songs and ${failedSongs.length} failed songs. Check the list above.`;
+        }
+
+
+        generateButton.disabled = false;
     }
-);
 
-/* =========================================================
-   START
-========================================================= */
 
-generateButton.addEventListener(
-    "click",
-    generate
-);
+    generateButton.addEventListener(
+        "click",
+        generateDurations
+    );
 </script>
 
 </body>
-
 </html>
