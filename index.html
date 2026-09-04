@@ -629,12 +629,6 @@
 
     </main>
 
-    <!--
-        Native audio elements are intentionally used instead of Web Audio
-        so the browser has the best chance of continuing playback while
-        the phone is locked/backgrounded.
-    -->
-
     <audio
         id="musicAudio"
         preload="auto"
@@ -659,13 +653,6 @@
 
         const SONG_FOLDER = "./songs/";
         const SPEECH_SRC = "./songs/speech.mp3";
-
-        /*
-            IMPORTANT:
-            durations.json should be located at:
-
-            /songs/durations.json
-        */
 
         const DURATION_MANIFEST =
             "./songs/durations.json";
@@ -762,6 +749,140 @@
 
 
         /* =========================================================
+           MEDIA SESSION
+        ========================================================= */
+
+        function updateLiveMediaSession() {
+
+            if (!("mediaSession" in navigator)) {
+                return;
+            }
+
+            try {
+
+                navigator.mediaSession.metadata =
+                    new MediaMetadata({
+                        title: "🔴 LIVE",
+                        artist: "Christmas Countdown Radio",
+                        album: "Christmas Countdown",
+                        artwork: [
+                            {
+                                src: "./favicon.ico",
+                                sizes: "512x512",
+                                type: "image/x-icon"
+                            }
+                        ]
+                    });
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not set Media Session metadata:",
+                    error
+                );
+            }
+
+
+            /*
+                Tell the operating system that this is a live,
+                indefinite broadcast rather than a normal song.
+
+                Infinity means there is no known ending point.
+            */
+
+            try {
+
+                navigator.mediaSession.setPositionState({
+                    duration: Infinity,
+                    playbackRate: 1,
+                    position: 0
+                });
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not set live Media Session position:",
+                    error
+                );
+            }
+        }
+
+
+        function setupMediaSession() {
+
+            if (!("mediaSession" in navigator)) {
+                return;
+            }
+
+
+            updateLiveMediaSession();
+
+
+            /*
+                Lock Screen PLAY
+            */
+
+            try {
+
+                navigator.mediaSession.setActionHandler(
+                    "play",
+                    async () => {
+                        await resumeLive();
+                    }
+                );
+
+            } catch {}
+
+
+            /*
+                Lock Screen PAUSE
+            */
+
+            try {
+
+                navigator.mediaSession.setActionHandler(
+                    "pause",
+                    () => {
+                        pauseRadio();
+                    }
+                );
+
+            } catch {}
+
+
+            /*
+                Disable track skipping.
+            */
+
+            const blockedActions = [
+                "nexttrack",
+                "previoustrack",
+                "seekbackward",
+                "seekforward",
+                "seekto"
+            ];
+
+
+            for (
+                const action of blockedActions
+            ) {
+
+                try {
+
+                    navigator.mediaSession.setActionHandler(
+                        action,
+                        () => {}
+                    );
+
+                } catch {}
+            }
+        }
+
+
+        setupMediaSession();
+
+
+        /* =========================================================
            HELPERS
         ========================================================= */
 
@@ -785,17 +906,24 @@
 
 
         function formatTime(seconds) {
+
             if (!Number.isFinite(seconds)) {
                 return "0:00";
             }
 
-            seconds = Math.max(0, Math.floor(seconds));
+            seconds =
+                Math.max(
+                    0,
+                    Math.floor(seconds)
+                );
 
             const minutes =
                 Math.floor(seconds / 60);
 
             const secs =
-                String(seconds % 60).padStart(2, "0");
+                String(
+                    seconds % 60
+                ).padStart(2, "0");
 
             return `${minutes}:${secs}`;
         }
@@ -807,7 +935,8 @@
 
         function updateCountdown() {
 
-            const now = new Date();
+            const now =
+                new Date();
 
             let christmas =
                 new Date(
@@ -820,7 +949,12 @@
                     0
                 );
 
-            if (now.getTime() >= christmas.getTime()) {
+
+            if (
+                now.getTime() >=
+                christmas.getTime()
+            ) {
+
                 christmas =
                     new Date(
                         now.getFullYear() + 1,
@@ -833,14 +967,17 @@
                     );
             }
 
+
             const difference =
                 christmas.getTime() -
                 now.getTime();
+
 
             const totalSeconds =
                 Math.floor(
                     difference / 1000
                 );
+
 
             const days =
                 Math.floor(
@@ -859,6 +996,7 @@
 
             const seconds =
                 totalSeconds % 60;
+
 
             countdownElement.textContent =
                 `${days}d ${hours}h ${minutes}m ${seconds}s`;
@@ -966,23 +1104,29 @@
                         }
                     );
 
+
                 if (!response.ok) {
+
                     throw new Error(
                         "Duration manifest unavailable"
                     );
                 }
 
+
                 const data =
                     await response.json();
+
 
                 if (
                     !data ||
                     !Array.isArray(data.songs)
                 ) {
+
                     throw new Error(
                         "Invalid duration manifest"
                     );
                 }
+
 
                 return data.songs;
 
@@ -1011,6 +1155,7 @@
                         document.createElement("audio");
 
                     let finished = false;
+
 
                     const cleanup =
                         () => {
@@ -1056,8 +1201,10 @@
                                 return;
                             }
 
+
                             const duration =
                                 audio.duration;
+
 
                             if (
                                 Number.isFinite(duration) &&
@@ -1145,9 +1292,11 @@
                 return;
             }
 
+
             if (metadataLoadingPromise) {
                 return metadataLoadingPromise;
             }
+
 
             metadataLoadingPromise =
                 (async () => {
@@ -1155,10 +1304,12 @@
                     const manifest =
                         await loadDurationManifest();
 
+
                     durations =
                         new Array(
                             SONG_NAMES.length
                         );
+
 
                     /*
                         First use durations.json.
@@ -1175,6 +1326,7 @@
                             const songName =
                                 SONG_NAMES[i];
 
+
                             const entry =
                                 manifest.find(
                                     item =>
@@ -1182,12 +1334,17 @@
                                         item.name === songName
                                 );
 
+
                             if (
                                 entry &&
                                 Number.isFinite(
-                                    Number(entry.duration)
+                                    Number(
+                                        entry.duration
+                                    )
                                 ) &&
-                                Number(entry.duration) > 0
+                                Number(
+                                    entry.duration
+                                ) > 0
                             ) {
 
                                 durations[i] =
@@ -1201,8 +1358,7 @@
 
                     /*
                         Fallback:
-                        If a duration wasn't supplied by the
-                        manifest, read the MP3 metadata.
+                        Read MP3 metadata only when needed.
                     */
 
                     for (
@@ -1219,6 +1375,7 @@
                         ) {
                             continue;
                         }
+
 
                         try {
 
@@ -1262,6 +1419,7 @@
                     if (
                         totalPlaylistDuration <= 0
                     ) {
+
                         throw new Error(
                             "No valid song durations were found."
                         );
@@ -1269,6 +1427,7 @@
 
 
                     metadataLoaded = true;
+
 
                     console.log(
                         "Radio playlist duration:",
@@ -1301,6 +1460,7 @@
                 !metadataLoaded ||
                 totalPlaylistDuration <= 0
             ) {
+
                 return {
                     index: 0,
                     offset: 0
@@ -1320,11 +1480,10 @@
 
 
             /*
-                This is critical.
+                The playlist loops forever.
 
-                The radio loops forever, so once the original
-                start time has passed the end of the playlist,
-                use modulo to determine the current position.
+                Modulo keeps the radio synchronized even when
+                RADIO_START is months or years in the past.
             */
 
             elapsed =
@@ -1379,9 +1538,7 @@
            DISPLAY CURRENT SONG
         ========================================================= */
 
-        function updateSongDisplay(
-            index
-        ) {
+        function updateSongDisplay(index) {
 
             if (
                 index >= 0 &&
@@ -1404,8 +1561,10 @@
 
                 await loadDurations();
 
+
                 const position =
                     findCurrentSong();
+
 
                 currentSongIndex =
                     position.index;
@@ -1427,31 +1586,27 @@
                     );
 
 
-                /*
-                    Only reload the source if we're
-                    changing songs.
-                */
-
-                if (
-                    musicAudio.src !==
+                const absoluteURL =
                     new URL(
                         url,
                         location.href
-                    ).href
+                    ).href;
+
+
+                if (
+                    musicAudio.src !==
+                    absoluteURL
                 ) {
 
-                    musicAudio.src = url;
+                    musicAudio.src =
+                        url;
 
                     musicAudio.load();
-
                 }
 
 
                 /*
-                    Set the exact live position.
-
-                    The browser may not allow seeking until
-                    metadata has loaded, so wait if necessary.
+                    Wait for metadata before seeking.
                 */
 
                 if (
@@ -1472,24 +1627,24 @@
                                     resolve();
                                 };
 
+
                             musicAudio.addEventListener(
                                 "loadedmetadata",
                                 onMetadata
                             );
-
                         }
                     );
                 }
 
 
+                /*
+                    Recalculate because loading the audio may
+                    have taken some time.
+                */
+
                 const targetOffset =
                     findCurrentSong();
 
-
-                /*
-                    The song could have changed while metadata
-                    was loading, so recalculate immediately.
-                */
 
                 if (
                     targetOffset.index !==
@@ -1502,9 +1657,11 @@
                     currentSongOffset =
                         targetOffset.offset;
 
+
                     updateSongDisplay(
                         currentSongIndex
                     );
+
 
                     musicAudio.src =
                         getSongURL(
@@ -1513,7 +1670,9 @@
                             ]
                         );
 
+
                     musicAudio.load();
+
 
                     await new Promise(
                         resolve => {
@@ -1529,11 +1688,11 @@
                                     resolve();
                                 };
 
+
                             musicAudio.addEventListener(
                                 "loadedmetadata",
                                 onMetadata
                             );
-
                         }
                     );
 
@@ -1560,12 +1719,33 @@
 
                 await musicAudio.play();
 
+
                 radioPlaying = true;
+
 
                 updatePlayButton();
 
+
                 lastSyncTime =
                     Date.now();
+
+
+                /*
+                    Refresh the OS-level live metadata.
+                */
+
+                updateLiveMediaSession();
+
+
+                if ("mediaSession" in navigator) {
+
+                    try {
+
+                        navigator.mediaSession.playbackState =
+                            "playing";
+
+                    } catch {}
+                }
 
             } catch (error) {
 
@@ -1574,9 +1754,11 @@
                     error
                 );
 
+
                 radioPlaying = false;
 
                 updatePlayButton();
+
 
                 songNameElement.textContent =
                     "Tap Start Live Radio to begin";
@@ -1596,6 +1778,17 @@
             radioPlaying = false;
 
             updatePlayButton();
+
+
+            if ("mediaSession" in navigator) {
+
+                try {
+
+                    navigator.mediaSession.playbackState =
+                        "paused";
+
+                } catch {}
+            }
         }
 
 
@@ -1657,7 +1850,6 @@
                 } else {
 
                     await resumeLive();
-
                 }
             }
         );
@@ -1675,11 +1867,10 @@
                     return;
                 }
 
-                /*
-                    Never manually advance based only on the
-                    previous song.
 
-                    Recalculate the real live position instead.
+                /*
+                    Recalculate actual live position instead
+                    of simply advancing one track.
                 */
 
                 await playLive();
@@ -1699,16 +1890,16 @@
                     return;
                 }
 
+
                 console.warn(
                     "Music playback error. Resynchronizing..."
                 );
 
+
                 setTimeout(
                     async () => {
 
-                        if (
-                            radioPlaying
-                        ) {
+                        if (radioPlaying) {
                             await playLive();
                         }
 
@@ -1734,19 +1925,15 @@
                     return;
                 }
 
+
                 if (!radioPlaying) {
                     return;
                 }
 
 
-                /*
-                    If the phone was locked/backgrounded,
-                    immediately compare our current position
-                    with the real live position.
-                */
-
                 const now =
                     Date.now();
+
 
                 if (
                     now -
@@ -1781,16 +1968,9 @@
                     const expected =
                         live.offset;
 
-
                     const actual =
                         musicAudio.currentTime;
 
-
-                    /*
-                        Allow a small amount of timing drift,
-                        but resync if the browser has moved
-                        significantly away from live.
-                    */
 
                     if (
                         Math.abs(
@@ -1801,6 +1981,14 @@
 
                         await playLive();
                     }
+
+
+                    /*
+                        Refresh live OS metadata after returning
+                        from the background/Lock Screen.
+                    */
+
+                    updateLiveMediaSession();
 
                 } catch (error) {
 
@@ -1823,6 +2011,7 @@
                 if (!radioPlaying) {
                     return;
                 }
+
 
                 try {
 
@@ -1848,12 +2037,6 @@
                         );
 
 
-                    /*
-                        Don't constantly seek.
-
-                        Only correct meaningful drift.
-                    */
-
                     if (
                         drift > 5
                     ) {
@@ -1865,6 +2048,16 @@
 
                     lastSyncTime =
                         Date.now();
+
+
+                    /*
+                        Keep telling the operating system that
+                        this is an indefinite live broadcast.
+
+                        No finite song duration is supplied here.
+                    */
+
+                    updateLiveMediaSession();
 
                 } catch (error) {
 
@@ -1928,15 +2121,13 @@
 
         updatePlayButton();
 
+
         songNameElement.textContent =
             "Christmas Radio Ready";
 
 
         /*
             Load durations in the background.
-
-            This means the page doesn't need to wait for every
-            MP3 before the UI becomes usable.
         */
 
         loadDurations()
@@ -1944,6 +2135,7 @@
 
                 const live =
                     findCurrentSong();
+
 
                 updateSongDisplay(
                     live.index
@@ -1956,7 +2148,6 @@
                     "Radio metadata initialization failed:",
                     error
                 );
-
             });
 
 
