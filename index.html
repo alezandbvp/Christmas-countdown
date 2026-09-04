@@ -871,49 +871,35 @@
                 BLOCK ALL TRACK SKIPPING
             */
 
-            const blockedActions = [
-                "nexttrack",
-                "previoustrack",
+   const blockedActions = [
 
-                /*
-                    iOS can expose these as the
-                    15-second backward/forward buttons.
-                */
+    "nexttrack",
 
-                "seekbackward",
-                "seekforward",
+    "previoustrack",
 
-                /*
-                    Blocks direct seeking.
-                */
+    "seekbackward",
 
-                "seekto"
-            ];
+    "seekforward",
 
+    "seekto"
 
-            for (
-                const action of blockedActions
-            ) {
+];
 
-                try {
+for (const action of blockedActions) {
 
-                    navigator.mediaSession.setActionHandler(
-                        action,
-                        () => {
+    try {
 
-                            /*
-                                Intentionally empty.
+        navigator.mediaSession.setActionHandler(
 
-                                The Lock Screen cannot move
-                                the live broadcast backward,
-                                forward, or to another track.
-                            */
+            action,
 
-                        }
-                    );
+            () => {}
 
-                } catch {}
-            }
+        );
+
+    } catch {}
+
+}
 
 
             /*
