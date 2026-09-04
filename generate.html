@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Christmas Radio • Generate Durations</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: #080b14;
+            color: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            width: min(900px, 100%);
+            margin: auto;
+        }
+
+        .card {
+            padding: 28px;
+            background: rgba(18, 24, 39, .96);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 22px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, .4);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 7vw, 46px);
+        }
+
+        p {
+            color: #aab3c5;
+            line-height: 1.5;
+        }
+
+        button {
+            width: 100%;
+            min-height: 52px;
+            margin-top: 12px;
+            border: 0;
+            border-radius: 14px;
+            background: #6366f1;
+            color: #fff;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+        #download {
+            display: none;
+            background: #16a34a;
+        }
+
+        .progress {
+            width: 100%;
+            height: 9px;
+            margin-top: 22px;
+            overflow: hidden;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .08);
+        }
+
+        #bar {
+            width: 0;
+            height: 100%;
+            background: #6366f1;
+            transition: width .2s ease;
+        }
+
+        #status {
+            margin-top: 14px;
+            color: #aab3c5;
+            font-size: 14px;
+        }
+
+        #songs {
+            margin-top: 22px;
+        }
+
+        .song {
+            display: grid;
+            grid-template-columns: 45px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .number {
+            color: #707b91;
+            font-size: 13px;
+        }
+
+        .name {
+            overflow-wrap: anywhere;
+            font-size: 14px;
+        }
+
+        .duration {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .json {
+            display: none;
+            margin-top: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 280px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 12px;
+            outline: none;
+            resize: vertical;
+            background: #050810;
+            color: #dbe4ff;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 20px 16px;
+                border-radius: 18px;
+            }
+
+            .song {
+                grid-template-columns: 30px 1fr;
+            }
+
+            .duration {
+                grid-column: 2;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>🎄 Radio JSON Generator</h1>
+
+        <p>
+            This tool automatically scans the
+            <strong>songs/</strong> folder, finds the MP3 files,
+            extracts their song names from the filenames, reads
+            their exact durations, and creates
+            <strong>durations.json</strong>.
+        </p>
+
+        <button id="generate">
+            Generate durations.json
+        </button>
+
+        <button id="download">
+            Download durations.json
+        </button>
+
+        <div class="progress">
+            <div id="bar"></div>
+        </div>
+
+        <div id="status">
+            Ready.
+        </div>
+
+        <div id="songs"></div>
+
+        <div id="json" class="json">
+            <textarea id="output" readonly></textarea>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
+const SONG_FOLDER = "songs/";
+
+const FILE_PREFIX =
+    "Music Now, Trap Music Now, Dance Music Now - ";
+
+const FILE_SUFFIX =
+    " (SPOTISAVER).mp3";
+
+/*
+ * Browsers cannot normally list a directory.
+ *
+ * Therefore this generator reads the directory's HTML index
+ * when the server provides one.
+ *
+ * It also supports a generated directory listing containing
+ * normal <a href="..."> links.
+ */
+const DIRECTORY_URL = SONG_FOLDER;
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const generateButton =
+    document.getElementById("generate");
+
+const downloadButton =
+    document.getElementById("download");
+
+const bar =
+    document.getElementById("bar");
+
+const status =
+    document.getElementById("status");
+
+const songsElement =
+    document.getElementById("songs");
+
+const jsonElement =
+    document.getElementById("json");
+
+const output =
+    document.getElementById("output");
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function formatDuration(seconds) {
+    const total =
+        Math.round(seconds);
+
+    const minutes =
+        Math.floor(total / 60);
+
+    const secondsLeft =
+        total % 60;
+
+    return (
+        `${minutes}:${String(secondsLeft).padStart(2, "0")}`
+    );
+}
+
+function extractSongName(filename) {
+    let name = filename;
+
+    if (name.startsWith(FILE_PREFIX)) {
+        name =
+            name.slice(FILE_PREFIX.length);
+    }
+
+    if (name.endsWith(FILE_SUFFIX)) {
+        name =
+            name.slice(
+                0,
+                -FILE_SUFFIX.length
+            );
+    }
+
+    /*
+     * Decode URL-encoded filenames.
+     */
+    try {
+        name =
+            decodeURIComponent(name);
+    } catch {}
+
+    return name.trim();
+}
+
+function getDuration(url) {
+    return new Promise(
+        (resolve, reject) => {
+            const audio =
+                document.createElement("audio");
+
+            audio.preload = "metadata";
+            audio.src = url;
+
+            let finished = false;
+
+            function cleanup() {
+                audio.removeEventListener(
+                    "loadedmetadata",
+                    loaded
+                );
+
+                audio.removeEventListener(
+                    "error",
+                    failed
+                );
+
+                audio.removeAttribute("src");
+                audio.load();
+            }
+
+            function loaded() {
+                if (finished) return;
+
+                finished = true;
+
+                const duration =
+                    audio.duration;
+
+                cleanup();
+
+                if (
+                    Number.isFinite(duration) &&
+                    duration > 0
+                ) {
+                    resolve(duration);
+                } else {
+                    reject(
+                        new Error(
+                            "Invalid duration"
+                        )
+                    );
+                }
+            }
+
+            function failed() {
+                if (finished) return;
+
+                finished = true;
+
+                cleanup();
+
+                reject(
+                    new Error(
+                        "Could not load audio"
+                    )
+                );
+            }
+
+            audio.addEventListener(
+                "loadedmetadata",
+                loaded
+            );
+
+            audio.addEventListener(
+                "error",
+                failed
+            );
+
+            audio.load();
+
+            /*
+             * Don't let one broken file hang
+             * the entire generator.
+             */
+            setTimeout(() => {
+                if (!finished) {
+                    failed();
+                }
+            }, 15000);
+        }
+    );
+}
+
+function addSongRow(index, name) {
+    const row =
+        document.createElement("div");
+
+    row.className = "song";
+
+    row.innerHTML = `
+        <div class="number">
+            ${index + 1}
+        </div>
+
+        <div class="name">
+            ${escapeHtml(name)}
+        </div>
+
+        <div
+            class="duration"
+            id="duration-${index}"
+        >
+            Waiting...
+        </div>
+    `;
+
+    songsElement.appendChild(row);
+}
+
+function escapeHtml(value) {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+/* =========================================================
+   FIND MP3 FILES
+========================================================= */
+
+async function findSongs() {
+    const response =
+        await fetch(
+            DIRECTORY_URL,
+            {
+                cache: "no-store"
+            }
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            `Could not open ${DIRECTORY_URL}`
+        );
+    }
+
+    const html =
+        await response.text();
+
+    const documentHTML =
+        new DOMParser().parseFromString(
+            html,
+            "text/html"
+        );
+
+    const links =
+        [...documentHTML.querySelectorAll("a[href]")];
+
+    const files = [];
+
+    for (const link of links) {
+        const href =
+            link.getAttribute("href");
+
+        if (!href) continue;
+
+        let filename;
+
+        try {
+            filename =
+                decodeURIComponent(
+                    href.split("/").pop()
+                );
+        } catch {
+            filename =
+                href.split("/").pop();
+        }
+
+        if (!filename) continue;
+
+        if (
+            !filename
+                .toLowerCase()
+                .endsWith(".mp3")
+        ) {
+            continue;
+        }
+
+        if (
+            filename.startsWith(
+                FILE_PREFIX
+            ) &&
+            filename.endsWith(
+                FILE_SUFFIX
+            )
+        ) {
+            files.push({
+                filename,
+                url:
+                    SONG_FOLDER +
+                    encodeURIComponent(
+                        filename
+                    ),
+                name:
+                    extractSongName(
+                        filename
+                    )
+            });
+        }
+    }
+
+    /*
+     * Sort alphabetically by the actual
+     * extracted song name.
+     */
+    files.sort(
+        (a, b) =>
+            a.name.localeCompare(
+                b.name
+            )
+    );
+
+    return files;
+}
+
+/* =========================================================
+   GENERATE
+========================================================= */
+
+async function generate() {
+    generateButton.disabled = true;
+    downloadButton.style.display = "none";
+
+    songsElement.innerHTML = "";
+    jsonElement.style.display = "none";
+    output.value = "";
+
+    bar.style.width = "0%";
+
+    status.textContent =
+        "Scanning songs folder...";
+
+    let files;
+
+    try {
+        files =
+            await findSongs();
+    } catch (error) {
+        status.innerHTML =
+            `<span class="error">
+                ${escapeHtml(error.message)}
+            </span>`;
+
+        generateButton.disabled = false;
+
+        return;
+    }
+
+    if (!files.length) {
+        status.innerHTML =
+            `<span class="error">
+                No matching MP3 files were found.
+            </span>`;
+
+        generateButton.disabled = false;
+
+        return;
+    }
+
+    status.textContent =
+        `Found ${files.length} song(s).`;
+
+    files.forEach(
+        (file, index) => {
+            addSongRow(
+                index,
+                file.name
+            );
+        }
+    );
+
+    const songs = [];
+    const errors = [];
+
+    /*
+     * Process one file at a time.
+     *
+     * This keeps browser memory low because
+     * the MP3 itself is not decoded.
+     */
+    for (
+        let i = 0;
+        i < files.length;
+        i++
+    ) {
+        const file =
+            files[i];
+
+        const durationElement =
+            document.getElementById(
+                `duration-${i}`
+            );
+
+        status.textContent =
+            `Reading ${i + 1} of ${files.length}: ${file.name}`;
+
+        try {
+            const duration =
+                await getDuration(
+                    file.url
+                );
+
+            const rounded =
+                Number(
+                    duration.toFixed(3)
+                );
+
+            songs.push({
+                name: file.name,
+                duration: rounded
+            });
+
+            durationElement.textContent =
+                formatDuration(
+                    duration
+                );
+
+            durationElement.classList.add(
+                "success"
+            );
+        } catch (error) {
+            errors.push({
+                name: file.name,
+                file: file.filename,
+                error: error.message
+            });
+
+            durationElement.textContent =
+                "FAILED";
+
+            durationElement.classList.add(
+                "error"
+            );
+        }
+
+        bar.style.width =
+            `${((i + 1) / files.length) * 100}%`;
+    }
+
+    /* =====================================================
+       ERRORS
+    ===================================================== */
+
+    if (errors.length) {
+        status.innerHTML =
+            `<span class="error">
+                ${songs.length}/${files.length} songs processed.
+                ${errors.length} failed.
+            </span>`;
+
+        generateButton.disabled = false;
+
+        return;
+    }
+
+    /* =====================================================
+       COMPLETE JSON
+    ===================================================== */
+
+    const json = {
+        songs
+    };
+
+    const jsonText =
+        JSON.stringify(
+            json,
+            null,
+            2
+        );
+
+    output.value =
+        jsonText;
+
+    jsonElement.style.display =
+        "block";
+
+    downloadButton.style.display =
+        "block";
+
+    const totalDuration =
+        songs.reduce(
+            (total, song) =>
+                total + song.duration,
+            0
+        );
+
+    status.innerHTML =
+        `<span class="success">
+            Complete! ${songs.length} songs generated.
+            Total playlist time:
+            ${formatDuration(totalDuration)}.
+        </span>`;
+
+    generateButton.disabled = false;
+}
+
+/* =========================================================
+   DOWNLOAD
+========================================================= */
+
+downloadButton.addEventListener(
+    "click",
+    () => {
+        const blob =
+            new Blob(
+                [output.value],
+                {
+                    type:
+                        "application/json"
+                }
+            );
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href =
+            url;
+
+        link.download =
+            "durations.json";
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+        URL.revokeObjectURL(
+            url
+        );
+    }
+);
+
+/* =========================================================
+   RUN
+========================================================= */
+
+generateButton.addEventListener(
+    "click",
+    generate
+);
+</script>
+
+</body>
+</html>
