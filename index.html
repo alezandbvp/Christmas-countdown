@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
 
     <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        content="width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no,
+        viewport-fit=cover">
 
     <meta name="theme-color" content="#12030a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -91,27 +95,87 @@
 
     /*
      * =====================================================
-     * PHONE-ONLY NATIVE PORTRAIT LOCK
+     * PHONE-ONLY PORTRAIT CANVAS
      * =====================================================
      *
-     * Phone detection is handled by JavaScript.
+     * This follows the same layout mechanism as the
+     * Portrait Lock Test, but applies it to the entire
+     * complex Christmas Radio application.
      *
-     * Phones request the browser's native portrait
-     * orientation lock.
+     * Phone in portrait:
+     *     Normal 100% × 100dvh layout.
      *
-     * Tablets, iPads, desktops and laptops are untouched.
+     * Phone in landscape:
+     *     The entire application becomes a portrait-shaped
+     *     canvas using the landscape viewport dimensions.
      *
      * IMPORTANT:
-     * There is no CSS rotation and no fake portrait
-     * viewport.
+     * This is intentionally PHONE ONLY.
+     *
+     * Tablets, iPads, desktops and laptops are untouched.
      */
+
+    #phonePortraitViewport {
+        width: 100%;
+        height: 100dvh;
+
+        position: relative;
+
+        overflow: hidden;
+    }
+
+    /*
+     * PHONE LANDSCAPE
+     *
+     * Same geometry used by the Portrait Lock Test.
+     *
+     * The application's portrait canvas is:
+     *
+     *     width  = 100vh
+     *     height = 100vw
+     *
+     * and is centered in the physical landscape screen.
+     */
+
+    body.phone.landscape {
+        width: 100vw;
+        height: 100dvh;
+
+        overflow: hidden;
+
+        position: relative;
+    }
+
+    body.phone.landscape #phonePortraitViewport {
+        width: 100dvh;
+        min-width: 100dvh;
+        max-width: 100dvh;
+
+        height: 100vw;
+        min-height: 100vw;
+        max-height: 100vw;
+
+        position: fixed;
+
+        left: 50%;
+        top: 50%;
+
+        transform:
+            translate(-50%, -50%)
+            rotate(90deg);
+
+        transform-origin:
+            center center;
+
+        overflow: hidden;
+    }
 
     /*
      * BACKGROUND
      */
 
     #bg {
-        position: fixed;
+        position: absolute;
 
         inset: -4%;
 
@@ -133,7 +197,7 @@
             saturate(1.2)
             contrast(1.02);
 
-        z-index: -5;
+        z-index: 0;
 
         transform: translateZ(0);
     }
@@ -143,7 +207,7 @@
      */
 
     .snow-layer {
-        position: fixed;
+        position: absolute;
 
         inset: 0;
 
@@ -321,7 +385,7 @@
 
     #container {
         width: 100%;
-        height: 100dvh;
+        height: 100%;
 
         display: flex;
 
@@ -1007,6 +1071,8 @@
      * LANDSCAPE
      *
      * Only applies to non-phone devices.
+     *
+     * Phones are handled by the portrait canvas above.
      */
 
     @media (max-width: 900px) and (orientation: landscape) {
@@ -1065,6 +1131,74 @@
             margin-top:
                 12px;
         }
+    }
+
+    /*
+     * PHONE LANDSCAPE
+     *
+     * Because the entire application is now inside the
+     * portrait canvas, retain the normal mobile sizing.
+     *
+     * Do NOT use another rotation here.
+     */
+
+    body.phone.landscape #container {
+        width: 100%;
+        height: 100%;
+
+        padding:
+            max(15px, env(safe-area-inset-top))
+            max(15px, env(safe-area-inset-right))
+            max(15px, env(safe-area-inset-bottom))
+            max(15px, env(safe-area-inset-left));
+
+        overflow: hidden;
+    }
+
+    body.phone.landscape .card {
+        width: 94%;
+
+        max-width: none;
+        max-height: none;
+
+        overflow: visible;
+
+        padding:
+            30px 20px;
+
+        border-radius:
+            28px;
+    }
+
+    body.phone.landscape .card::before {
+        border-radius:
+            27px;
+    }
+
+    body.phone.landscape #title {
+        font-size:
+            clamp(3rem, 9vw, 7rem);
+    }
+
+    body.phone.landscape #subtitle {
+        font-size:
+            clamp(2rem, 5vw, 4rem);
+
+        margin-bottom:
+            28px;
+    }
+
+    body.phone.landscape #countdown {
+        margin-bottom:
+            24px;
+
+        padding:
+            13px 15px;
+    }
+
+    body.phone.landscape .song-wrapper {
+        margin-bottom:
+            28px;
     }
 
     /*
@@ -1176,12 +1310,9 @@
          * PHONE DETECTION + NATIVE PORTRAIT LOCK
          * =====================================================
          *
-         * The page does NOT rotate itself.
-         *
-         * Phones request the browser's native portrait
-         * orientation lock.
-         *
-         * Tablets, iPads and computers are excluded.
+         * The phone detection is intentionally done before
+         * the application is displayed so the correct canvas
+         * behavior is established immediately.
          */
 
         (function () {
@@ -1189,10 +1320,12 @@
             const userAgent =
                 navigator.userAgent || "";
 
+
             const applePhone =
                 /iPhone|iPod/i.test(
                     userAgent
                 );
+
 
             const androidPhone =
                 /Android/i.test(
@@ -1205,10 +1338,12 @@
                     userAgent
                 );
 
+
             const windowsPhone =
                 /Windows Phone/i.test(
                     userAgent
                 );
+
 
             const genericPhone =
                 /Mobile/i.test(
@@ -1217,6 +1352,7 @@
                 !/Tablet|iPad/i.test(
                     userAgent
                 );
+
 
             const isPhone =
                 applePhone ||
@@ -1240,165 +1376,330 @@
 
 
             /*
-             * NATIVE PORTRAIT LOCK
-             *
-             * This asks the browser/OS to keep the
-             * phone in portrait orientation.
-             *
-             * Some browsers, especially normal iOS
-             * Safari tabs, do not expose orientation.lock().
-             * In those browsers the request simply fails
-             * silently.
+             * =================================================
+             * ORIENTATION DETECTION
+             * =================================================
              */
 
-            async function requestPortraitLock() {
+            function getViewportWidth() {
+
+                return window.visualViewport
+                    ? window.visualViewport.width
+                    : window.innerWidth;
+            }
+
+
+            function getViewportHeight() {
+
+                return window.visualViewport
+                    ? window.visualViewport.height
+                    : window.innerHeight;
+            }
+
+
+            function updatePhoneOrientation() {
 
                 if (!isPhone) {
                     return;
                 }
 
 
+                const width =
+                    getViewportWidth();
+
+
+                const height =
+                    getViewportHeight();
+
+
+                const landscape =
+                    width > height;
+
+
+                document.body.classList.toggle(
+                    "landscape",
+                    landscape
+                );
+
+
+                document.body.classList.toggle(
+                    "portrait",
+                    !landscape
+                );
+            }
+
+
+            updatePhoneOrientation();
+
+
+            window.addEventListener(
+                "resize",
+                updatePhoneOrientation,
+                {
+                    passive: true
+                }
+            );
+
+
+            window.addEventListener(
+                "orientationchange",
+                updatePhoneOrientation,
+                {
+                    passive: true
+                }
+            );
+
+
+            if (
+                window.visualViewport
+            ) {
+
+                window.visualViewport.addEventListener(
+                    "resize",
+                    updatePhoneOrientation,
+                    {
+                        passive: true
+                    }
+                );
+            }
+
+
+            /*
+             * Native Screen Orientation API.
+             *
+             * This is the same native request used by
+             * the Portrait Lock Test.
+             *
+             * The browser decides whether the request is
+             * permitted. Failure is intentionally silent.
+             */
+
+            let portraitLockAttempted =
+                false;
+
+
+            async function requestPortrait() {
+
+                if (!isPhone) {
+                    return;
+                }
+
+
+                if (
+                    !screen.orientation ||
+                    typeof screen.orientation.lock !==
+                        "function"
+                ) {
+                    return;
+                }
+
+
                 try {
 
-                    if (
-                        screen.orientation &&
-                        typeof screen.orientation.lock ===
-                            "function"
-                    ) {
+                    await screen.orientation.lock(
+                        "portrait"
+                    );
 
-                        await screen.orientation.lock(
-                            "portrait"
-                        );
-                    }
+
+                    portraitLockAttempted =
+                        true;
 
                 } catch (
                     error
                 ) {
 
                     /*
-                     * Orientation locking is not supported
-                     * in every browser/context.
+                     * Some browsers require a user
+                     * activation before orientation
+                     * locking is permitted.
                      *
-                     * Do not rotate or alter the page
-                     * as a fallback.
+                     * Leave the CSS canvas active.
                      */
                 }
             }
 
 
-            requestPortraitLock();
+            /*
+             * Initial native request.
+             */
+
+            requestPortrait();
+
+
+            /*
+             * Retry after the first user interaction.
+             *
+             * This helps environments where the native
+             * orientation API rejects calls made during
+             * initial page loading.
+             */
+
+            function retryNativePortraitLock() {
+
+                if (
+                    !portraitLockAttempted
+                ) {
+
+                    requestPortrait();
+                }
+            }
+
+
+            window.addEventListener(
+                "pointerdown",
+                retryNativePortraitLock,
+                {
+                    passive: true,
+                    once: true
+                }
+            );
+
+
+            window.addEventListener(
+                "touchstart",
+                retryNativePortraitLock,
+                {
+                    passive: true,
+                    once: true
+                }
+            );
+
+
+            /*
+             * Keep the CSS state synchronized with the
+             * native orientation state when available.
+             */
+
+            if (
+                screen.orientation &&
+                typeof screen.orientation.addEventListener ===
+                    "function"
+            ) {
+
+                screen.orientation.addEventListener(
+                    "change",
+                    updatePhoneOrientation,
+                    {
+                        passive: true
+                    }
+                );
+            }
 
         })();
     </script>
 
 
-    <div id="bg"></div>
+    <div id="phonePortraitViewport">
 
-    <div
-        id="snowFar"
-        class="snow-layer">
-    </div>
+        <div id="bg"></div>
 
-    <div
-        id="snowMid"
-        class="snow-layer">
-    </div>
+        <div
+            id="snowFar"
+            class="snow-layer">
+        </div>
 
-    <div
-        id="snowNear"
-        class="snow-layer">
-    </div>
+        <div
+            id="snowMid"
+            class="snow-layer">
+        </div>
 
-    <div
-        id="snowAbove"
-        class="snow-layer">
-    </div>
+        <div
+            id="snowNear"
+            class="snow-layer">
+        </div>
 
-
-    <main id="container">
-
-        <section class="card">
-
-            <div class="live-label">
-
-                <span class="live-dot"></span>
-
-                Christmas Radio
-
-            </div>
+        <div
+            id="snowAbove"
+            class="snow-layer">
+        </div>
 
 
-            <h1 id="title">
-                Christmas
-            </h1>
+        <main id="container">
 
+            <section class="card">
 
-            <h1 id="subtitle">
-                Countdown
-            </h1>
+                <div class="live-label">
 
+                    <span class="live-dot"></span>
 
-            <div id="countdown">
-                Loading...
-            </div>
+                    Christmas Radio
 
-
-            <div class="song-wrapper">
-
-                <div class="now-playing">
-                    Now Playing
                 </div>
 
 
-                <div id="songName">
-                    Loading radio...
+                <h1 id="title">
+                    Christmas
+                </h1>
+
+
+                <h1 id="subtitle">
+                    Countdown
+                </h1>
+
+
+                <div id="countdown">
+                    Loading...
                 </div>
 
 
-                <div class="up-next-wrapper">
+                <div class="song-wrapper">
 
-                    <div class="up-next-label">
-                        Up Next
+                    <div class="now-playing">
+                        Now Playing
                     </div>
 
 
-                    <div id="upNext">
-                        Loading...
+                    <div id="songName">
+                        Loading radio...
+                    </div>
+
+
+                    <div class="up-next-wrapper">
+
+                        <div class="up-next-label">
+                            Up Next
+                        </div>
+
+
+                        <div id="upNext">
+                            Loading...
+                        </div>
+
                     </div>
 
                 </div>
 
-            </div>
+
+                <button id="playButton">
+                    🎄 Start Live Radio
+                </button>
 
 
-            <button id="playButton">
-                🎄 Start Live Radio
-            </button>
+                <footer>
+                    ❄️ Merry Christmas ❄️
+                </footer>
+
+            </section>
+
+        </main>
 
 
-            <footer>
-                ❄️ Merry Christmas ❄️
-            </footer>
-
-        </section>
-
-    </main>
-
-
-    <audio
-        id="musicAudio"
-        preload="auto"
-        playsinline
-        controlslist="nodownload noplaybackrate noremoteplayback">
-    </audio>
+        <audio
+            id="musicAudio"
+            preload="auto"
+            playsinline
+            controlslist="nodownload noplaybackrate noremoteplayback">
+        </audio>
 
 
-    <audio
-        id="speechAudio"
-        preload="auto"
-        playsinline
-        controlslist="nodownload noplaybackrate noremoteplayback">
-    </audio>
+        <audio
+            id="speechAudio"
+            preload="auto"
+            playsinline
+            controlslist="nodownload noplaybackrate noremoteplayback">
+        </audio>
+
+    </div>
 
 
     <script>
