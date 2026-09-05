@@ -1029,10 +1029,22 @@
      * =====================================================
      * PHONE LANDSCAPE
      *
-     * The page is NOT rotated.
+     * Completely responsive landscape layout.
      *
-     * Everything simply becomes smaller and tighter so
-     * the complete card fits inside the landscape viewport.
+     * The card becomes a two-column composition:
+     *
+     * LEFT:
+     * Christmas
+     * Countdown
+     * Countdown timer
+     *
+     * RIGHT:
+     * Now Playing
+     * Up Next
+     * Radio button
+     *
+     * This uses the horizontal space instead of simply
+     * shrinking the portrait design.
      * =====================================================
      */
 
@@ -1040,81 +1052,105 @@
 
         #container {
             padding:
-                10px
-                max(15px, env(safe-area-inset-right))
-                10px
-                max(15px, env(safe-area-inset-left));
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
+                max(8px, env(safe-area-inset-top))
+                max(12px, env(safe-area-inset-right))
+                max(8px, env(safe-area-inset-bottom))
+                max(12px, env(safe-area-inset-left));
         }
 
         .card {
             width:
-                min(94vw, 850px);
-
-            /*
-             * Prevent the card itself from becoming taller
-             * than the available landscape screen.
-             */
-            max-height:
-                calc(
-                    100dvh -
-                    env(safe-area-inset-top) -
-                    env(safe-area-inset-bottom) -
-                    20px
+                min(
+                    94vw,
+                    850px
                 );
+
+            height:
+                min(
+                    92dvh,
+                    440px
+                );
+
+            min-height:
+                0;
 
             padding:
                 clamp(12px, 3vh, 22px)
-                clamp(20px, 5vw, 40px);
+                clamp(18px, 4vw, 38px);
 
             border-radius:
-                24px;
+                25px;
 
-            /*
-             * Never create an internal scrolling card.
-             */
             overflow:
                 hidden;
 
             display:
-                flex;
+                grid;
 
-            flex-direction:
-                column;
+            grid-template-columns:
+                minmax(0, 1.15fr)
+                minmax(0, 0.95fr);
+
+            grid-template-rows:
+                auto
+                auto
+                auto
+                auto;
+
+            grid-template-areas:
+                "live live"
+                "title info"
+                "subtitle info"
+                "countdown button";
+
+            column-gap:
+                clamp(18px, 5vw, 48px);
+
+            row-gap:
+                clamp(2px, 0.8vh, 7px);
 
             align-items:
                 center;
 
             justify-content:
                 center;
+
+            backdrop-filter:
+                blur(14px)
+                saturate(180%);
+
+            -webkit-backdrop-filter:
+                blur(14px)
+                saturate(180%);
         }
 
         .card::before {
             border-radius:
-                23px;
+                24px;
         }
 
         /*
-         * Smaller live label
+         * LIVE LABEL
          */
 
         .live-label {
+            grid-area:
+                live;
+
+            justify-self:
+                center;
+
             padding:
-                6px 13px;
+                5px 12px;
 
             gap:
                 7px;
 
             font-size:
-                0.62rem;
+                0.58rem;
 
             margin-bottom:
-                clamp(5px, 1.5vh, 10px);
+                2px;
         }
 
         .live-dot {
@@ -1126,61 +1162,78 @@
         }
 
         /*
-         * Smaller title
+         * LEFT SIDE
          */
 
         #title {
+            grid-area:
+                title;
+
             font-size:
                 clamp(
-                    2.2rem,
-                    10vh,
-                    4.2rem
+                    2.25rem,
+                    9.5vh,
+                    4.4rem
+                );
+
+            line-height:
+                0.86;
+
+            margin:
+                0;
+
+            white-space:
+                nowrap;
+        }
+
+        #subtitle {
+            grid-area:
+                subtitle;
+
+            font-size:
+                clamp(
+                    1.45rem,
+                    5.5vh,
+                    2.5rem
                 );
 
             line-height:
                 0.9;
 
-            margin-bottom:
-                4px;
+            margin:
+                0;
+
+            white-space:
+                nowrap;
         }
-
-        #subtitle {
-            font-size:
-                clamp(
-                    1.4rem,
-                    6vh,
-                    2.5rem
-                );
-
-            margin-bottom:
-                clamp(7px, 1.8vh, 14px);
-        }
-
-        /*
-         * Smaller countdown
-         */
 
         #countdown {
+            grid-area:
+                countdown;
+
+            justify-self:
+                center;
+
             width:
-                auto;
+                100%;
 
             min-width:
                 0;
 
             max-width:
-                90%;
+                100%;
 
             padding:
-                8px 16px;
+                8px 12px;
 
-            margin-bottom:
-                clamp(7px, 1.8vh, 14px);
+            margin:
+                2px 0 0;
 
             font-size:
                 clamp(
-                    0.8rem,
-                    3.5vh,
-                    1.15rem
+                    0.72rem,
+                    3.2vh,
+                    1.05rem
                 );
 
             white-space:
@@ -1188,23 +1241,41 @@
         }
 
         /*
-         * Compact song information
+         * RIGHT SIDE
          */
 
         .song-wrapper {
-            margin-bottom:
-                clamp(7px, 1.8vh, 14px);
+            grid-area:
+                info;
 
             width:
                 100%;
+
+            min-width:
+                0;
+
+            margin:
+                0;
+
+            padding:
+                0 2px;
+
+            text-align:
+                center;
         }
 
         .now-playing {
             font-size:
-                0.58rem;
+                0.55rem;
+
+            letter-spacing:
+                0.16em;
 
             margin-bottom:
                 4px;
+
+            opacity:
+                0.68;
         }
 
         #songName {
@@ -1212,14 +1283,17 @@
                 1.2em;
 
             padding:
-                0 5px;
+                0;
 
             font-size:
                 clamp(
-                    0.78rem,
-                    3vh,
-                    1.05rem
+                    0.82rem,
+                    3.2vh,
+                    1.1rem
                 );
+
+            line-height:
+                1.15;
 
             white-space:
                 nowrap;
@@ -1232,16 +1306,16 @@
         }
 
         .up-next-wrapper {
-            margin-top:
-                5px;
-
-            margin-bottom:
-                0;
+            margin:
+                7px 0 0;
         }
 
         .up-next-label {
             font-size:
-                0.5rem;
+                0.47rem;
+
+            letter-spacing:
+                0.14em;
 
             margin-bottom:
                 2px;
@@ -1253,10 +1327,13 @@
 
             font-size:
                 clamp(
-                    0.65rem,
+                    0.64rem,
                     2.5vh,
-                    0.85rem
+                    0.86rem
                 );
+
+            line-height:
+                1.1;
 
             white-space:
                 nowrap;
@@ -1269,44 +1346,72 @@
         }
 
         /*
-         * Compact play button
+         * BUTTON
          */
 
         #playButton {
+            grid-area:
+                button;
+
+            justify-self:
+                center;
+
             width:
-                auto;
+                min(
+                    100%,
+                    250px
+                );
 
             min-width:
-                180px;
-
-            max-width:
-                280px;
+                0;
 
             padding:
-                9px 20px;
+                8px 16px;
 
             font-size:
                 clamp(
-                    0.72rem,
-                    2.8vh,
-                    0.9rem
+                    0.68rem,
+                    2.7vh,
+                    0.88rem
                 );
+
+            white-space:
+                nowrap;
         }
 
         /*
-         * Compact footer
+         * FOOTER IS MOVED TO A SMALL FLOATING POSITION
+         * SO IT DOESN'T TAKE UP A GRID ROW.
          */
 
         footer {
-            margin-top:
-                clamp(5px, 1.5vh, 9px);
+            position:
+                absolute;
+
+            left:
+                50%;
+
+            bottom:
+                7px;
+
+            transform:
+                translateX(-50%);
+
+            margin:
+                0;
 
             font-size:
                 clamp(
-                    0.52rem,
-                    2vh,
-                    0.68rem
+                    0.45rem,
+                    1.8vh,
+                    0.6rem
                 );
+
+            white-space:
+                nowrap;
+
+            opacity:
+                0.55;
         }
     }
 
@@ -1322,43 +1427,72 @@
 
         #container {
             padding:
-                6px 12px;
+                5px 10px;
         }
 
         .card {
+            width:
+                min(
+                    95vw,
+                    850px
+                );
+
+            height:
+                calc(
+                    100dvh -
+                    env(safe-area-inset-top) -
+                    env(safe-area-inset-bottom) -
+                    10px
+                );
+
             padding:
-                8px 18px;
+                8px 16px;
 
             border-radius:
+                21px;
+
+            grid-template-columns:
+                minmax(0, 1.15fr)
+                minmax(0, 0.95fr);
+
+            column-gap:
                 20px;
+
+            row-gap:
+                1px;
         }
 
         .card::before {
             border-radius:
-                19px;
+                20px;
         }
 
         .live-label {
             padding:
-                4px 10px;
+                3px 9px;
 
-            margin-bottom:
-                4px;
+            gap:
+                5px;
 
             font-size:
-                0.52rem;
+                0.48rem;
+        }
+
+        .live-dot {
+            width:
+                6px;
+
+            height:
+                6px;
         }
 
         #title {
             font-size:
                 clamp(
-                    1.8rem,
+                    1.85rem,
                     9vh,
-                    3.3rem
+                    3.2rem
                 );
-
-            margin-bottom:
-                2px;
         }
 
         #subtitle {
@@ -1366,36 +1500,25 @@
                 clamp(
                     1.15rem,
                     5vh,
-                    2rem
+                    1.9rem
                 );
-
-            margin-bottom:
-                5px;
         }
 
         #countdown {
             padding:
-                6px 12px;
-
-            margin-bottom:
-                6px;
+                6px 9px;
 
             font-size:
                 clamp(
-                    0.7rem,
+                    0.62rem,
                     3vh,
-                    0.95rem
+                    0.88rem
                 );
-        }
-
-        .song-wrapper {
-            margin-bottom:
-                6px;
         }
 
         .now-playing {
             font-size:
-                0.5rem;
+                0.46rem;
 
             margin-bottom:
                 2px;
@@ -1404,79 +1527,64 @@
         #songName {
             font-size:
                 clamp(
-                    0.7rem,
+                    0.68rem,
                     2.8vh,
-                    0.9rem
+                    0.88rem
                 );
         }
 
         .up-next-wrapper {
             margin-top:
-                3px;
+                4px;
         }
 
         .up-next-label {
             font-size:
-                0.45rem;
+                0.4rem;
+
+            margin-bottom:
+                1px;
         }
 
         #upNext {
             font-size:
                 clamp(
-                    0.58rem,
-                    2.2vh,
-                    0.75rem
+                    0.55rem,
+                    2.3vh,
+                    0.73rem
                 );
         }
 
         #playButton {
-            min-width:
-                160px;
+            width:
+                min(
+                    100%,
+                    220px
+                );
 
             padding:
-                7px 16px;
+                6px 13px;
 
             font-size:
                 clamp(
-                    0.65rem,
-                    2.5vh,
-                    0.8rem
+                    0.59rem,
+                    2.4vh,
+                    0.76rem
                 );
         }
 
         footer {
-            display:
-                none;
+            bottom:
+                4px;
+
+            font-size:
+                0.42rem;
         }
     }
 
     /*
      * =====================================================
-     * NON-PHONE TABLET/DESKTOP LANDSCAPE
-     * =====================================================
-     */
-
-    @media (min-width: 769px)
-        and (max-width: 1100px)
-        and (orientation: landscape) {
-
-        #container {
-            padding:
-                15px;
-        }
-
-        .card {
-            max-height:
-                94dvh;
-
-            overflow:
-                hidden;
-        }
-    }
-
-    /*
-     * =====================================================
-     * SMALL PHONES
+     * SMALL PORTRAIT PHONES
      * =====================================================
      */
 
@@ -1512,6 +1620,30 @@
 
             padding:
                 13px 20px;
+        }
+    }
+
+    /*
+     * =====================================================
+     * TABLET LANDSCAPE
+     * =====================================================
+     */
+
+    @media (min-width: 769px)
+        and (max-width: 1100px)
+        and (orientation: landscape) {
+
+        #container {
+            padding:
+                15px;
+        }
+
+        .card {
+            max-height:
+                94dvh;
+
+            overflow:
+                hidden;
         }
     }
 
