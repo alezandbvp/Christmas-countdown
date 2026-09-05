@@ -24,9 +24,6 @@
         --gold: #ffd76a;
         --white: #ffffff;
 
-        /*
-         * LIQUID GLASS
-         */
         --glass-bg: rgba(255, 255, 255, 0.075);
         --glass-bg-strong: rgba(255, 255, 255, 0.105);
         --glass-border: rgba(255, 255, 255, 0.25);
@@ -137,17 +134,29 @@
         overflow: hidden;
     }
 
-    #snowFar {
+    /*
+     * All normal snow stays behind
+     * the glass card.
+     */
+
+    #snowFar,
+    #snowMid,
+    #snowNear {
         z-index: 2;
     }
 
-    #snowMid {
-        z-index: 6;
+    /*
+     * Only selected white-circle
+     * snow is placed here.
+     */
+
+    #snowAbove {
+        z-index: 10;
     }
 
-    #snowNear {
-        z-index: 8;
-    }
+    /*
+     * SNOWFLAKE
+     */
 
     .snowflake {
         position: absolute;
@@ -160,16 +169,25 @@
 
         opacity: var(--opacity);
 
+        /*
+         * One combined animation prevents
+         * the old left/right twitching.
+         */
+
         animation:
-            snowFall var(--duration) linear infinite,
-            snowDrift var(--drift) ease-in-out infinite alternate;
+            smoothSnowFall
+            var(--duration)
+            linear
+            infinite;
 
         animation-delay: var(--delay);
 
-        will-change:
-            transform,
-            margin-left;
+        will-change: transform;
     }
+
+    /*
+     * White circle snow
+     */
 
     .circle-snow {
         color: #ffffff;
@@ -184,48 +202,126 @@
         line-height: 1;
 
         text-shadow:
-            0 0 5px rgba(255, 255, 255, 0.35);
+            0 0 5px
+            rgba(255, 255, 255, 0.35);
 
         will-change:
             transform,
-            margin-left,
             opacity;
     }
 
     .circle-snow.far {
-        filter: blur(0.25px);
+        filter:
+            blur(0.25px);
     }
 
     .circle-snow.mid {
-        filter: blur(0.1px);
+        filter:
+            blur(0.1px);
 
         text-shadow:
-            0 0 7px rgba(255, 255, 255, 0.45);
+            0 0 7px
+            rgba(255, 255, 255, 0.45);
     }
 
     .circle-snow.near {
         text-shadow:
-            0 0 9px rgba(255, 255, 255, 0.65),
-            0 0 18px rgba(255, 255, 255, 0.25);
+            0 0 9px
+            rgba(255, 255, 255, 0.65),
+            0 0 18px
+            rgba(255, 255, 255, 0.25);
     }
 
-    @keyframes snowFall {
-        from {
-            transform: translate3d(0, -40px, 0);
+    /*
+     * Smooth falling + gentle sideways
+     * movement.
+     *
+     * The horizontal movement is part
+     * of the same transform animation,
+     * so it never fights another animation.
+     */
+
+    @keyframes smoothSnowFall {
+
+        0% {
+            transform:
+                translate3d(
+                    var(--drift-start),
+                    -50px,
+                    0
+                );
         }
 
-        to {
-            transform: translate3d(0, 110vh, 0);
+        12% {
+            transform:
+                translate3d(
+                    var(--drift-one),
+                    12vh,
+                    0
+                );
         }
-    }
 
-    @keyframes snowDrift {
-        from {
-            margin-left: -25px;
+        25% {
+            transform:
+                translate3d(
+                    var(--drift-two),
+                    25vh,
+                    0
+                );
         }
 
-        to {
-            margin-left: 25px;
+        37% {
+            transform:
+                translate3d(
+                    var(--drift-three),
+                    37vh,
+                    0
+                );
+        }
+
+        50% {
+            transform:
+                translate3d(
+                    var(--drift-four),
+                    50vh,
+                    0
+                );
+        }
+
+        62% {
+            transform:
+                translate3d(
+                    var(--drift-five),
+                    62vh,
+                    0
+                );
+        }
+
+        75% {
+            transform:
+                translate3d(
+                    var(--drift-six),
+                    75vh,
+                    0
+                );
+        }
+
+        87% {
+            transform:
+                translate3d(
+                    var(--drift-seven),
+                    87vh,
+                    0
+                );
+        }
+
+        100% {
+            transform:
+                translate3d(
+                    var(--drift-end),
+                    110vh,
+                    0
+                );
         }
     }
 
@@ -260,35 +356,27 @@
     .card {
         width: min(92vw, 900px);
 
-        padding: clamp(30px, 5vw, 60px);
+        padding:
+            clamp(30px, 5vw, 60px);
 
         text-align: center;
 
         position: relative;
 
-        /*
-         * Transparent glass body
-         */
         background:
-            linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.13),
-                rgba(255, 255, 255, 0.045) 45%,
-                rgba(255, 255, 255, 0.075)
-            );
+    linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.11),
+        rgba(255, 255, 255, 0.035) 45%,
+        rgba(255, 255, 255, 0.06)
+    );
 
-        /*
-         * Apple-style glass border
-         */
         border:
             1px solid
             rgba(255, 255, 255, 0.24);
 
         border-radius: 32px;
 
-        /*
-         * Deep background blur
-         */
         backdrop-filter:
             blur(28px)
             saturate(180%);
@@ -297,16 +385,13 @@
             blur(28px)
             saturate(180%);
 
-        /*
-         * Outer depth
-         */
         box-shadow:
-            0 35px 100px rgba(0, 0, 0, 0.48),
-            0 10px 30px rgba(0, 0, 0, 0.22),
+            0 35px 100px
+                rgba(0, 0, 0, 0.48),
 
-            /*
-             * Inner glass illumination
-             */
+            0 10px 30px
+                rgba(0, 0, 0, 0.22),
+
             inset 0 1px 0
                 rgba(255, 255, 255, 0.42),
 
@@ -318,7 +403,7 @@
     }
 
     /*
-     * Large glass reflection
+     * GLASS REFLECTION
      */
 
     .card::before {
@@ -345,7 +430,7 @@
     }
 
     /*
-     * Soft glass glow around lower edge
+     * GLASS LOWER GLOW
      */
 
     .card::after {
@@ -355,6 +440,7 @@
 
         left: 10%;
         right: 10%;
+
         bottom: -18px;
 
         height: 35px;
@@ -364,17 +450,13 @@
         background:
             rgba(255, 255, 255, 0.08);
 
-        filter: blur(22px);
+        filter:
+            blur(22px);
 
         pointer-events: none;
 
         z-index: -1;
     }
-
-    /*
-     * Keep card content above
-     * its glass reflection.
-     */
 
     .card > * {
         position: relative;
@@ -390,9 +472,11 @@
         display: inline-flex;
 
         align-items: center;
+
         gap: 9px;
 
-        padding: 9px 17px;
+        padding:
+            9px 17px;
 
         border-radius: 999px;
 
@@ -422,15 +506,20 @@
             blur(18px)
             saturate(160%);
 
-        font-size: 0.78rem;
+        font-size:
+            0.78rem;
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        letter-spacing: 0.12em;
+        letter-spacing:
+            0.12em;
 
-        text-transform: uppercase;
+        text-transform:
+            uppercase;
 
-        margin-bottom: 20px;
+        margin-bottom:
+            20px;
     }
 
     .live-dot {
@@ -439,17 +528,22 @@
 
         border-radius: 50%;
 
-        background: #ff3038;
+        background:
+            #ff3038;
 
         box-shadow:
             0 0 8px #ff3038,
-            0 0 16px rgba(255, 48, 56, 0.65);
+            0 0 16px
+            rgba(255, 48, 56, 0.65);
 
         animation:
-            livePulse 1.4s infinite;
+            livePulse
+            1.4s
+            infinite;
     }
 
     @keyframes livePulse {
+
         0%,
         100% {
             opacity: 1;
@@ -467,73 +561,103 @@
     }
 
     /*
-     * TITLE
+     * CHRISTMAS TITLE
+     *
+     * Rich Christmas red + green.
      */
 
     #title {
         font-size:
             clamp(3rem, 9vw, 7rem);
 
-        line-height: 0.95;
+        line-height:
+            0.95;
 
-        font-weight: 900;
+        font-weight:
+            900;
 
-        letter-spacing: -0.06em;
+        letter-spacing:
+            -0.06em;
 
         background:
             linear-gradient(
-                135deg,
-                #ffffff 5%,
-                #ffe59b 40%,
-                #ffffff 70%,
-                #ffccd0 100%
+                105deg,
+                #ff2933 0%,
+                #d71920 22%,
+                #ffffff 43%,
+                #ffffff 49%,
+                #0fa15a 64%,
+                #0b6b3a 82%,
+                #16a864 100%
             );
 
-        -webkit-background-clip: text;
-        background-clip: text;
+        background-size:
+            200% 100%;
 
-        color: transparent;
+        -webkit-background-clip:
+            text;
+
+        background-clip:
+            text;
+
+        color:
+            transparent;
 
         text-shadow:
             0 10px 40px
             rgba(0, 0, 0, 0.35);
 
-        margin-bottom: 4px;
+        margin-bottom:
+            4px;
     }
+
+    /*
+     * COUNTDOWN TITLE
+     */
 
     #subtitle {
         font-size:
             clamp(2rem, 5vw, 4rem);
 
-        line-height: 1;
+        line-height:
+            1;
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        color: #ffffff;
+        color:
+            #ffffff;
 
         text-shadow:
             0 5px 25px
             rgba(0, 0, 0, 0.4);
 
-        margin-bottom: 28px;
+        margin-bottom:
+            28px;
     }
 
     /*
-     * LIQUID GLASS COUNTDOWN
+     * COUNTDOWN GLASS
      */
 
     #countdown {
-        display: inline-flex;
+        display:
+            inline-flex;
 
-        align-items: center;
-        justify-content: center;
+        align-items:
+            center;
+
+        justify-content:
+            center;
 
         min-width:
             min(90%, 500px);
 
-        padding: 15px 25px;
+        padding:
+            15px 25px;
 
-        border-radius: 999px;
+        border-radius:
+            999px;
 
         background:
             linear-gradient(
@@ -567,11 +691,14 @@
         font-size:
             clamp(1.1rem, 3vw, 1.7rem);
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        letter-spacing: 0.03em;
+        letter-spacing:
+            0.03em;
 
-        margin-bottom: 30px;
+        margin-bottom:
+            30px;
     }
 
     /*
@@ -579,32 +706,42 @@
      */
 
     .song-wrapper {
-        margin-bottom: 28px;
+        margin-bottom:
+            28px;
     }
 
     .now-playing {
-        font-size: 0.72rem;
+        font-size:
+            0.72rem;
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        text-transform: uppercase;
+        text-transform:
+            uppercase;
 
-        letter-spacing: 0.18em;
+        letter-spacing:
+            0.18em;
 
-        opacity: 0.72;
+        opacity:
+            0.72;
 
-        margin-bottom: 9px;
+        margin-bottom:
+            9px;
     }
 
     #songName {
-        min-height: 1.5em;
+        min-height:
+            1.5em;
 
         font-size:
             clamp(1rem, 3vw, 1.45rem);
 
-        font-weight: 700;
+        font-weight:
+            700;
 
-        color: #ffffff;
+        color:
+            #ffffff;
 
         text-shadow:
             0 2px 12px
@@ -612,32 +749,42 @@
     }
 
     .up-next-wrapper {
-        margin-top: 14px;
+        margin-top:
+            14px;
 
-        margin-bottom: 4px;
+        margin-bottom:
+            4px;
     }
 
     .up-next-label {
-        font-size: 0.62rem;
+        font-size:
+            0.62rem;
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        text-transform: uppercase;
+        text-transform:
+            uppercase;
 
-        letter-spacing: 0.16em;
+        letter-spacing:
+            0.16em;
 
-        opacity: 0.52;
+        opacity:
+            0.52;
 
-        margin-bottom: 5px;
+        margin-bottom:
+            5px;
     }
 
     #upNext {
-        min-height: 1.3em;
+        min-height:
+            1.3em;
 
         font-size:
             clamp(0.85rem, 2.5vw, 1rem);
 
-        font-weight: 700;
+        font-weight:
+            700;
 
         color:
             rgba(255, 255, 255, 0.78);
@@ -648,22 +795,28 @@
     }
 
     /*
-     * LIQUID GLASS BUTTON
+     * PLAY BUTTON
      */
 
     #playButton {
-        position: relative;
+        position:
+            relative;
 
-        overflow: hidden;
+        overflow:
+            hidden;
 
-        border: 1px solid
+        border:
+            1px solid
             rgba(255, 255, 255, 0.25);
 
-        outline: none;
+        outline:
+            none;
 
-        padding: 15px 28px;
+        padding:
+            15px 28px;
 
-        border-radius: 999px;
+        border-radius:
+            999px;
 
         background:
             linear-gradient(
@@ -673,15 +826,20 @@
                 rgba(141, 7, 16, 0.55)
             );
 
-        color: white;
+        color:
+            white;
 
-        font-size: 1rem;
+        font-size:
+            1rem;
 
-        font-weight: 800;
+        font-weight:
+            800;
 
-        cursor: pointer;
+        cursor:
+            pointer;
 
-        touch-action: manipulation;
+        touch-action:
+            manipulation;
 
         backdrop-filter:
             blur(20px)
@@ -706,20 +864,24 @@
             box-shadow 0.18s ease;
     }
 
-    /*
-     * Button glass reflection
-     */
-
     #playButton::before {
-        content: "";
+        content:
+            "";
 
-        position: absolute;
+        position:
+            absolute;
 
-        top: 0;
-        left: -40%;
+        top:
+            0;
 
-        width: 35%;
-        height: 100%;
+        left:
+            -40%;
+
+        width:
+            35%;
+
+        height:
+            100%;
 
         background:
             linear-gradient(
@@ -737,7 +899,8 @@
     }
 
     #playButton:hover::before {
-        left: 110%;
+        left:
+            110%;
     }
 
     #playButton:active {
@@ -786,19 +949,25 @@
      */
 
     footer {
-        margin-top: 28px;
+        margin-top:
+            28px;
 
-        font-size: 0.78rem;
+        font-size:
+            0.78rem;
 
-        font-weight: 700;
+        font-weight:
+            700;
 
-        opacity: 0.65;
+        opacity:
+            0.65;
 
-        letter-spacing: 0.08em;
+        letter-spacing:
+            0.08em;
     }
 
     audio {
-        display: none !important;
+        display:
+            none !important;
     }
 
     /*
@@ -816,16 +985,15 @@
         }
 
         .card {
-            width: 94vw;
+            width:
+                94vw;
 
-            padding: 30px 20px;
+            padding:
+                30px 20px;
 
-            border-radius: 28px;
+            border-radius:
+                28px;
 
-            /*
-             * Slightly stronger mobile glass
-             * because the screen is smaller.
-             */
             backdrop-filter:
                 blur(25px)
                 saturate(180%);
@@ -836,21 +1004,27 @@
         }
 
         .card::before {
-            border-radius: 27px;
+            border-radius:
+                27px;
         }
 
         #countdown {
-            min-width: 0;
+            min-width:
+                0;
 
-            width: 100%;
+            width:
+                100%;
 
-            padding: 13px 15px;
+            padding:
+                13px 15px;
 
-            margin-bottom: 24px;
+            margin-bottom:
+                24px;
         }
 
         #songName {
-            padding: 0 8px;
+            padding:
+                0 8px;
         }
 
         #playButton {
@@ -859,7 +1033,8 @@
         }
 
         footer {
-            margin-top: 22px;
+            margin-top:
+                22px;
         }
     }
 
@@ -870,21 +1045,27 @@
     @media (max-width: 900px) and (orientation: landscape) {
 
         #container {
-            align-items: center;
+            align-items:
+                center;
         }
 
         .card {
-            padding: 20px 35px;
+            padding:
+                20px 35px;
 
-            max-height: 92dvh;
+            max-height:
+                92dvh;
 
-            overflow-y: auto;
+            overflow-y:
+                auto;
 
-            border-radius: 26px;
+            border-radius:
+                26px;
         }
 
         .live-label {
-            margin-bottom: 8px;
+            margin-bottom:
+                8px;
         }
 
         #title {
@@ -896,21 +1077,26 @@
             font-size:
                 clamp(1.6rem, 4vw, 2.7rem);
 
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
         #countdown {
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
 
-            padding: 9px 20px;
+            padding:
+                9px 20px;
         }
 
         .song-wrapper {
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
         footer {
-            margin-top: 12px;
+            margin-top:
+                12px;
         }
     }
 
@@ -921,28 +1107,36 @@
     @media (max-height: 650px) {
 
         .card {
-            padding-top: 20px;
-            padding-bottom: 20px;
+            padding-top:
+                20px;
+
+            padding-bottom:
+                20px;
         }
 
         .live-label {
-            margin-bottom: 8px;
+            margin-bottom:
+                8px;
         }
 
         #subtitle {
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
         #countdown {
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
         .song-wrapper {
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
         footer {
-            display: none;
+            display:
+                none;
         }
     }
 
@@ -953,27 +1147,34 @@
     @media (max-width: 380px) {
 
         .card {
-            padding: 25px 15px;
+            padding:
+                25px 15px;
 
-            border-radius: 25px;
+            border-radius:
+                25px;
         }
 
         #countdown {
-            font-size: 0.95rem;
+            font-size:
+                0.95rem;
         }
 
         #songName {
-            font-size: 0.95rem;
+            font-size:
+                0.95rem;
         }
 
         #upNext {
-            font-size: 0.8rem;
+            font-size:
+                0.8rem;
         }
 
         #playButton {
-            font-size: 0.9rem;
+            font-size:
+                0.9rem;
 
-            padding: 13px 20px;
+            padding:
+                13px 20px;
         }
     }
 
@@ -1006,6 +1207,9 @@
     <div id="snowFar" class="snow-layer"></div>
     <div id="snowMid" class="snow-layer"></div>
     <div id="snowNear" class="snow-layer"></div>
+
+    <!-- Only selected circle snow goes above the glass -->
+    <div id="snowAbove" class="snow-layer"></div>
 
     <main id="container">
 
@@ -1332,13 +1536,85 @@
         /*
          * SNOW
          *
-         * ❄ and • are deliberately separated.
+         * ❄ and • are separated.
          *
-         * The ❄ snow uses the original amount.
+         * ❄ snow remains at the original
+         * quantities.
          *
-         * The • snow gets considerably more
-         * particles and its own depth system.
+         * • snow gets considerably more
+         * particles.
          */
+
+        function setSnowDrift(
+            snowflake,
+            driftAmount
+        ) {
+
+            /*
+             * Give every snowflake its own
+             * smooth horizontal path.
+             */
+
+            const center =
+                (Math.random() - 0.5) *
+                driftAmount;
+
+            const swing =
+                8 +
+                Math.random() *
+                (driftAmount * 0.55);
+
+            const direction =
+                Math.random() > 0.5
+                    ? 1
+                    : -1;
+
+            snowflake.style.setProperty(
+                "--drift-start",
+                `${center - swing * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-one",
+                `${center + swing * 0.25 * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-two",
+                `${center + swing * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-three",
+                `${center + swing * 0.35 * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-four",
+                `${center - swing * 0.45 * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-five",
+                `${center - swing * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-six",
+                `${center - swing * 0.30 * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-seven",
+                `${center + swing * 0.55 * direction}px`
+            );
+
+            snowflake.style.setProperty(
+                "--drift-end",
+                `${center + swing * 0.15 * direction}px`
+            );
+        }
+
 
         function createSnowflakes(
             container,
@@ -1383,13 +1659,13 @@
                 );
 
                 snowflake.style.setProperty(
-                    "--drift",
-                    `${2 + Math.random() * 4}s`
-                );
-
-                snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * 15}s`
+                );
+
+                setSnowDrift(
+                    snowflake,
+                    50
                 );
 
                 container.appendChild(
@@ -1400,10 +1676,13 @@
 
 
         /*
-         * Create only white-circle snow.
+         * WHITE CIRCLE SNOW
          *
-         * These are separate from the ❄ flakes,
-         * allowing much higher particle counts.
+         * Only selected • particles are
+         * moved into snowAbove.
+         *
+         * This means ❄ can NEVER appear
+         * over the glass.
          */
 
         function createCircleSnow(
@@ -1430,19 +1709,16 @@
                     "•";
 
 
-                /*
-                 * Depth controls the apparent
-                 * distance of the snow.
-                 */
-
                 let minSize;
                 let maxSize;
+
                 let minOpacity;
                 let maxOpacity;
+
                 let minDuration;
                 let maxDuration;
-                let minDrift;
-                let maxDrift;
+
+                let driftAmount;
 
 
                 if (
@@ -1458,8 +1734,7 @@
                     minDuration = 10;
                     maxDuration = 20;
 
-                    minDrift = 2;
-                    maxDrift = 4;
+                    driftAmount = 35;
 
                 } else if (
                     depth === "mid"
@@ -1474,8 +1749,7 @@
                     minDuration = 8;
                     maxDuration = 16;
 
-                    minDrift = 2;
-                    maxDrift = 4.5;
+                    driftAmount = 50;
 
                 } else {
 
@@ -1488,8 +1762,7 @@
                     minDuration = 6;
                     maxDuration = 13;
 
-                    minDrift = 2;
-                    maxDrift = 5;
+                    driftAmount = 65;
                 }
 
 
@@ -1517,14 +1790,6 @@
                         minDuration
                     );
 
-                const drift =
-                    minDrift +
-                    Math.random() *
-                    (
-                        maxDrift -
-                        minDrift
-                    );
-
 
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
@@ -1545,37 +1810,92 @@
                 );
 
                 snowflake.style.setProperty(
-                    "--drift",
-                    `${drift}s`
-                );
-
-                snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * duration}s`
                 );
 
-
                 /*
-                 * Slightly randomize the starting
-                 * vertical position so the screen
-                 * does not fill in synchronized waves.
+                 * Random starting height.
                  */
 
                 snowflake.style.top =
                     `${-20 - Math.random() * 100}px`;
 
 
-                container.appendChild(
-                    snowflake
+                /*
+                 * Smooth natural movement.
+                 */
+
+                setSnowDrift(
+                    snowflake,
+                    driftAmount
                 );
+
+
+                /*
+                 * Above-glass probability.
+                 *
+                 * Far  = 8%
+                 * Mid  = 40%
+                 * Near = 70%
+                 *
+                 * This makes the effect noticeable
+                 * without putting all the snow
+                 * over the card.
+                 */
+
+                let aboveChance;
+
+                if (
+                    depth === "far"
+                ) {
+
+                    aboveChance =
+                        0.08;
+
+                } else if (
+                    depth === "mid"
+                ) {
+
+                    aboveChance =
+                        0.40;
+
+                } else {
+
+                    aboveChance =
+                        0.70;
+                }
+
+
+                const shouldGoAbove =
+                    Math.random() <
+                    aboveChance;
+
+
+                if (
+                    shouldGoAbove
+                ) {
+
+                    document
+                        .getElementById(
+                            "snowAbove"
+                        )
+                        .appendChild(
+                            snowflake
+                        );
+
+                } else {
+
+                    container.appendChild(
+                        snowflake
+                    );
+                }
             }
         }
 
 
         /*
-         * ❄ SNOW
-         *
-         * Original quantities and behavior.
+         * ❄ ORIGINAL SNOW
          */
 
         createSnowflakes(
@@ -1601,14 +1921,7 @@
 
 
         /*
-         * WHITE CIRCLES
-         *
-         * Much more frequent than the ❄ flakes.
-         *
-         * Far: mostly background.
-         * Mid: increasingly visible.
-         * Near: large and bright, with a chance
-         * to pass directly over the card.
+         * • WHITE CIRCLES
          */
 
         createCircleSnow(
@@ -1642,11 +1955,15 @@
 
         async function loadDurations() {
 
-            if (metadataLoaded) {
+            if (
+                metadataLoaded
+            ) {
                 return;
             }
 
-            if (metadataLoadingPromise) {
+            if (
+                metadataLoadingPromise
+            ) {
                 return metadataLoadingPromise;
             }
 
@@ -1662,7 +1979,9 @@
                             }
                         );
 
-                    if (!response.ok) {
+                    if (
+                        !response.ok
+                    ) {
 
                         throw new Error(
                             `Could not load durations.json (${response.status})`
@@ -1687,13 +2006,17 @@
 
                     songs =
                         data.songs.map(
-                            (entry, index) => {
+                            (
+                                entry,
+                                index
+                            ) => {
 
                                 if (
                                     !entry ||
                                     typeof entry !==
                                         "object"
                                 ) {
+
                                     throw new Error(
                                         `Invalid song entry at index ${index}.`
                                     );
@@ -1716,14 +2039,18 @@
                                         entry.duration
                                     );
 
-                                if (!name) {
+                                if (
+                                    !name
+                                ) {
 
                                     throw new Error(
                                         `Song ${index + 1} is missing its name.`
                                     );
                                 }
 
-                                if (!file) {
+                                if (
+                                    !file
+                                ) {
 
                                     throw new Error(
                                         `"${name}" is missing its file in durations.json.`
@@ -1762,7 +2089,7 @@
 
 
                     /*
-                     * Speech duration
+                     * SPEECH DURATION
                      */
 
                     try {
@@ -1788,14 +2115,17 @@
                                     const timeout =
                                         setTimeout(
                                             () => {
+
                                                 reject(
                                                     new Error(
                                                         "Timed out loading speech.mp3"
                                                     )
                                                 );
+
                                             },
                                             15000
                                         );
+
 
                                     speechMetadata.addEventListener(
                                         "loadedmetadata",
@@ -1827,12 +2157,14 @@
                                                     )
                                                 );
                                             }
+
                                         },
                                         {
                                             once:
                                                 true
                                         }
                                     );
+
 
                                     speechMetadata.addEventListener(
                                         "error",
@@ -1847,6 +2179,7 @@
                                                     "Could not load speech.mp3"
                                                 )
                                             );
+
                                         },
                                         {
                                             once:
@@ -1854,11 +2187,14 @@
                                         }
                                     );
 
+
                                     speechMetadata.load();
                                 }
                             );
 
-                    } catch (error) {
+                    } catch (
+                        error
+                    ) {
 
                         console.error(
                             "Could not read speech duration:",
@@ -1871,7 +2207,7 @@
 
 
                     /*
-                     * Calculate playlist duration
+                     * PLAYLIST DURATION
                      */
 
                     totalPlaylistDuration =
@@ -1933,13 +2269,15 @@
                     );
 
                 })()
-                    .catch(error => {
+                    .catch(
+                        error => {
 
-                        metadataLoadingPromise =
-                            null;
+                            metadataLoadingPromise =
+                                null;
 
-                        throw error;
-                    });
+                            throw error;
+                        }
+                    );
 
 
             return metadataLoadingPromise;
@@ -1958,9 +2296,14 @@
             ) {
 
                 return {
-                    type: "song",
-                    index: 0,
-                    offset: 0
+                    type:
+                        "song",
+
+                    index:
+                        0,
+
+                    offset:
+                        0
                 };
             }
 
@@ -1983,7 +2326,8 @@
                 totalPlaylistDuration;
 
 
-            let accumulated = 0;
+            let accumulated =
+                0;
 
 
             for (
@@ -1999,12 +2343,16 @@
                 if (
                     position <
                     accumulated +
-                        duration
+                    duration
                 ) {
 
                     return {
-                        type: "song",
-                        index: i,
+                        type:
+                            "song",
+
+                        index:
+                            i,
+
                         offset:
                             position -
                             accumulated
@@ -2026,12 +2374,16 @@
                     if (
                         position <
                         accumulated +
-                            speechDuration
+                        speechDuration
                     ) {
 
                         return {
-                            type: "speech",
-                            index: i,
+                            type:
+                                "speech",
+
+                            index:
+                                i,
+
                             offset:
                                 position -
                                 accumulated
@@ -2046,9 +2398,14 @@
 
 
             return {
-                type: "song",
-                index: 0,
-                offset: 0
+                type:
+                    "song",
+
+                index:
+                    0,
+
+                offset:
+                    0
             };
         }
 
@@ -2098,7 +2455,7 @@
 
 
         /*
-         * UPDATE SONG DISPLAY
+         * UPDATE RADIO UI
          */
 
         function updateRadioUI(
@@ -2161,14 +2518,15 @@
                     "speech"
                     ? "Christmas Radio"
                     : songs[
-                          segment.index
-                      ].name;
+                        segment.index
+                    ].name;
 
 
             try {
 
                 navigator.mediaSession.metadata =
                     new MediaMetadata({
+
                         title:
                             title,
 
@@ -2178,16 +2536,18 @@
                         album:
                             "Christmas Countdown",
 
-                        artwork: [{
-                            src:
-                                "./favicon.ico",
+                        artwork: [
+                            {
+                                src:
+                                    "./favicon.ico",
 
-                            sizes:
-                                "512x512",
+                                sizes:
+                                    "512x512",
 
-                            type:
-                                "image/x-icon"
-                        }]
+                                type:
+                                    "image/x-icon"
+                            }
+                        ]
                     });
 
             } catch {}
@@ -2223,10 +2583,13 @@
 
                     navigator.mediaSession
                         .setPositionState({
+
                             duration,
+
                             playbackRate:
                                 audio.playbackRate ||
                                 1,
+
                             position
                         });
                 }
@@ -2253,7 +2616,8 @@
                 navigator.mediaSession
                     .setActionHandler(
                         "play",
-                        () => resumeLive()
+                        () =>
+                            resumeLive()
                     );
 
             } catch {}
@@ -2418,7 +2782,7 @@
 
 
         /*
-         * LOAD MUSIC SONG
+         * LOAD SONG
          */
 
         async function loadSong(
@@ -2560,7 +2924,9 @@
 
                 } catch {}
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
                     "Could not start live radio:",
@@ -2825,7 +3191,9 @@
 
                 updateLiveMediaSession();
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.warn(
                     "Periodic sync failed:",
@@ -2842,7 +3210,7 @@
 
 
         /*
-         * MEDIA SESSION POSITION UPDATE
+         * MEDIA SESSION POSITION
          */
 
         setInterval(
@@ -2932,7 +3300,9 @@
                         updateLiveMediaSession();
                     }
 
-                } catch (error) {
+                } catch (
+                    error
+                ) {
 
                     console.warn(
                         "Visibility sync failed:",
@@ -3006,45 +3376,49 @@
          */
 
         loadDurations()
-            .then(() => {
+            .then(
+                () => {
 
-                const live =
-                    findLiveSegment();
+                    const live =
+                        findLiveSegment();
 
 
-                currentSongIndex =
-                    getDisplaySongIndex(
+                    currentSongIndex =
+                        getDisplaySongIndex(
+                            live
+                        );
+
+
+                    currentSegmentType =
+                        live.type;
+
+
+                    updateRadioUI(
                         live
                     );
 
 
-                currentSegmentType =
-                    live.type;
+                    updateLiveMediaSession();
+
+                }
+            )
+            .catch(
+                error => {
+
+                    console.error(
+                        "Radio metadata initialization failed:",
+                        error
+                    );
 
 
-                updateRadioUI(
-                    live
-                );
+                    songNameElement.textContent =
+                        "Radio unavailable";
 
 
-                updateLiveMediaSession();
-
-            })
-            .catch(error => {
-
-                console.error(
-                    "Radio metadata initialization failed:",
-                    error
-                );
-
-
-                songNameElement.textContent =
-                    "Radio unavailable";
-
-
-                upNextElement.textContent =
-                    error.message;
-            });
+                    upNextElement.textContent =
+                        error.message;
+                }
+            );
 
 
         /*
