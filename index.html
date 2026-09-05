@@ -13,7 +13,7 @@
 
     <link rel="icon" href="favicon.ico">
 
-    <title>Christmas Radio • Duration Generator</title>
+    <title>Christmas Countdown • Live Radio</title>
 
     <style>
         :root {
@@ -36,6 +36,10 @@
             -webkit-user-select: none;
         }
 
+        /*
+         * FULL TOUCH/GESTURE PREVENTION
+         */
+
         html,
         body {
             width: 100%;
@@ -53,6 +57,7 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             color: var(--white);
+
             background:
                 radial-gradient(
                     circle at 15% 20%,
@@ -221,7 +226,7 @@
         }
 
         #title {
-            font-size: clamp(2.5rem, 8vw, 5.5rem);
+            font-size: clamp(3rem, 9vw, 7rem);
 
             line-height: 0.95;
 
@@ -249,7 +254,7 @@
         }
 
         #subtitle {
-            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-size: clamp(2rem, 5vw, 4rem);
 
             line-height: 1;
 
@@ -261,18 +266,6 @@
                 0 5px 25px rgba(0, 0, 0, 0.4);
 
             margin-bottom: 28px;
-        }
-
-        #description {
-            max-width: 650px;
-
-            margin: 0 auto 28px;
-
-            color: rgba(255, 255, 255, 0.72);
-
-            font-size: clamp(0.9rem, 2.5vw, 1.05rem);
-
-            line-height: 1.6;
         }
 
         #countdown {
@@ -300,20 +293,20 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.1),
                 0 10px 30px rgba(0, 0, 0, 0.18);
 
-            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-size: clamp(1.1rem, 3vw, 1.7rem);
 
             font-weight: 800;
 
             letter-spacing: 0.03em;
 
+            margin-bottom: 30px;
+        }
+
+        .song-wrapper {
             margin-bottom: 28px;
         }
 
-        .generator-wrapper {
-            margin-bottom: 20px;
-        }
-
-        .status-label {
+        .now-playing {
             font-size: 0.72rem;
 
             font-weight: 800;
@@ -327,73 +320,52 @@
             margin-bottom: 9px;
         }
 
-        #status {
+        #songName {
             min-height: 1.5em;
 
-            padding: 15px;
+            font-size: clamp(1rem, 3vw, 1.45rem);
 
-            border-radius: 15px;
+            font-weight: 700;
 
-            background: rgba(0, 0, 0, 0.22);
+            color: #ffffff;
 
-            border:
-                1px solid rgba(255, 255, 255, 0.1);
+            text-shadow:
+                0 2px 12px rgba(0, 0, 0, 0.45);
+        }
 
-            color: rgba(255, 255, 255, 0.86);
+        .up-next-wrapper {
+            margin-top: 14px;
+            margin-bottom: 4px;
+        }
+
+        .up-next-label {
+            font-size: 0.62rem;
+
+            font-weight: 800;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.16em;
+
+            opacity: 0.52;
+
+            margin-bottom: 5px;
+        }
+
+        #upNext {
+            min-height: 1.3em;
 
             font-size: clamp(0.85rem, 2.5vw, 1rem);
 
             font-weight: 700;
 
-            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.78);
 
-            white-space: pre-wrap;
-
-            word-break: break-word;
-
-            text-align: left;
-
-            max-height: 180px;
-
-            overflow-y: auto;
-
-            user-select: text;
-            -webkit-user-select: text;
+            text-shadow:
+                0 2px 10px rgba(0, 0, 0, 0.35);
         }
 
-        #progress {
-            width: 100%;
-
-            height: 10px;
-
-            margin-top: 15px;
-
-            border-radius: 10px;
-
-            overflow: hidden;
-
-            background: rgba(53, 16, 29, 0.75);
-
-            display: none;
-        }
-
-        #progressBar {
-            width: 0%;
-            height: 100%;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    #d71920,
-                    #ffd76a,
-                    #0b6b3a
-                );
-
-            transition:
-                width 0.15s ease;
-        }
-
-        #generateButton {
+        #playButton {
             border: 0;
             outline: none;
 
@@ -427,11 +399,11 @@
                 box-shadow 0.18s ease;
         }
 
-        #generateButton:active {
+        #playButton:active {
             transform: scale(0.96);
         }
 
-        #generateButton:hover {
+        #playButton:hover {
             transform: translateY(-2px);
 
             box-shadow:
@@ -439,37 +411,13 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.18);
         }
 
-        #generateButton:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-
-            transform: none;
-        }
-
-        #generateButton.ready {
+        #playButton.paused {
             background:
                 linear-gradient(
                     135deg,
                     #0d7a43,
                     #07552f
                 );
-        }
-
-        #generateButton.error {
-            background:
-                linear-gradient(
-                    135deg,
-                    #a80d15,
-                    #70060c
-                );
-        }
-
-        .success {
-            color: #8be28b !important;
-        }
-
-        .error {
-            color: #ff8585 !important;
         }
 
         footer {
@@ -484,59 +432,8 @@
             letter-spacing: 0.08em;
         }
 
-        .star {
-            position: absolute;
-
-            font-size: 1.3rem;
-
-            opacity: 0.65;
-
-            animation:
-                starFloat 3s ease-in-out infinite alternate;
-        }
-
-        .star.one {
-            top: 22px;
-            left: 25px;
-        }
-
-        .star.two {
-            top: 45px;
-            right: 30px;
-
-            animation-delay: 0.8s;
-        }
-
-        .star.three {
-            bottom: 35px;
-            left: 35px;
-
-            animation-delay: 1.5s;
-        }
-
-        .star.four {
-            bottom: 25px;
-            right: 35px;
-
-            animation-delay: 2.1s;
-        }
-
-        @keyframes starFloat {
-            from {
-                transform:
-                    translateY(0)
-                    rotate(0deg);
-
-                opacity: 0.45;
-            }
-
-            to {
-                transform:
-                    translateY(-8px)
-                    rotate(8deg);
-
-                opacity: 0.9;
-            }
+        audio {
+            display: none !important;
         }
 
         @media (max-width: 768px) {
@@ -566,15 +463,11 @@
                 margin-bottom: 24px;
             }
 
-            #description {
-                margin-bottom: 22px;
+            #songName {
+                padding: 0 8px;
             }
 
-            #status {
-                max-height: 150px;
-            }
-
-            #generateButton {
+            #playButton {
                 width: min(100%, 330px);
             }
 
@@ -606,12 +499,8 @@
 
             #subtitle {
                 font-size:
-                    clamp(1.4rem, 4vw, 2.5rem);
+                    clamp(1.6rem, 4vw, 2.7rem);
 
-                margin-bottom: 15px;
-            }
-
-            #description {
                 margin-bottom: 15px;
             }
 
@@ -621,8 +510,8 @@
                 padding: 9px 20px;
             }
 
-            .generator-wrapper {
-                margin-bottom: 12px;
+            .song-wrapper {
+                margin-bottom: 15px;
             }
 
             footer {
@@ -644,16 +533,12 @@
                 margin-bottom: 15px;
             }
 
-            #description {
-                margin-bottom: 12px;
-            }
-
             #countdown {
                 margin-bottom: 15px;
             }
 
-            .generator-wrapper {
-                margin-bottom: 12px;
+            .song-wrapper {
+                margin-bottom: 15px;
             }
 
             footer {
@@ -670,15 +555,15 @@
                 font-size: 0.95rem;
             }
 
-            #description {
-                font-size: 0.82rem;
+            #songName {
+                font-size: 0.95rem;
             }
 
-            #status {
+            #upNext {
                 font-size: 0.8rem;
             }
 
-            #generateButton {
+            #playButton {
                 font-size: 0.9rem;
 
                 padding: 13px 20px;
@@ -711,11 +596,6 @@
 
         <section class="card">
 
-            <div class="star one">✦</div>
-            <div class="star two">✧</div>
-            <div class="star three">✦</div>
-            <div class="star four">✧</div>
-
             <div class="live-label">
                 <span class="live-dot"></span>
                 Christmas Radio
@@ -726,40 +606,39 @@
             </h1>
 
             <h1 id="subtitle">
-                Duration Generator
+                Countdown
             </h1>
 
             <div id="countdown">
                 Loading...
             </div>
 
-            <div id="description">
-                Loads song names from
-                <strong>songs.json</strong>, checks each
-                matching MP3 in the
-                <strong>songs</strong> folder, reads its
-                duration, and downloads
-                <strong>durations.json</strong>.
+            <div class="song-wrapper">
+
+                <div class="now-playing">
+                    Now Playing
+                </div>
+
+                <div id="songName">
+                    Loading radio...
+                </div>
+
+                <div class="up-next-wrapper">
+
+                    <div class="up-next-label">
+                        Up Next
+                    </div>
+
+                    <div id="upNext">
+                        Loading...
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="generator-wrapper">
-
-                <div class="status-label">
-                    Generator Status
-                </div>
-
-                <div id="status">
-                    Ready to load songs.json.
-                </div>
-
-                <div id="progress">
-                    <div id="progressBar"></div>
-                </div>
-
-            </div>
-
-            <button id="generateButton">
-                🎄 Generate durations.json
+            <button id="playButton">
+                🎄 Start Live Radio
             </button>
 
             <footer>
@@ -770,16 +649,24 @@
 
     </main>
 
+    <audio
+        id="musicAudio"
+        preload="auto"
+        playsinline
+        controlslist="nodownload noplaybackrate noremoteplayback">
+    </audio>
+
+    <audio
+        id="speechAudio"
+        preload="auto"
+        playsinline
+        controlslist="nodownload noplaybackrate noremoteplayback">
+    </audio>
+
     <script>
+
         /*
-         * FULL TOUCH/GESTURE PREVENTION
-         *
-         * Prevents:
-         * - Pinch-to-zoom
-         * - Touch panning
-         * - Browser touch gestures
-         * - Double-tap zoom
-         * - Safari gesture zoom
+         * FULL MOBILE GESTURE PREVENTION
          */
 
         let lastTouchEnd = 0;
@@ -797,6 +684,7 @@
                 }
 
                 lastTouchEnd = now;
+
             },
             {
                 passive: false
@@ -834,24 +722,33 @@
         );
 
 
-        const generateButton =
+        /*
+         * ELEMENTS
+         */
+
+        const musicAudio =
             document.getElementById(
-                "generateButton"
+                "musicAudio"
             );
 
-        const status =
+        const speechAudio =
             document.getElementById(
-                "status"
+                "speechAudio"
             );
 
-        const progress =
+        const playButton =
             document.getElementById(
-                "progress"
+                "playButton"
             );
 
-        const progressBar =
+        const songNameElement =
             document.getElementById(
-                "progressBar"
+                "songName"
+            );
+
+        const upNextElement =
+            document.getElementById(
+                "upNext"
             );
 
         const countdownElement =
@@ -860,295 +757,108 @@
             );
 
 
+        /*
+         * RADIO CONFIGURATION
+         *
+         * durations.json is the source of truth.
+         *
+         * Each entry provides:
+         *
+         * {
+         *     "name": "...",
+         *     "file": "...mp3",
+         *     "duration": 252.749
+         * }
+         *
+         * No music filenames are constructed here.
+         * No prefix/suffix is added.
+         * No music durations are read from the MP3s.
+         */
+
+        const RADIO_START =
+            new Date(
+                "Dec 1, 2025 00:00:00"
+            ).getTime();
+
         const SONG_FOLDER =
             "./songs/";
 
+        const SPEECH_SRC =
+            "./songs/speech.mp3";
+
+        const DURATION_MANIFEST =
+            "./songs/durations.json";
+
+        const SONGS_PER_SPEECH =
+            4;
+
 
         /*
-         * Load the song names from songs.json.
-         *
-         * songs.json:
-         *
-         * {
-         *     "songs": [
-         *         "All I Want For Christmas Is You",
-         *         "Baby It's Cold Outside"
-         *     ]
-         * }
+         * STATE
          */
-        async function loadSongNames() {
 
-            const response =
-                await fetch(
-                    "./songs.json",
-                    {
-                        cache: "no-store"
-                    }
-                );
+        let songs = [];
 
-            if (!response.ok) {
+        let speechDuration = 0;
 
-                throw new Error(
-                    `Could not load songs.json (${response.status})`
-                );
-            }
+        let totalPlaylistDuration = 0;
 
-            const data =
-                await response.json();
+        let metadataLoaded = false;
 
+        let metadataLoadingPromise = null;
+
+        let radioPlaying = false;
+
+        let currentSongIndex = 0;
+
+        let currentSegmentType = "song";
+
+        let isChangingTrack = false;
+
+
+        /*
+         * FORMAT TIME
+         */
+
+        function formatTime(seconds) {
 
             if (
-                !data ||
-                !Array.isArray(
-                    data.songs
-                )
+                !Number.isFinite(seconds)
             ) {
-
-                throw new Error(
-                    "songs.json must contain a 'songs' array."
-                );
+                return "0:00";
             }
 
-
-            const songs =
-                data.songs
-                    .map(
-                        name =>
-                            String(name).trim()
-                    )
-                    .filter(Boolean);
-
-
-            if (
-                songs.length === 0
-            ) {
-
-                throw new Error(
-                    "songs.json contains no songs."
+            seconds =
+                Math.max(
+                    0,
+                    Math.floor(seconds)
                 );
-            }
 
+            const minutes =
+                Math.floor(
+                    seconds / 60
+                );
 
-            return songs;
+            const secs =
+                String(
+                    seconds % 60
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+            return `${minutes}:${secs}`;
         }
 
 
         /*
-         * Song filenames are now simply:
-         *
-         * Song Name.mp3
-         *
-         * No prefix.
-         * No suffix.
+         * CHRISTMAS COUNTDOWN
          */
-        function getFilename(songName) {
 
-            return `${songName}.mp3`;
-        }
-
-
-        /*
-         * Build the hosted MP3 URL.
-         */
-        function getSongURL(songName) {
-
-            const filename =
-                getFilename(songName);
-
-            return (
-                SONG_FOLDER +
-                encodeURIComponent(
-                    filename
-                )
-            );
-        }
-
-
-        /*
-         * Read MP3 duration.
-         *
-         * This is used by the generator
-         * to create durations.json.
-         */
-        function getDuration(songName) {
-
-            return new Promise(
-                (resolve, reject) => {
-
-                    const audio =
-                        new Audio();
-
-                    let finished = false;
-
-
-                    const cleanup = () => {
-
-                        audio.removeEventListener(
-                            "loadedmetadata",
-                            handleMetadata
-                        );
-
-                        audio.removeEventListener(
-                            "error",
-                            handleError
-                        );
-
-                        audio.src = "";
-                    };
-
-
-                    const handleMetadata =
-                        () => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            const duration =
-                                audio.duration;
-
-                            cleanup();
-
-
-                            if (
-                                !Number.isFinite(
-                                    duration
-                                ) ||
-                                duration <= 0
-                            ) {
-
-                                reject(
-                                    new Error(
-                                        "Invalid audio duration"
-                                    )
-                                );
-
-                                return;
-                            }
-
-
-                            resolve(
-                                duration
-                            );
-                        };
-
-
-                    const handleError =
-                        () => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            cleanup();
-
-                            reject(
-                                new Error(
-                                    "Could not load audio"
-                                )
-                            );
-                        };
-
-
-                    audio.preload =
-                        "metadata";
-
-
-                    audio.addEventListener(
-                        "loadedmetadata",
-                        handleMetadata
-                    );
-
-                    audio.addEventListener(
-                        "error",
-                        handleError
-                    );
-
-
-                    audio.src =
-                        getSongURL(
-                            songName
-                        );
-
-                    audio.load();
-                }
-            );
-        }
-
-
-        /*
-         * Download generated JSON.
-         */
-        function downloadJSON(
-            data,
-            filename
-        ) {
-
-            const json =
-                JSON.stringify(
-                    data,
-                    null,
-                    2
-                );
-
-
-            const blob =
-                new Blob(
-                    [json],
-                    {
-                        type:
-                            "application/json"
-                    }
-                );
-
-
-            const url =
-                URL.createObjectURL(
-                    blob
-                );
-
-
-            const link =
-                document.createElement(
-                    "a"
-                );
-
-
-            link.href = url;
-
-            link.download =
-                filename;
-
-
-            document.body.appendChild(
-                link
-            );
-
-
-            link.click();
-
-
-            link.remove();
-
-
-            URL.revokeObjectURL(
-                url
-            );
-        }
-
-
-        /*
-         * Christmas countdown.
-         */
         function updateCountdown() {
 
             const now =
                 new Date();
-
 
             let christmas =
                 new Date(
@@ -1160,7 +870,6 @@
                     0,
                     0
                 );
-
 
             if (
                 now >= christmas
@@ -1178,7 +887,6 @@
                     );
             }
 
-
             const seconds =
                 Math.floor(
                     (
@@ -1186,35 +894,31 @@
                     ) / 1000
                 );
 
-
             const days =
                 Math.floor(
                     seconds / 86400
                 );
 
-
             const hours =
                 Math.floor(
-                    (seconds % 86400) /
-                    3600
+                    (
+                        seconds % 86400
+                    ) / 3600
                 );
-
 
             const minutes =
                 Math.floor(
-                    (seconds % 3600) /
-                    60
+                    (
+                        seconds % 3600
+                    ) / 60
                 );
-
 
             const secs =
                 seconds % 60;
 
-
             countdownElement.textContent =
                 `${days}d ${hours}h ${minutes}m ${secs}s`;
         }
-
 
         updateCountdown();
 
@@ -1225,8 +929,9 @@
 
 
         /*
-         * Snow animation.
+         * SNOW
          */
+
         function createSnowflakes(
             container,
             amount
@@ -1243,57 +948,47 @@
                         "div"
                     );
 
-
                 snowflake.className =
                     "snowflake";
-
 
                 snowflake.textContent =
                     Math.random() > 0.5
                         ? "❄"
                         : "•";
 
-
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
-
 
                 snowflake.style.setProperty(
                     "--size",
                     `${8 + Math.random() * 14}px`
                 );
 
-
                 snowflake.style.setProperty(
                     "--opacity",
                     `${0.25 + Math.random() * 0.65}`
                 );
-
 
                 snowflake.style.setProperty(
                     "--duration",
                     `${7 + Math.random() * 12}s`
                 );
 
-
                 snowflake.style.setProperty(
                     "--drift",
                     `${2 + Math.random() * 4}s`
                 );
-
 
                 snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * 15}s`
                 );
 
-
                 container.appendChild(
                     snowflake
                 );
             }
         }
-
 
         createSnowflakes(
             document.getElementById(
@@ -1302,14 +997,12 @@
             20
         );
 
-
         createSnowflakes(
             document.getElementById(
                 "snowMid"
             ),
             15
         );
-
 
         createSnowflakes(
             document.getElementById(
@@ -1320,213 +1013,1465 @@
 
 
         /*
-         * Generate durations.json.
+         * LOAD durations.json
+         *
+         * This is the ONLY source for music:
+         *
+         * - Song order
+         * - Song names
+         * - Song filenames
+         * - Song durations
          */
-        async function generateDurations() {
 
-            generateButton.disabled =
-                true;
+        async function loadDurations() {
 
-            generateButton.classList.remove(
-                "ready",
-                "error"
-            );
+            if (metadataLoaded) {
+                return;
+            }
 
+            if (metadataLoadingPromise) {
+                return metadataLoadingPromise;
+            }
 
-            progress.style.display =
-                "block";
+            metadataLoadingPromise =
+                (async () => {
 
-
-            progressBar.style.width =
-                "0%";
-
-
-            status.className =
-                "";
-
-
-            try {
-
-                status.textContent =
-                    "Loading song names from songs.json...";
-
-
-                /*
-                 * Song names now come
-                 * entirely from songs.json.
-                 */
-                const songNames =
-                    await loadSongNames();
-
-
-                const total =
-                    songNames.length;
-
-
-                status.textContent =
-                    `Checking ${total} hosted songs...`;
-
-
-                const songs = [];
-
-                const failed = [];
-
-
-                for (
-                    let i = 0;
-                    i < songNames.length;
-                    i++
-                ) {
-
-                    const name =
-                        songNames[i];
-
-
-                    const file =
-                        getFilename(
-                            name
+                    const response =
+                        await fetch(
+                            DURATION_MANIFEST,
+                            {
+                                cache:
+                                    "no-store"
+                            }
                         );
 
+                    if (!response.ok) {
 
-                    status.textContent =
-                        `Checking ${i + 1} of ${total}\n\n${name}`;
-
-
-                    try {
-
-                        const duration =
-                            await getDuration(
-                                name
-                            );
-
-
-                        songs.push({
-                            name: name,
-                            file: file,
-                            duration:
-                                Number(
-                                    duration.toFixed(
-                                        3
-                                    )
-                                )
-                        });
-
-
-                    } catch (error) {
-
-                        console.error(
-                            `Failed to load ${name}:`,
-                            error
+                        throw new Error(
+                            `Could not load durations.json (${response.status})`
                         );
+                    }
 
+                    const data =
+                        await response.json();
 
-                        songs.push({
-                            name: name,
-                            file: file,
-                            duration: null,
-                            error: true
-                        });
+                    if (
+                        !data ||
+                        !Array.isArray(
+                            data.songs
+                        )
+                    ) {
 
-
-                        failed.push(
-                            name
+                        throw new Error(
+                            "durations.json must contain a 'songs' array."
                         );
                     }
 
 
-                    const percent =
-                        (
-                            (i + 1) /
-                            total
-                        ) * 100;
+                    /*
+                     * Validate and normalize
+                     * the manifest.
+                     */
+
+                    songs =
+                        data.songs.map(
+                            (entry, index) => {
+
+                                if (
+                                    !entry ||
+                                    typeof entry !==
+                                        "object"
+                                ) {
+                                    throw new Error(
+                                        `Invalid song entry at index ${index}.`
+                                    );
+                                }
+
+                                const name =
+                                    String(
+                                        entry.name ??
+                                        ""
+                                    ).trim();
+
+                                const file =
+                                    String(
+                                        entry.file ??
+                                        ""
+                                    ).trim();
+
+                                const duration =
+                                    Number(
+                                        entry.duration
+                                    );
+
+                                if (!name) {
+
+                                    throw new Error(
+                                        `Song ${index + 1} is missing its name.`
+                                    );
+                                }
+
+                                if (!file) {
+
+                                    throw new Error(
+                                        `"${name}" is missing its file in durations.json.`
+                                    );
+                                }
+
+                                if (
+                                    !Number.isFinite(
+                                        duration
+                                    ) ||
+                                    duration <= 0
+                                ) {
+
+                                    throw new Error(
+                                        `"${name}" has an invalid duration in durations.json.`
+                                    );
+                                }
+
+                                return {
+                                    name,
+                                    file,
+                                    duration
+                                };
+                            }
+                        );
 
 
-                    progressBar.style.width =
-                        `${percent}%`;
-                }
+                    if (
+                        songs.length === 0
+                    ) {
+
+                        throw new Error(
+                            "durations.json contains no songs."
+                        );
+                    }
 
 
-                /*
-                 * Create final JSON.
-                 */
-                const output = {
-                    songs: songs
+                    /*
+                     * Speech is separate from
+                     * the music manifest.
+                     *
+                     * Its duration is read directly
+                     * from speech.mp3 because it
+                     * is not a playlist song.
+                     */
+
+                    try {
+
+                        const speechMetadata =
+                            document.createElement(
+                                "audio"
+                            );
+
+                        speechMetadata.preload =
+                            "metadata";
+
+                        speechMetadata.src =
+                            SPEECH_SRC;
+
+                        speechDuration =
+                            await new Promise(
+                                (
+                                    resolve,
+                                    reject
+                                ) => {
+
+                                    const timeout =
+                                        setTimeout(
+                                            () => {
+                                                reject(
+                                                    new Error(
+                                                        "Timed out loading speech.mp3"
+                                                    )
+                                                );
+                                            },
+                                            15000
+                                        );
+
+                                    speechMetadata.addEventListener(
+                                        "loadedmetadata",
+                                        () => {
+
+                                            clearTimeout(
+                                                timeout
+                                            );
+
+                                            const duration =
+                                                speechMetadata.duration;
+
+                                            if (
+                                                Number.isFinite(
+                                                    duration
+                                                ) &&
+                                                duration > 0
+                                            ) {
+
+                                                resolve(
+                                                    duration
+                                                );
+
+                                            } else {
+
+                                                reject(
+                                                    new Error(
+                                                        "Invalid speech duration"
+                                                    )
+                                                );
+                                            }
+                                        },
+                                        {
+                                            once:
+                                                true
+                                        }
+                                    );
+
+                                    speechMetadata.addEventListener(
+                                        "error",
+                                        () => {
+
+                                            clearTimeout(
+                                                timeout
+                                            );
+
+                                            reject(
+                                                new Error(
+                                                    "Could not load speech.mp3"
+                                                )
+                                            );
+                                        },
+                                        {
+                                            once:
+                                                true
+                                        }
+                                    );
+
+                                    speechMetadata.load();
+                                }
+                            );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Could not read speech duration:",
+                            error
+                        );
+
+                        speechDuration =
+                            0;
+                    }
+
+
+                    /*
+                     * Calculate the complete
+                     * repeating radio timeline.
+                     */
+
+                    totalPlaylistDuration =
+                        0;
+
+                    for (
+                        let i = 0;
+                        i < songs.length;
+                        i++
+                    ) {
+
+                        totalPlaylistDuration +=
+                            songs[i].duration;
+
+                        if (
+                            (i + 1) %
+                                SONGS_PER_SPEECH ===
+                                0 &&
+                            speechDuration > 0
+                        ) {
+
+                            totalPlaylistDuration +=
+                                speechDuration;
+                        }
+                    }
+
+
+                    if (
+                        totalPlaylistDuration <= 0
+                    ) {
+
+                        throw new Error(
+                            "No valid playlist duration was found."
+                        );
+                    }
+
+
+                    metadataLoaded =
+                        true;
+
+
+                    console.log(
+                        "Loaded songs:",
+                        songs.length
+                    );
+
+                    console.log(
+                        "Speech duration:",
+                        formatTime(
+                            speechDuration
+                        )
+                    );
+
+                    console.log(
+                        "Total radio timeline:",
+                        formatTime(
+                            totalPlaylistDuration
+                        )
+                    );
+
+                })()
+                    .catch(error => {
+
+                        metadataLoadingPromise =
+                            null;
+
+                        throw error;
+                    });
+
+
+            return metadataLoadingPromise;
+        }
+
+
+        /*
+         * FIND THE SONG/SPEECH SEGMENT
+         * THAT SHOULD BE PLAYING RIGHT NOW.
+         */
+
+        function findLiveSegment() {
+
+            if (
+                !metadataLoaded ||
+                totalPlaylistDuration <= 0
+            ) {
+
+                return {
+                    type: "song",
+                    index: 0,
+                    offset: 0
                 };
+            }
 
 
-                downloadJSON(
-                    output,
-                    "durations.json"
-                );
+            const elapsed =
+                (
+                    Date.now() -
+                    RADIO_START
+                ) / 1000;
+
+
+            const position =
+                (
+                    (
+                        elapsed %
+                        totalPlaylistDuration
+                    ) +
+                    totalPlaylistDuration
+                ) %
+                totalPlaylistDuration;
+
+
+            let accumulated = 0;
+
+
+            for (
+                let i = 0;
+                i < songs.length;
+                i++
+            ) {
+
+                const duration =
+                    songs[i].duration;
 
 
                 if (
-                    failed.length > 0
+                    position <
+                    accumulated +
+                        duration
                 ) {
 
-                    status.className =
-                        "error";
-
-
-                    status.textContent =
-                        `Finished with ${failed.length} failed song(s).\n\n` +
-                        `durations.json has been downloaded.\n\n` +
-                        `Failed songs:\n` +
-                        failed.join("\n");
-
-
-                    generateButton.classList.add(
-                        "error"
-                    );
-
-                } else {
-
-                    status.className =
-                        "success";
-
-
-                    status.textContent =
-                        `Successfully generated durations.json.\n\n` +
-                        `${songs.length} songs processed.\n\n` +
-                        `The file has been downloaded.`;
-
-
-                    generateButton.classList.add(
-                        "ready"
-                    );
+                    return {
+                        type: "song",
+                        index: i,
+                        offset:
+                            position -
+                            accumulated
+                    };
                 }
 
 
-            } catch (error) {
+                accumulated +=
+                    duration;
 
-                console.error(
-                    error
+
+                /*
+                 * Speech after every
+                 * group of 4 songs.
+                 */
+
+                if (
+                    (i + 1) %
+                        SONGS_PER_SPEECH ===
+                        0 &&
+                    speechDuration > 0
+                ) {
+
+                    if (
+                        position <
+                        accumulated +
+                            speechDuration
+                    ) {
+
+                        return {
+                            type: "speech",
+                            index: i,
+                            offset:
+                                position -
+                                accumulated
+                        };
+                    }
+
+
+                    accumulated +=
+                        speechDuration;
+                }
+            }
+
+
+            return {
+                type: "song",
+                index: 0,
+                offset: 0
+            };
+        }
+
+
+        /*
+         * DISPLAY SONG INDEX
+         */
+
+        function getDisplaySongIndex(
+            segment
+        ) {
+
+            if (
+                segment.type ===
+                "speech"
+            ) {
+
+                return (
+                    (
+                        segment.index +
+                        1
+                    ) %
+                    songs.length
+                );
+            }
+
+            return segment.index;
+        }
+
+
+        function getDisplayNextSongIndex(
+            segment
+        ) {
+
+            const current =
+                getDisplaySongIndex(
+                    segment
+                );
+
+            return (
+                (
+                    current + 1
+                ) %
+                songs.length
+            );
+        }
+
+
+        /*
+         * UPDATE SONG DISPLAY
+         */
+
+        function updateRadioUI(
+            segment
+        ) {
+
+            if (
+                !songs.length
+            ) {
+                return;
+            }
+
+
+            const current =
+                getDisplaySongIndex(
+                    segment
+                );
+
+            const next =
+                getDisplayNextSongIndex(
+                    segment
                 );
 
 
-                status.className =
-                    "error";
+            songNameElement.textContent =
+                songs[current].name;
+
+            upNextElement.textContent =
+                songs[next].name;
+        }
 
 
-                status.textContent =
-                    `Error:\n\n${error.message}`;
+        /*
+         * MEDIA SESSION
+         */
+
+        function updateLiveMediaSession() {
+
+            if (
+                !("mediaSession" in navigator)
+            ) {
+                return;
+            }
 
 
-                generateButton.classList.add(
-                    "error"
+            if (
+                !metadataLoaded ||
+                !songs.length
+            ) {
+                return;
+            }
+
+
+            const segment =
+                findLiveSegment();
+
+
+            const title =
+                segment.type ===
+                    "speech"
+                    ? "Christmas Radio"
+                    : songs[
+                          segment.index
+                      ].name;
+
+
+            try {
+
+                navigator.mediaSession.metadata =
+                    new MediaMetadata({
+                        title:
+                            title,
+
+                        artist:
+                            "Christmas Countdown Radio",
+
+                        album:
+                            "Christmas Countdown",
+
+                        artwork: [{
+                            src:
+                                "./favicon.ico",
+
+                            sizes:
+                                "512x512",
+
+                            type:
+                                "image/x-icon"
+                        }]
+                    });
+
+            } catch {}
+
+
+            try {
+
+                const audio =
+                    segment.type ===
+                        "speech"
+                        ? speechAudio
+                        : musicAudio;
+
+
+                const duration =
+                    audio.duration;
+
+                const position =
+                    audio.currentTime;
+
+
+                if (
+                    Number.isFinite(
+                        duration
+                    ) &&
+                    duration > 0 &&
+                    Number.isFinite(
+                        position
+                    ) &&
+                    position >= 0 &&
+                    position <= duration
+                ) {
+
+                    navigator.mediaSession
+                        .setPositionState({
+                            duration,
+                            playbackRate:
+                                audio.playbackRate ||
+                                1,
+                            position
+                        });
+                }
+
+            } catch {}
+        }
+
+
+        /*
+         * MEDIA SESSION SETUP
+         */
+
+        function setupMediaSession() {
+
+            if (
+                !("mediaSession" in navigator)
+            ) {
+                return;
+            }
+
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "play",
+                        () => resumeLive()
+                    );
+
+            } catch {}
+
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "pause",
+                        pauseRadio
+                    );
+
+            } catch {}
+
+
+            [
+                "previoustrack",
+                "nexttrack",
+                "seekbackward",
+                "seekforward"
+            ].forEach(
+                action => {
+
+                    try {
+
+                        navigator.mediaSession
+                            .setActionHandler(
+                                action,
+                                () => {}
+                            );
+
+                    } catch {}
+                }
+            );
+
+
+            try {
+
+                navigator.mediaSession
+                    .setActionHandler(
+                        "seekto",
+                        () => {}
+                    );
+
+            } catch {}
+        }
+
+        setupMediaSession();
+
+
+        /*
+         * LOAD AUDIO
+         */
+
+        async function loadAudio(
+            audio,
+            src,
+            offset
+        ) {
+
+            const absoluteURL =
+                new URL(
+                    src,
+                    location.href
+                ).href;
+
+
+            if (
+                audio.src !==
+                absoluteURL
+            ) {
+
+                audio.src =
+                    src;
+
+                audio.load();
+
+
+                await new Promise(
+                    (
+                        resolve,
+                        reject
+                    ) => {
+
+                        const onMetadata =
+                            () => {
+
+                                cleanup();
+
+                                resolve();
+                            };
+
+
+                        const onError =
+                            () => {
+
+                                cleanup();
+
+                                reject(
+                                    new Error(
+                                        "Could not load audio"
+                                    )
+                                );
+                            };
+
+
+                        const cleanup =
+                            () => {
+
+                                audio.removeEventListener(
+                                    "loadedmetadata",
+                                    onMetadata
+                                );
+
+                                audio.removeEventListener(
+                                    "error",
+                                    onError
+                                );
+                            };
+
+
+                        audio.addEventListener(
+                            "loadedmetadata",
+                            onMetadata,
+                            {
+                                once:
+                                    true
+                            }
+                        );
+
+
+                        audio.addEventListener(
+                            "error",
+                            onError,
+                            {
+                                once:
+                                    true
+                            }
+                        );
+                    }
                 );
             }
 
 
-            generateButton.disabled =
-                false;
+            if (
+                Number.isFinite(
+                    offset
+                ) &&
+                offset >= 0 &&
+                Number.isFinite(
+                    audio.duration
+                ) &&
+                offset <
+                    audio.duration
+            ) {
+
+                audio.currentTime =
+                    offset;
+            }
         }
 
 
-        generateButton.addEventListener(
+        /*
+         * LOAD A MUSIC SONG
+         *
+         * The filename comes DIRECTLY
+         * from durations.json.
+         */
+
+        async function loadSong(
+            index,
+            offset
+        ) {
+
+            const song =
+                songs[index];
+
+
+            if (
+                !song ||
+                !song.file
+            ) {
+
+                throw new Error(
+                    `Song ${index + 1} has no file in durations.json.`
+                );
+            }
+
+
+            const songURL =
+                SONG_FOLDER +
+                encodeURIComponent(
+                    song.file
+                );
+
+
+            await loadAudio(
+                musicAudio,
+                songURL,
+                offset
+            );
+        }
+
+
+        /*
+         * LOAD SPEECH
+         */
+
+        async function loadSpeech(
+            offset
+        ) {
+
+            await loadAudio(
+                speechAudio,
+                SPEECH_SRC,
+                offset
+            );
+        }
+
+
+        /*
+         * START LIVE RADIO
+         */
+
+        async function playLive() {
+
+            if (
+                isChangingTrack
+            ) {
+                return;
+            }
+
+
+            isChangingTrack =
+                true;
+
+
+            try {
+
+                await loadDurations();
+
+
+                const segment =
+                    findLiveSegment();
+
+
+                currentSongIndex =
+                    getDisplaySongIndex(
+                        segment
+                    );
+
+
+                currentSegmentType =
+                    segment.type;
+
+
+                updateRadioUI(
+                    segment
+                );
+
+
+                if (
+                    segment.type ===
+                    "speech"
+                ) {
+
+                    musicAudio.pause();
+
+
+                    await loadSpeech(
+                        segment.offset
+                    );
+
+
+                    await speechAudio.play();
+
+                } else {
+
+                    speechAudio.pause();
+
+
+                    await loadSong(
+                        segment.index,
+                        segment.offset
+                    );
+
+
+                    await musicAudio.play();
+                }
+
+
+                radioPlaying =
+                    true;
+
+
+                updatePlayButton();
+
+                updateLiveMediaSession();
+
+
+                try {
+
+                    navigator.mediaSession
+                        .playbackState =
+                        "playing";
+
+                } catch {}
+
+            } catch (error) {
+
+                console.error(
+                    "Could not start live radio:",
+                    error
+                );
+
+
+                radioPlaying =
+                    false;
+
+
+                updatePlayButton();
+
+
+                songNameElement.textContent =
+                    "Could not start radio";
+
+
+                upNextElement.textContent =
+                    "Please try again";
+
+            } finally {
+
+                isChangingTrack =
+                    false;
+            }
+        }
+
+
+        /*
+         * PAUSE
+         */
+
+        function pauseRadio() {
+
+            musicAudio.pause();
+
+            speechAudio.pause();
+
+            radioPlaying =
+                false;
+
+
+            updatePlayButton();
+
+
+            try {
+
+                navigator.mediaSession
+                    .playbackState =
+                    "paused";
+
+            } catch {}
+        }
+
+
+        /*
+         * RESUME
+         *
+         * Recalculates the live position
+         * instead of continuing from an old
+         * paused position.
+         */
+
+        async function resumeLive() {
+
+            musicAudio.pause();
+
+            speechAudio.pause();
+
+            await playLive();
+        }
+
+
+        /*
+         * BUTTON
+         */
+
+        function updatePlayButton() {
+
+            if (
+                radioPlaying
+            ) {
+
+                playButton.textContent =
+                    "⏸ Pause";
+
+                playButton.classList.remove(
+                    "paused"
+                );
+
+            } else {
+
+                playButton.textContent =
+                    "▶️ Play";
+
+                playButton.classList.add(
+                    "paused"
+                );
+            }
+        }
+
+
+        playButton.addEventListener(
             "click",
-            generateDurations
+            async () => {
+
+                if (
+                    radioPlaying
+                ) {
+
+                    pauseRadio();
+
+                } else {
+
+                    await resumeLive();
+                }
+            }
         );
+
+
+        /*
+         * TRACK END
+         */
+
+        musicAudio.addEventListener(
+            "ended",
+            async () => {
+
+                if (
+                    radioPlaying
+                ) {
+
+                    await playLive();
+                }
+            }
+        );
+
+
+        speechAudio.addEventListener(
+            "ended",
+            async () => {
+
+                if (
+                    radioPlaying
+                ) {
+
+                    await playLive();
+                }
+            }
+        );
+
+
+        /*
+         * ERROR RECOVERY
+         */
+
+        function retryLive() {
+
+            if (
+                !radioPlaying
+            ) {
+                return;
+            }
+
+
+            setTimeout(
+                () => {
+
+                    if (
+                        radioPlaying
+                    ) {
+
+                        playLive();
+                    }
+
+                },
+                1000
+            );
+        }
+
+
+        musicAudio.addEventListener(
+            "error",
+            retryLive
+        );
+
+
+        speechAudio.addEventListener(
+            "error",
+            () => {
+
+                console.error(
+                    "Speech audio error."
+                );
+
+                retryLive();
+            }
+        );
+
+
+        /*
+         * PERIODIC LIVE SYNCHRONIZATION
+         */
+
+        async function syncRadio() {
+
+            if (
+                !radioPlaying
+            ) {
+                return;
+            }
+
+
+            try {
+
+                const live =
+                    findLiveSegment();
+
+
+                const displayIndex =
+                    getDisplaySongIndex(
+                        live
+                    );
+
+
+                if (
+                    live.type !==
+                        currentSegmentType ||
+                    displayIndex !==
+                        currentSongIndex
+                ) {
+
+                    await playLive();
+
+                    return;
+                }
+
+
+                const audio =
+                    live.type ===
+                        "speech"
+                        ? speechAudio
+                        : musicAudio;
+
+
+                const drift =
+                    Math.abs(
+                        audio.currentTime -
+                        live.offset
+                    );
+
+
+                if (
+                    drift > 3
+                ) {
+
+                    audio.currentTime =
+                        live.offset;
+                }
+
+
+                updateRadioUI(
+                    live
+                );
+
+                updateLiveMediaSession();
+
+            } catch (error) {
+
+                console.warn(
+                    "Periodic sync failed:",
+                    error
+                );
+            }
+        }
+
+
+        setInterval(
+            syncRadio,
+            5000
+        );
+
+
+        /*
+         * MEDIA SESSION POSITION UPDATE
+         */
+
+        setInterval(
+            () => {
+
+                if (
+                    radioPlaying
+                ) {
+
+                    updateLiveMediaSession();
+                }
+
+            },
+            3000
+        );
+
+
+        /*
+         * VISIBILITY SYNCHRONIZATION
+         */
+
+        document.addEventListener(
+            "visibilitychange",
+            async () => {
+
+                if (
+                    document.visibilityState !==
+                        "visible" ||
+                    !radioPlaying
+                ) {
+
+                    return;
+                }
+
+
+                try {
+
+                    const live =
+                        findLiveSegment();
+
+
+                    const displayIndex =
+                        getDisplaySongIndex(
+                            live
+                        );
+
+
+                    if (
+                        live.type !==
+                            currentSegmentType ||
+                        displayIndex !==
+                            currentSongIndex
+                    ) {
+
+                        await playLive();
+
+                        return;
+                    }
+
+
+                    const audio =
+                        live.type ===
+                            "speech"
+                            ? speechAudio
+                            : musicAudio;
+
+
+                    const drift =
+                        Math.abs(
+                            audio.currentTime -
+                            live.offset
+                        );
+
+
+                    if (
+                        drift > 3
+                    ) {
+
+                        await playLive();
+
+                    } else {
+
+                        updateRadioUI(
+                            live
+                        );
+
+                        updateLiveMediaSession();
+                    }
+
+                } catch (error) {
+
+                    console.warn(
+                        "Visibility sync failed:",
+                        error
+                    );
+                }
+            }
+        );
+
+
+        /*
+         * BLOCK TRACK-SKIPPING KEYS
+         */
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                const blocked = [
+                    "ArrowLeft",
+                    "ArrowRight",
+                    "Home",
+                    "End",
+                    "MediaTrackNext",
+                    "MediaTrackPrevious",
+                    "MediaFastForward",
+                    "MediaRewind"
+                ];
+
+
+                if (
+                    blocked.includes(
+                        event.key
+                    )
+                ) {
+
+                    event.preventDefault();
+                }
+            }
+        );
+
+
+        /*
+         * BLOCK CONTEXT MENU
+         */
+
+        document.addEventListener(
+            "contextmenu",
+            event =>
+                event.preventDefault()
+        );
+
+
+        /*
+         * INITIAL UI
+         */
+
+        updatePlayButton();
+
+
+        songNameElement.textContent =
+            "Christmas Radio Ready";
+
+
+        upNextElement.textContent =
+            "Loading...";
+
+
+        /*
+         * LOAD MANIFEST ON PAGE LOAD
+         *
+         * This only loads durations.json.
+         * It does NOT load the music itself
+         * until the user presses Play.
+         */
+
+        loadDurations()
+            .then(() => {
+
+                const live =
+                    findLiveSegment();
+
+
+                currentSongIndex =
+                    getDisplaySongIndex(
+                        live
+                    );
+
+
+                currentSegmentType =
+                    live.type;
+
+
+                updateRadioUI(
+                    live
+                );
+
+
+                updateLiveMediaSession();
+
+            })
+            .catch(error => {
+
+                console.error(
+                    "Radio metadata initialization failed:",
+                    error
+                );
+
+
+                songNameElement.textContent =
+                    "Radio unavailable";
+
+
+                upNextElement.textContent =
+                    error.message;
+            });
+
+
+        /*
+         * CLEANUP
+         */
+
+        window.addEventListener(
+            "beforeunload",
+            () => {
+
+                musicAudio.pause();
+
+                speechAudio.pause();
+            }
+        );
+
     </script>
 
 </body>
