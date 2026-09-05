@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christmas Radio • Duration Generator</title>
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <meta name="theme-color" content="#12030a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <title>Christmas Radio Duration Generator</title>
 
     <style>
         * {
@@ -13,74 +20,55 @@
         html,
         body {
             margin: 0;
+            padding: 0;
             min-height: 100%;
-            font-family: Arial, sans-serif;
-            background: #10131a;
+            background: #12030a;
             color: white;
+            font-family: Arial, sans-serif;
         }
 
         body {
-            padding: 30px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .container {
-            width: min(900px, 100%);
-            margin: auto;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 22px;
-            padding: 28px;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            width: 100%;
+            max-width: 650px;
+            background: #1d0710;
+            border: 1px solid #4d1829;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
         }
 
         h1 {
-            margin: 0 0 8px;
-            font-size: clamp(28px, 6vw, 44px);
+            margin: 0 0 10px;
+            font-size: 26px;
         }
 
-        .subtitle {
-            margin: 0 0 25px;
-            opacity: 0.7;
-        }
-
-        .status {
-            padding: 15px;
-            border-radius: 12px;
-            background: rgba(0, 0, 0, 0.25);
-            margin-bottom: 20px;
+        .description {
+            color: #c9aeb7;
             line-height: 1.5;
-        }
-
-        .progress {
-            width: 100%;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 999px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: #fff;
-            transition: width 0.2s ease;
+            margin-bottom: 25px;
         }
 
         button {
             width: 100%;
             border: 0;
-            border-radius: 14px;
-            padding: 15px 20px;
+            border-radius: 12px;
+            padding: 15px;
+            background: #8b1e3f;
+            color: white;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            background: white;
-            color: #10131a;
+        }
+
+        button:hover {
+            background: #a5264c;
         }
 
         button:disabled {
@@ -88,455 +76,419 @@
             cursor: not-allowed;
         }
 
-        .song-list {
-            margin-top: 25px;
-            display: grid;
-            gap: 8px;
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #12030a;
+            color: #d8c1c8;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
-        .song {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 10px 12px;
-            border-radius: 9px;
-            background: rgba(255, 255, 255, 0.04);
-            font-size: 14px;
-        }
-
-        .song-name {
+        #progress {
+            width: 100%;
+            height: 10px;
+            margin-top: 15px;
+            border-radius: 10px;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            background: #35101d;
+            display: none;
         }
 
-        .duration {
-            opacity: 0.65;
-            white-space: nowrap;
-        }
-
-        .error {
-            color: #ff8c8c;
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background: #b52b55;
+            transition: width 0.15s ease;
         }
 
         .success {
-            color: #8cffb0;
+            color: #8be28b;
         }
 
-        .hidden {
-            display: none;
+        .error {
+            color: #ff8585;
         }
     </style>
 </head>
 
 <body>
 
-<div class="container">
-    <div class="card">
+    <div class="container">
 
-        <h1>Christmas Radio</h1>
-        <p class="subtitle">Generate the hosted song duration manifest</p>
+        <h1>Christmas Radio Duration Generator</h1>
 
-        <div id="status" class="status">
-            Ready to scan the 36 Christmas songs.
-        </div>
-
-        <div class="progress">
-            <div id="progressBar" class="progress-bar"></div>
+        <div class="description">
+            Loads the song names from <strong>songs.json</strong>, checks each
+            corresponding MP3 in the <strong>songs</strong> folder, reads its
+            duration, and downloads a new <strong>durations.json</strong>.
         </div>
 
         <button id="generateButton">
             Generate durations.json
         </button>
 
-        <div id="songList" class="song-list"></div>
+        <div id="progress">
+            <div id="progressBar"></div>
+        </div>
+
+        <div id="status">
+            Ready to load songs.json.
+        </div>
 
     </div>
-</div>
 
-<script>
-    /*
-        The songs are already hosted on the website.
+    <script>
+        const SONG_FOLDER = "./songs/";
 
-        The generator does NOT try to open ./songs/.
-        It directly checks each known MP3 URL.
-    */
-
-    const SONG_FOLDER = "./songs/";
-
-    const FILE_PREFIX =
-        "Music Now, Trap Music Now, Dance Music Now - ";
-
-    const FILE_SUFFIX =
-        " (SPOTISAVER).mp3";
+        const generateButton = document.getElementById("generateButton");
+        const status = document.getElementById("status");
+        const progress = document.getElementById("progress");
+        const progressBar = document.getElementById("progressBar");
 
 
-    const SONG_NAMES = [
-        "All I Want For Christmas Is You",
-        "Baby It's Cold Outside",
-        "Blue Christmas",
-        "Carol Of The Bells",
-        "Christmas (Baby Please Come Home)",
-        "Christmas Canon",
-        "Deck The Halls",
-        "Do You Want To Build A Snowman",
-        "Feliz Navidad",
-        "Frosty The Snowman",
-        "God Rest Ye Merry Gentlemen",
-        "Here Comes Santa Claus",
-        "Holly Jolly Christmas",
-        "I Want A Hippopotamus For Christmas",
-        "It's Beginning To Look A Lot Like Christmas",
-        "It's The Most Wonderful Time Of The Year",
-        "Jingle Bell Rock",
-        "Jingle Bells",
-        "Last Christmas",
-        "Let It Snow! Let It Snow!",
-        "Little Drummer Boy",
-        "Mistletoe",
-        "O Christmas Tree",
-        "Rockin Around The Christmas Tree",
-        "Rudolph The Red-Nosed Reindeer",
-        "Santa Baby",
-        "Santa Claus Is Comin' To Town",
-        "Silent Night",
-        "Sleigh Ride",
-        "The Christmas Song",
-        "Up On The Housetop",
-        "We Wish You A Merry Christmas",
-        "White Christmas",
-        "Winter Wonderland",
-        "Wonderful Christmastime",
-        "You're A Mean One, Mr. Grinch"
-    ];
+        /*
+         * Load song names from songs.json
+         *
+         * Expected format:
+         *
+         * {
+         *     "songs": [
+         *         "All I Want For Christmas Is You",
+         *         "Baby It's Cold Outside"
+         *     ]
+         * }
+         */
+        async function loadSongNames() {
 
+            const response = await fetch("./songs.json", {
+                cache: "no-store"
+            });
 
-    const statusElement =
-        document.getElementById("status");
-
-    const progressBar =
-        document.getElementById("progressBar");
-
-    const generateButton =
-        document.getElementById("generateButton");
-
-    const songList =
-        document.getElementById("songList");
-
-
-    function getFilename(songName) {
-        return FILE_PREFIX + songName + FILE_SUFFIX;
-    }
-
-
-    function getSongURL(songName) {
-        return SONG_FOLDER +
-            encodeURIComponent(getFilename(songName));
-    }
-
-
-    function formatDuration(seconds) {
-        if (!Number.isFinite(seconds)) {
-            return "--:--";
-        }
-
-        const totalSeconds = Math.floor(seconds);
-
-        const minutes = Math.floor(totalSeconds / 60);
-        const remainingSeconds = totalSeconds % 60;
-
-        return (
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(remainingSeconds).padStart(2, "0")
-        );
-    }
-
-
-    function createSongElement(songName) {
-        const element = document.createElement("div");
-
-        element.className = "song";
-
-        element.innerHTML = `
-            <span class="song-name">
-                ${escapeHTML(songName)}
-            </span>
-
-            <span
-                class="duration"
-                id="duration-${SONG_NAMES.indexOf(songName)}"
-            >
-                Waiting...
-            </span>
-        `;
-
-        songList.appendChild(element);
-    }
-
-
-    function escapeHTML(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-
-    function getDuration(songName) {
-        return new Promise((resolve, reject) => {
-
-            const audio = document.createElement("audio");
-
-            audio.preload = "metadata";
-
-            let finished = false;
-
-            const timeout = setTimeout(() => {
-
-                if (finished) {
-                    return;
-                }
-
-                finished = true;
-
-                audio.src = "";
-
-                reject(
-                    new Error("Timed out while loading audio")
+            if (!response.ok) {
+                throw new Error(
+                    `Could not load songs.json (${response.status})`
                 );
-
-            }, 20000);
-
-
-            audio.onloadedmetadata = () => {
-
-                if (finished) {
-                    return;
-                }
-
-                finished = true;
-
-                clearTimeout(timeout);
-
-                const duration = audio.duration;
-
-                audio.removeAttribute("src");
-                audio.load();
-
-                if (
-                    Number.isFinite(duration) &&
-                    duration > 0
-                ) {
-                    resolve(duration);
-                } else {
-                    reject(
-                        new Error("Invalid duration")
-                    );
-                }
-            };
-
-
-            audio.onerror = () => {
-
-                if (finished) {
-                    return;
-                }
-
-                finished = true;
-
-                clearTimeout(timeout);
-
-                audio.removeAttribute("src");
-                audio.load();
-
-                reject(
-                    new Error("Could not load MP3")
-                );
-            };
-
-
-            audio.src = getSongURL(songName);
-        });
-    }
-
-
-    async function generateDurations() {
-
-        generateButton.disabled = true;
-
-        songList.innerHTML = "";
-
-        SONG_NAMES.forEach(createSongElement);
-
-        const songs = [];
-
-        let completed = 0;
-
-        const total = SONG_NAMES.length;
-
-        statusElement.className = "status";
-
-        statusElement.textContent =
-            `Checking ${total} hosted songs...`;
-
-        progressBar.style.width = "0%";
-
-
-        for (let i = 0; i < SONG_NAMES.length; i++) {
-
-            const name = SONG_NAMES[i];
-
-            const durationElement =
-                document.getElementById(
-                    `duration-${i}`
-                );
-
-
-            statusElement.textContent =
-                `Checking ${i + 1} of ${total}: ${name}`;
-
-
-            try {
-
-                const duration =
-                    await getDuration(name);
-
-
-                songs.push({
-                    name: name,
-                    file: getFilename(name),
-                    duration: Number(
-                        duration.toFixed(3)
-                    )
-                });
-
-
-                durationElement.textContent =
-                    formatDuration(duration);
-
-
-                durationElement.classList.add(
-                    "success"
-                );
-
-
-            } catch (error) {
-
-                console.error(
-                    "Failed:",
-                    name,
-                    error
-                );
-
-
-                durationElement.textContent =
-                    "FAILED";
-
-                durationElement.classList.add(
-                    "error"
-                );
-
-
-                songs.push({
-                    name: name,
-                    file: getFilename(name),
-                    duration: null,
-                    error: true
-                });
             }
 
+            const data = await response.json();
 
-            completed++;
+            if (!data || !Array.isArray(data.songs)) {
+                throw new Error(
+                    "songs.json must contain a 'songs' array."
+                );
+            }
 
-            progressBar.style.width =
-                `${(completed / total) * 100}%`;
+            const songs = data.songs
+                .map(name => String(name).trim())
+                .filter(Boolean);
+
+            if (songs.length === 0) {
+                throw new Error(
+                    "songs.json contains no songs."
+                );
+            }
+
+            return songs;
         }
 
 
-        const successfulSongs =
-            songs.filter(
-                song =>
-                    Number.isFinite(song.duration)
-            );
+        /*
+         * Turn a song name into its actual filename.
+         *
+         * Example:
+         *
+         * All I Want For Christmas Is You
+         *
+         * becomes:
+         *
+         * All I Want For Christmas Is You.mp3
+         */
+        function getFilename(songName) {
+
+            return `${songName}.mp3`;
+        }
 
 
-        const failedSongs =
-            songs.filter(
-                song =>
-                    !Number.isFinite(song.duration)
-            );
+        /*
+         * Create the URL for the MP3.
+         */
+        function getSongURL(songName) {
+
+            const filename = getFilename(songName);
+
+            return SONG_FOLDER + encodeURIComponent(filename);
+        }
 
 
-        const output = {
-            songs: songs
-        };
+        /*
+         * Read the duration of an MP3.
+         *
+         * This is only used by the generator to create durations.json.
+         */
+        function getDuration(songName) {
+
+            return new Promise((resolve, reject) => {
+
+                const audio = new Audio();
+
+                let finished = false;
+
+                const cleanup = () => {
+                    audio.removeEventListener(
+                        "loadedmetadata",
+                        handleMetadata
+                    );
+
+                    audio.removeEventListener(
+                        "error",
+                        handleError
+                    );
+
+                    audio.src = "";
+                };
+
+                const handleMetadata = () => {
+
+                    if (finished) {
+                        return;
+                    }
+
+                    finished = true;
+
+                    const duration = audio.duration;
+
+                    cleanup();
+
+                    if (
+                        !Number.isFinite(duration) ||
+                        duration <= 0
+                    ) {
+                        reject(
+                            new Error("Invalid audio duration")
+                        );
+                        return;
+                    }
+
+                    resolve(duration);
+                };
+
+                const handleError = () => {
+
+                    if (finished) {
+                        return;
+                    }
+
+                    finished = true;
+
+                    cleanup();
+
+                    reject(
+                        new Error("Could not load audio")
+                    );
+                };
+
+                audio.preload = "metadata";
+
+                audio.addEventListener(
+                    "loadedmetadata",
+                    handleMetadata
+                );
+
+                audio.addEventListener(
+                    "error",
+                    handleError
+                );
+
+                audio.src = getSongURL(songName);
+
+                audio.load();
+            });
+        }
 
 
-        const json =
-            JSON.stringify(
-                output,
-                null,
-                2
-            );
+        /*
+         * Download a JSON file.
+         */
+        function downloadJSON(data, filename) {
 
+            const json = JSON.stringify(data, null, 2);
 
-        const blob =
-            new Blob(
+            const blob = new Blob(
                 [json],
                 {
                     type: "application/json"
                 }
             );
 
+            const url = URL.createObjectURL(blob);
 
-        const url =
-            URL.createObjectURL(blob);
+            const link = document.createElement("a");
 
+            link.href = url;
+            link.download = filename;
 
-        const link =
-            document.createElement("a");
+            document.body.appendChild(link);
 
+            link.click();
 
-        link.href = url;
+            link.remove();
 
-        link.download = "durations.json";
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        link.remove();
-
-        URL.revokeObjectURL(url);
-
-
-        if (failedSongs.length === 0) {
-
-            statusElement.className =
-                "status success";
-
-            statusElement.textContent =
-                `Done! ${successfulSongs.length} songs were processed. durations.json has been downloaded.`;
-
-        } else {
-
-            statusElement.className =
-                "status error";
-
-            statusElement.textContent =
-                `Finished with ${successfulSongs.length} successful songs and ${failedSongs.length} failed songs. Check the list above.`;
+            URL.revokeObjectURL(url);
         }
 
 
-        generateButton.disabled = false;
-    }
+        /*
+         * Generate durations.json.
+         */
+        async function generateDurations() {
+
+            generateButton.disabled = true;
+
+            progress.style.display = "block";
+
+            progressBar.style.width = "0%";
+
+            status.className = "";
+
+            try {
+
+                status.textContent =
+                    "Loading song names from songs.json...";
 
 
-    generateButton.addEventListener(
-        "click",
-        generateDurations
-    );
-</script>
+                /*
+                 * SONG_NAMES no longer exists here.
+                 *
+                 * The JSON file is now the source.
+                 */
+                const songNames = await loadSongNames();
+
+                const total = songNames.length;
+
+                status.textContent =
+                    `Checking ${total} hosted songs...`;
+
+
+                const songs = [];
+
+                const failed = [];
+
+
+                for (
+                    let i = 0;
+                    i < songNames.length;
+                    i++
+                ) {
+
+                    const name = songNames[i];
+
+                    const file = getFilename(name);
+
+                    status.textContent =
+                        `Checking ${i + 1} of ${total}\n\n${name}`;
+
+                    try {
+
+                        const duration =
+                            await getDuration(name);
+
+
+                        songs.push({
+                            name: name,
+                            file: file,
+                            duration: Number(
+                                duration.toFixed(3)
+                            )
+                        });
+
+
+                    } catch (error) {
+
+                        console.error(
+                            `Failed to load ${name}:`,
+                            error
+                        );
+
+
+                        songs.push({
+                            name: name,
+                            file: file,
+                            duration: null,
+                            error: true
+                        });
+
+
+                        failed.push(name);
+                    }
+
+
+                    const percent =
+                        ((i + 1) / total) * 100;
+
+                    progressBar.style.width =
+                        `${percent}%`;
+                }
+
+
+                /*
+                 * Create the final durations.json.
+                 */
+                const output = {
+                    songs: songs
+                };
+
+
+                downloadJSON(
+                    output,
+                    "durations.json"
+                );
+
+
+                if (failed.length > 0) {
+
+                    status.className = "error";
+
+                    status.textContent =
+                        `Finished with ${failed.length} failed song(s).\n\n` +
+                        `durations.json has been downloaded.\n\n` +
+                        `Failed songs:\n` +
+                        failed.join("\n");
+
+                } else {
+
+                    status.className = "success";
+
+                    status.textContent =
+                        `Successfully generated durations.json.\n\n` +
+                        `${songs.length} songs processed.\n\n` +
+                        `The file has been downloaded.`;
+                }
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                status.className = "error";
+
+                status.textContent =
+                    `Error:\n\n${error.message}`;
+            }
+
+
+            generateButton.disabled = false;
+        }
+
+
+        generateButton.addEventListener(
+            "click",
+            generateDurations
+        );
+    </script>
 
 </body>
+
 </html>
