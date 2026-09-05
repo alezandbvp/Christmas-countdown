@@ -143,23 +143,36 @@
     <script>
         const SONG_FOLDER = "./songs/";
 
-        const generateButton = document.getElementById("generateButton");
-        const status = document.getElementById("status");
-        const progress = document.getElementById("progress");
-        const progressBar = document.getElementById("progressBar");
+        const generateButton =
+            document.getElementById("generateButton");
+
+        const status =
+            document.getElementById("status");
+
+        const progress =
+            document.getElementById("progress");
+
+        const progressBar =
+            document.getElementById("progressBar");
 
 
         /*
-         * Load song names from songs.json
+         * Load song names from songs.json.
          *
          * Expected format:
          *
          * {
          *     "songs": [
-         *         "All I Want For Christmas Is You",
-         *         "Baby It's Cold Outside"
+         *         {
+         *             "name": "All I Want For Christmas Is You"
+         *         },
+         *         {
+         *             "name": "Baby It's Cold Outside"
+         *         }
          *     ]
          * }
+         *
+         * String entries are also supported for compatibility.
          */
         async function loadSongNames() {
 
@@ -182,12 +195,35 @@
             }
 
             const songs = data.songs
-                .map(name => String(name).trim())
+                .map(song => {
+
+                    /*
+                     * Support:
+                     *
+                     * { "name": "Song Name" }
+                     *
+                     * and:
+                     *
+                     * "Song Name"
+                     */
+                    if (typeof song === "string") {
+                        return song.trim();
+                    }
+
+                    if (
+                        song &&
+                        typeof song.name === "string"
+                    ) {
+                        return song.name.trim();
+                    }
+
+                    return "";
+                })
                 .filter(Boolean);
 
             if (songs.length === 0) {
                 throw new Error(
-                    "songs.json contains no songs."
+                    "songs.json contains no valid songs."
                 );
             }
 
@@ -196,7 +232,7 @@
 
 
         /*
-         * Turn a song name into its actual filename.
+         * Convert the song name into the MP3 filename.
          *
          * Example:
          *
@@ -217,16 +253,21 @@
          */
         function getSongURL(songName) {
 
-            const filename = getFilename(songName);
+            const filename =
+                getFilename(songName);
 
-            return SONG_FOLDER + encodeURIComponent(filename);
+            return (
+                SONG_FOLDER +
+                encodeURIComponent(filename)
+            );
         }
 
 
         /*
          * Read the duration of an MP3.
          *
-         * This is only used by the generator to create durations.json.
+         * This is only used by the generator
+         * to create durations.json.
          */
         function getDuration(songName) {
 
@@ -236,7 +277,9 @@
 
                 let finished = false;
 
+
                 const cleanup = () => {
+
                     audio.removeEventListener(
                         "loadedmetadata",
                         handleMetadata
@@ -250,6 +293,7 @@
                     audio.src = "";
                 };
 
+
                 const handleMetadata = () => {
 
                     if (finished) {
@@ -258,22 +302,30 @@
 
                     finished = true;
 
-                    const duration = audio.duration;
+                    const duration =
+                        audio.duration;
 
                     cleanup();
+
 
                     if (
                         !Number.isFinite(duration) ||
                         duration <= 0
                     ) {
+
                         reject(
-                            new Error("Invalid audio duration")
+                            new Error(
+                                "Invalid audio duration"
+                            )
                         );
+
                         return;
                     }
 
+
                     resolve(duration);
                 };
+
 
                 const handleError = () => {
 
@@ -286,23 +338,30 @@
                     cleanup();
 
                     reject(
-                        new Error("Could not load audio")
+                        new Error(
+                            "Could not load audio"
+                        )
                     );
                 };
 
+
                 audio.preload = "metadata";
+
 
                 audio.addEventListener(
                     "loadedmetadata",
                     handleMetadata
                 );
 
+
                 audio.addEventListener(
                     "error",
                     handleError
                 );
 
-                audio.src = getSongURL(songName);
+
+                audio.src =
+                    getSongURL(songName);
 
                 audio.load();
             });
@@ -314,21 +373,35 @@
          */
         function downloadJSON(data, filename) {
 
-            const json = JSON.stringify(data, null, 2);
+            const json =
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
 
-            const blob = new Blob(
-                [json],
-                {
-                    type: "application/json"
-                }
-            );
 
-            const url = URL.createObjectURL(blob);
+            const blob =
+                new Blob(
+                    [json],
+                    {
+                        type: "application/json"
+                    }
+                );
 
-            const link = document.createElement("a");
+
+            const url =
+                URL.createObjectURL(blob);
+
+
+            const link =
+                document.createElement("a");
+
 
             link.href = url;
+
             link.download = filename;
+
 
             document.body.appendChild(link);
 
@@ -336,7 +409,10 @@
 
             link.remove();
 
-            URL.revokeObjectURL(url);
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
         }
 
 
@@ -353,6 +429,7 @@
 
             status.className = "";
 
+
             try {
 
                 status.textContent =
@@ -360,13 +437,16 @@
 
 
                 /*
-                 * SONG_NAMES no longer exists here.
-                 *
-                 * The JSON file is now the source.
+                 * songs.json is the source
+                 * for playlist order and names.
                  */
-                const songNames = await loadSongNames();
+                const songNames =
+                    await loadSongNames();
 
-                const total = songNames.length;
+
+                const total =
+                    songNames.length;
+
 
                 status.textContent =
                     `Checking ${total} hosted songs...`;
@@ -383,12 +463,17 @@
                     i++
                 ) {
 
-                    const name = songNames[i];
+                    const name =
+                        songNames[i];
 
-                    const file = getFilename(name);
+
+                    const file =
+                        getFilename(name);
+
 
                     status.textContent =
                         `Checking ${i + 1} of ${total}\n\n${name}`;
+
 
                     try {
 
@@ -413,6 +498,11 @@
                         );
 
 
+                        /*
+                         * Keep the song in the
+                         * generated manifest so
+                         * the failure is visible.
+                         */
                         songs.push({
                             name: name,
                             file: file,
@@ -427,6 +517,7 @@
 
                     const percent =
                         ((i + 1) / total) * 100;
+
 
                     progressBar.style.width =
                         `${percent}%`;
@@ -449,7 +540,9 @@
 
                 if (failed.length > 0) {
 
-                    status.className = "error";
+                    status.className =
+                        "error";
+
 
                     status.textContent =
                         `Finished with ${failed.length} failed song(s).\n\n` +
@@ -459,7 +552,9 @@
 
                 } else {
 
-                    status.className = "success";
+                    status.className =
+                        "success";
+
 
                     status.textContent =
                         `Successfully generated durations.json.\n\n` +
@@ -472,7 +567,9 @@
 
                 console.error(error);
 
-                status.className = "error";
+                status.className =
+                    "error";
+
 
                 status.textContent =
                     `Error:\n\n${error.message}`;
