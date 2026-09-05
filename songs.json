@@ -1,40 +1,205 @@
 {
   "songs": [
-    "All I Want For Christmas Is You",
-    "Baby It's Cold Outside",
-    "Christmas (Baby Please Come Home)",
-    "Christmas Eve / Sarajevo 12/24",
-    "Christmas Lights",
-    "Christmas Tree Farm",
-    "Do They Know It's Christmas?",
-    "Feliz Navidad",
-    "Hark! The Herald Angels Sing",
-    "Have Yourself a Merry Little Christmas",
-    "It's Beginning to Look a Lot Like Christmas",
-    "Jingle Bell Rock",
-    "Jingle Bells",
-    "Last Christmas",
-    "Let It Snow! Let It Snow! Let It Snow!",
-    "Mary, Did You Know?",
-    "Merry Christmas Everyone",
-    "Merry Christmas, Happy Holidays",
-    "Mistletoe",
-    "My Only Wish (This Year)",
-    "Rockin' Around the Christmas Tree",
-    "Santa Baby",
-    "Santa Claus Is Coming to Town",
-    "Santa Tell Me",
-    "Silent Night",
-    "Sleigh Ride",
-    "Step Into Christmas",
-    "Thank God It's Christmas",
-    "The Christmas Song",
-    "The Christmas Waltz",
-    "Underneath the Tree",
-    "We Wish You a Merry Christmas",
-    "What Christmas Means to Me",
-    "White Christmas",
-    "Winter Wonderland",
-    "Wonderful Christmastime"
+    {
+      "name": "All I Want For Christmas Is You",
+      "file": "All I Want For Christmas Is You.mp3",
+      "duration": 252.749
+    },
+    {
+      "name": "Baby It's Cold Outside",
+      "file": "Baby It's Cold Outside.mp3",
+      "duration": 166.56
+    },
+    {
+      "name": "Christmas (Baby Please Come Home)",
+      "file": "Christmas (Baby Please Come Home).mp3",
+      "duration": 144.92
+    },
+    {
+      "name": "Christmas Eve / Sarajevo 12/24",
+      "file": "Christmas Eve / Sarajevo 12/24.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Christmas Lights",
+      "file": "Christmas Lights.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Christmas Tree Farm",
+      "file": "Christmas Tree Farm.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Do They Know It's Christmas?",
+      "file": "Do They Know It's Christmas?.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Feliz Navidad",
+      "file": "Feliz Navidad.mp3",
+      "duration": 165.071
+    },
+    {
+      "name": "Hark! The Herald Angels Sing",
+      "file": "Hark! The Herald Angels Sing.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Have Yourself a Merry Little Christmas",
+      "file": "Have Yourself a Merry Little Christmas.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "It's Beginning to Look a Lot Like Christmas",
+      "file": "It's Beginning to Look a Lot Like Christmas.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Jingle Bell Rock",
+      "file": "Jingle Bell Rock.mp3",
+      "duration": 88.24
+    },
+    {
+      "name": "Jingle Bells",
+      "file": "Jingle Bells.mp3",
+      "duration": 121.76
+    },
+    {
+      "name": "Last Christmas",
+      "file": "Last Christmas.mp3",
+      "duration": 232.92
+    },
+    {
+      "name": "Let It Snow! Let It Snow! Let It Snow!",
+      "file": "Let It Snow! Let It Snow! Let It Snow!.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Mary, Did You Know?",
+      "file": "Mary, Did You Know?.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Merry Christmas Everyone",
+      "file": "Merry Christmas Everyone.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Merry Christmas, Happy Holidays",
+      "file": "Merry Christmas, Happy Holidays.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Mistletoe",
+      "file": "Mistletoe.mp3",
+      "duration": 237.47
+    },
+    {
+      "name": "My Only Wish (This Year)",
+      "file": "My Only Wish (This Year).mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Rockin' Around the Christmas Tree",
+      "file": "Rockin' Around the Christmas Tree.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Santa Baby",
+      "file": "Santa Baby.mp3",
+      "duration": 194.4
+    },
+    {
+      "name": "Santa Claus Is Coming to Town",
+      "file": "Santa Claus Is Coming to Town.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Santa Tell Me",
+      "file": "Santa Tell Me.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Silent Night",
+      "file": "Silent Night.mp3",
+      "duration": 214.16
+    },
+    {
+      "name": "Sleigh Ride",
+      "file": "Sleigh Ride.mp3",
+      "duration": 138.56
+    },
+    {
+      "name": "Step Into Christmas",
+      "file": "Step Into Christmas.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Thank God It's Christmas",
+      "file": "Thank God It's Christmas.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "The Christmas Song",
+      "file": "The Christmas Song.mp3",
+      "duration": 134.28
+    },
+    {
+      "name": "The Christmas Waltz",
+      "file": "The Christmas Waltz.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "Underneath the Tree",
+      "file": "Underneath the Tree.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "We Wish You a Merry Christmas",
+      "file": "We Wish You a Merry Christmas.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "What Christmas Means to Me",
+      "file": "What Christmas Means to Me.mp3",
+      "duration": null,
+      "error": true
+    },
+    {
+      "name": "White Christmas",
+      "file": "White Christmas.mp3",
+      "duration": 143.52
+    },
+    {
+      "name": "Winter Wonderland",
+      "file": "Winter Wonderland.mp3",
+      "duration": 127
+    },
+    {
+      "name": "Wonderful Christmastime",
+      "file": "Wonderful Christmastime.mp3",
+      "duration": 229.28
+    }
   ]
 }
