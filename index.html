@@ -91,41 +91,20 @@
 
     /*
      * =====================================================
-     * PHONE-ONLY PORTRAIT LOCK
+     * PHONE-ONLY NATIVE PORTRAIT LOCK
      * =====================================================
      *
-     * Phones are detected with JavaScript.
+     * Phone detection is handled by JavaScript.
      *
-     * On a phone in landscape, the entire website is
-     * placed into a portrait-sized canvas and rotated.
+     * Phones request the browser's native portrait
+     * orientation lock.
      *
      * Tablets, iPads, desktops and laptops are untouched.
+     *
+     * IMPORTANT:
+     * There is no CSS rotation and no fake portrait
+     * viewport.
      */
-
-    #phonePortraitViewport {
-        width: 100%;
-        height: 100dvh;
-
-        position: relative;
-
-        transform-origin: center center;
-    }
-
-    body.phone.landscape #phonePortraitViewport {
-        width: 100dvh;
-        height: 100dvw;
-
-        position: fixed;
-
-        left: 50%;
-        top: 50%;
-
-        transform:
-            translate(-50%, -50%)
-            rotate(90deg);
-
-        transform-origin: center center;
-    }
 
     /*
      * BACKGROUND
@@ -1028,19 +1007,16 @@
      * LANDSCAPE
      *
      * Only applies to non-phone devices.
-     *
-     * Phone landscape is handled by the portrait
-     * canvas above.
      */
 
     @media (max-width: 900px) and (orientation: landscape) {
 
-        body:not(.phone) #container {
+        body.not-phone #container {
             align-items:
                 center;
         }
 
-        body:not(.phone) .card {
+        body.not-phone .card {
             padding:
                 20px 35px;
 
@@ -1054,17 +1030,17 @@
                 26px;
         }
 
-        body:not(.phone) .live-label {
+        body.not-phone .live-label {
             margin-bottom:
                 8px;
         }
 
-        body:not(.phone) #title {
+        body.not-phone #title {
             font-size:
                 clamp(2.5rem, 8vw, 5rem);
         }
 
-        body:not(.phone) #subtitle {
+        body.not-phone #subtitle {
             font-size:
                 clamp(1.6rem, 4vw, 2.7rem);
 
@@ -1072,7 +1048,7 @@
                 15px;
         }
 
-        body:not(.phone) #countdown {
+        body.not-phone #countdown {
             margin-bottom:
                 15px;
 
@@ -1080,12 +1056,12 @@
                 9px 20px;
         }
 
-        body:not(.phone) .song-wrapper {
+        body.not-phone .song-wrapper {
             margin-bottom:
                 15px;
         }
 
-        body:not(.phone) footer {
+        body.not-phone footer {
             margin-top:
                 12px;
         }
@@ -1197,15 +1173,15 @@
     <script>
         /*
          * =====================================================
-         * PHONE DETECTION
+         * PHONE DETECTION + NATIVE PORTRAIT LOCK
          * =====================================================
          *
-         * iPhone / iPod
-         * Android phones
-         * Windows phones
-         * Other mobile phones
+         * The page does NOT rotate itself.
          *
-         * Tablets and computers are excluded.
+         * Phones request the browser's native portrait
+         * orientation lock.
+         *
+         * Tablets, iPads and computers are excluded.
          */
 
         (function () {
@@ -1248,6 +1224,7 @@
                 windowsPhone ||
                 genericPhone;
 
+
             if (isPhone) {
 
                 document.body.classList.add(
@@ -1262,78 +1239,16 @@
             }
 
 
-            function updatePhoneOrientation() {
-
-                if (!isPhone) {
-                    return;
-                }
-
-                const width =
-                    window.visualViewport
-                        ? window.visualViewport.width
-                        : window.innerWidth;
-
-                const height =
-                    window.visualViewport
-                        ? window.visualViewport.height
-                        : window.innerHeight;
-
-                const landscape =
-                    width > height;
-
-                document.body.classList.toggle(
-                    "landscape",
-                    landscape
-                );
-
-                document.body.classList.toggle(
-                    "portrait",
-                    !landscape
-                );
-            }
-
-
-            updatePhoneOrientation();
-
-
-            window.addEventListener(
-                "resize",
-                updatePhoneOrientation,
-                {
-                    passive: true
-                }
-            );
-
-
-            window.addEventListener(
-                "orientationchange",
-                updatePhoneOrientation,
-                {
-                    passive: true
-                }
-            );
-
-
-            if (
-                window.visualViewport
-            ) {
-
-                window.visualViewport.addEventListener(
-                    "resize",
-                    updatePhoneOrientation,
-                    {
-                        passive: true
-                    }
-                );
-            }
-
-
             /*
-             * Try native portrait locking where the
-             * browser permits it.
+             * NATIVE PORTRAIT LOCK
              *
-             * The CSS system above does NOT depend
-             * on this succeeding.
+             * This asks the browser/OS to keep the
+             * phone in portrait orientation.
+             *
+             * Some browsers, especially normal iOS
+             * Safari tabs, do not expose orientation.lock().
+             * In those browsers the request simply fails
+             * silently.
              */
 
             async function requestPortraitLock() {
@@ -1341,6 +1256,7 @@
                 if (!isPhone) {
                     return;
                 }
+
 
                 try {
 
@@ -1360,11 +1276,11 @@
                 ) {
 
                     /*
-                     * Safari normally does not allow
-                     * this from an ordinary webpage.
+                     * Orientation locking is not supported
+                     * in every browser/context.
                      *
-                     * The visual portrait lock still
-                     * works through CSS.
+                     * Do not rotate or alter the page
+                     * as a fallback.
                      */
                 }
             }
@@ -1376,125 +1292,113 @@
     </script>
 
 
-    <!--
-         Everything inside this wrapper rotates together.
+    <div id="bg"></div>
 
-         This is important because it makes the background,
-         snow, glass, buttons, text and audio UI all belong
-         to the same portrait canvas.
-    -->
-
-    <div id="phonePortraitViewport">
-
-        <div id="bg"></div>
-
-        <div
-            id="snowFar"
-            class="snow-layer">
-        </div>
-
-        <div
-            id="snowMid"
-            class="snow-layer">
-        </div>
-
-        <div
-            id="snowNear"
-            class="snow-layer">
-        </div>
-
-        <div
-            id="snowAbove"
-            class="snow-layer">
-        </div>
-
-
-        <main id="container">
-
-            <section class="card">
-
-                <div class="live-label">
-
-                    <span class="live-dot"></span>
-
-                    Christmas Radio
-
-                </div>
-
-
-                <h1 id="title">
-                    Christmas
-                </h1>
-
-
-                <h1 id="subtitle">
-                    Countdown
-                </h1>
-
-
-                <div id="countdown">
-                    Loading...
-                </div>
-
-
-                <div class="song-wrapper">
-
-                    <div class="now-playing">
-                        Now Playing
-                    </div>
-
-
-                    <div id="songName">
-                        Loading radio...
-                    </div>
-
-
-                    <div class="up-next-wrapper">
-
-                        <div class="up-next-label">
-                            Up Next
-                        </div>
-
-
-                        <div id="upNext">
-                            Loading...
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <button id="playButton">
-                    🎄 Start Live Radio
-                </button>
-
-
-                <footer>
-                    ❄️ Merry Christmas ❄️
-                </footer>
-
-            </section>
-
-        </main>
-
-
-        <audio
-            id="musicAudio"
-            preload="auto"
-            playsinline
-            controlslist="nodownload noplaybackrate noremoteplayback">
-        </audio>
-
-
-        <audio
-            id="speechAudio"
-            preload="auto"
-            playsinline
-            controlslist="nodownload noplaybackrate noremoteplayback">
-        </audio>
-
+    <div
+        id="snowFar"
+        class="snow-layer">
     </div>
+
+    <div
+        id="snowMid"
+        class="snow-layer">
+    </div>
+
+    <div
+        id="snowNear"
+        class="snow-layer">
+    </div>
+
+    <div
+        id="snowAbove"
+        class="snow-layer">
+    </div>
+
+
+    <main id="container">
+
+        <section class="card">
+
+            <div class="live-label">
+
+                <span class="live-dot"></span>
+
+                Christmas Radio
+
+            </div>
+
+
+            <h1 id="title">
+                Christmas
+            </h1>
+
+
+            <h1 id="subtitle">
+                Countdown
+            </h1>
+
+
+            <div id="countdown">
+                Loading...
+            </div>
+
+
+            <div class="song-wrapper">
+
+                <div class="now-playing">
+                    Now Playing
+                </div>
+
+
+                <div id="songName">
+                    Loading radio...
+                </div>
+
+
+                <div class="up-next-wrapper">
+
+                    <div class="up-next-label">
+                        Up Next
+                    </div>
+
+
+                    <div id="upNext">
+                        Loading...
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <button id="playButton">
+                🎄 Start Live Radio
+            </button>
+
+
+            <footer>
+                ❄️ Merry Christmas ❄️
+            </footer>
+
+        </section>
+
+    </main>
+
+
+    <audio
+        id="musicAudio"
+        preload="auto"
+        playsinline
+        controlslist="nodownload noplaybackrate noremoteplayback">
+    </audio>
+
+
+    <audio
+        id="speechAudio"
+        preload="auto"
+        playsinline
+        controlslist="nodownload noplaybackrate noremoteplayback">
+    </audio>
 
 
     <script>
