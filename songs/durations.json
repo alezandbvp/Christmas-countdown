@@ -168,7 +168,7 @@
     {
       "name": "Winter Wonderland",
       "file": "Winter Wonderland.mp3",
-      "duration": 127
+      "duration": 147.725
     },
     {
       "name": "Wonderful Christmastime",
@@ -179,6 +179,16 @@
       "name": "You're A Mean One, Mr. Grinch",
       "file": "You're A Mean One, Mr. Grinch.mp3",
       "duration": 171.735
+    },
+    {
+      "name": "Home Alone",
+      "file": "Home Alone.mp3",
+      "duration": 165.256
+    },
+    {
+      "name": "Winter Wonderland",
+      "file": "Winter Wonderland.mp3",
+      "duration": 147.725
     }
   ]
 }
