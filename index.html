@@ -95,29 +95,13 @@
 
     /*
      * =====================================================
-     * PHONE-ONLY PORTRAIT CANVAS
+     * MAIN PAGE
      * =====================================================
-     *
-     * This follows the same layout mechanism as the
-     * Portrait Lock Test, but applies it to the entire
-     * complex Christmas Radio application.
-     *
-     * Phone in portrait:
-     *     Normal 100% × 100dvh layout.
-     *
-     * Phone in landscape:
-     *     The entire application becomes a portrait-shaped
-     *     canvas using the landscape viewport dimensions.
-     *
-     * IMPORTANT:
-     * This is intentionally PHONE ONLY.
-     *
-     * Tablets, iPads, desktops and laptops are untouched.
      */
 
     #phonePortraitViewport {
         width: 100%;
-        height: 100dvh;
+        height: 100%;
 
         position: relative;
 
@@ -125,53 +109,9 @@
     }
 
     /*
-     * PHONE LANDSCAPE
-     *
-     * Same geometry used by the Portrait Lock Test.
-     *
-     * The application's portrait canvas is:
-     *
-     *     width  = 100vh
-     *     height = 100vw
-     *
-     * and is centered in the physical landscape screen.
-     */
-
-    body.phone.landscape {
-        width: 100vw;
-        height: 100dvh;
-
-        overflow: hidden;
-
-        position: relative;
-    }
-
-    body.phone.landscape #phonePortraitViewport {
-        width: 100dvh;
-        min-width: 100dvh;
-        max-width: 100dvh;
-
-        height: 100vw;
-        min-height: 100vw;
-        max-height: 100vw;
-
-        position: fixed;
-
-        left: 50%;
-        top: 50%;
-
-        transform:
-            translate(-50%, -50%)
-            rotate(90deg);
-
-        transform-origin:
-            center center;
-
-        overflow: hidden;
-    }
-
-    /*
+     * =====================================================
      * BACKGROUND
+     * =====================================================
      */
 
     #bg {
@@ -197,13 +137,15 @@
             saturate(1.2)
             contrast(1.02);
 
-        z-index: 0;
+        z-index: -5;
 
         transform: translateZ(0);
     }
 
     /*
+     * =====================================================
      * SNOW
+     * =====================================================
      */
 
     .snow-layer {
@@ -225,10 +167,6 @@
     #snowAbove {
         z-index: 10;
     }
-
-    /*
-     * SNOWFLAKE
-     */
 
     .snowflake {
         position: absolute;
@@ -380,7 +318,9 @@
     }
 
     /*
+     * =====================================================
      * MAIN CONTAINER
+     * =====================================================
      */
 
     #container {
@@ -398,13 +338,19 @@
             max(20px, env(safe-area-inset-bottom))
             max(20px, env(safe-area-inset-left));
 
-        position: relative;
+        position: absolute;
+
+        inset: 0;
 
         z-index: 5;
+
+        overflow: hidden;
     }
 
     /*
+     * =====================================================
      * LIQUID GLASS CARD
+     * =====================================================
      */
 
     .card {
@@ -467,10 +413,6 @@
             );
     }
 
-    /*
-     * GLASS LOWER GLOW
-     */
-
     .card::after {
         content: "";
 
@@ -503,7 +445,9 @@
     }
 
     /*
+     * =====================================================
      * LIVE LABEL
+     * =====================================================
      */
 
     .live-label {
@@ -600,7 +544,9 @@
     }
 
     /*
+     * =====================================================
      * CHRISTMAS TITLE
+     * =====================================================
      */
 
     #title {
@@ -641,7 +587,9 @@
     }
 
     /*
+     * =====================================================
      * COUNTDOWN TITLE
+     * =====================================================
      */
 
     #subtitle {
@@ -666,7 +614,9 @@
     }
 
     /*
+     * =====================================================
      * COUNTDOWN GLASS
+     * =====================================================
      */
 
     #countdown {
@@ -731,7 +681,9 @@
     }
 
     /*
+     * =====================================================
      * NOW PLAYING
+     * =====================================================
      */
 
     .song-wrapper {
@@ -824,7 +776,9 @@
     }
 
     /*
+     * =====================================================
      * PLAY BUTTON
+     * =====================================================
      */
 
     #playButton {
@@ -974,7 +928,9 @@
     }
 
     /*
+     * =====================================================
      * FOOTER
+     * =====================================================
      */
 
     footer {
@@ -1000,7 +956,9 @@
     }
 
     /*
-     * MOBILE
+     * =====================================================
+     * MOBILE PORTRAIT
+     * =====================================================
      */
 
     @media (max-width: 768px) {
@@ -1068,171 +1026,422 @@
     }
 
     /*
-     * LANDSCAPE
+     * =====================================================
+     * PHONE LANDSCAPE
      *
-     * Only applies to non-phone devices.
+     * The page is NOT rotated.
      *
-     * Phones are handled by the portrait canvas above.
+     * Everything simply becomes smaller and tighter so
+     * the complete card fits inside the landscape viewport.
+     * =====================================================
      */
 
     @media (max-width: 900px) and (orientation: landscape) {
 
-        body.not-phone #container {
+        #container {
+            padding:
+                10px
+                max(15px, env(safe-area-inset-right))
+                10px
+                max(15px, env(safe-area-inset-left));
+
             align-items:
+                center;
+
+            justify-content:
                 center;
         }
 
-        body.not-phone .card {
-            padding:
-                20px 35px;
+        .card {
+            width:
+                min(94vw, 850px);
 
+            /*
+             * Prevent the card itself from becoming taller
+             * than the available landscape screen.
+             */
             max-height:
-                92dvh;
+                calc(
+                    100dvh -
+                    env(safe-area-inset-top) -
+                    env(safe-area-inset-bottom) -
+                    20px
+                );
 
-            overflow-y:
-                auto;
+            padding:
+                clamp(12px, 3vh, 22px)
+                clamp(20px, 5vw, 40px);
 
             border-radius:
-                26px;
+                24px;
+
+            /*
+             * Never create an internal scrolling card.
+             */
+            overflow:
+                hidden;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
         }
 
-        body.not-phone .live-label {
-            margin-bottom:
-                8px;
+        .card::before {
+            border-radius:
+                23px;
         }
 
-        body.not-phone #title {
-            font-size:
-                clamp(2.5rem, 8vw, 5rem);
-        }
-
-        body.not-phone #subtitle {
-            font-size:
-                clamp(1.6rem, 4vw, 2.7rem);
-
-            margin-bottom:
-                15px;
-        }
-
-        body.not-phone #countdown {
-            margin-bottom:
-                15px;
-
-            padding:
-                9px 20px;
-        }
-
-        body.not-phone .song-wrapper {
-            margin-bottom:
-                15px;
-        }
-
-        body.not-phone footer {
-            margin-top:
-                12px;
-        }
-    }
-
-    /*
-     * PHONE LANDSCAPE
-     *
-     * Because the entire application is now inside the
-     * portrait canvas, retain the normal mobile sizing.
-     *
-     * Do NOT use another rotation here.
-     */
-
-    body.phone.landscape #container {
-        width: 100%;
-        height: 100%;
-
-        padding:
-            max(15px, env(safe-area-inset-top))
-            max(15px, env(safe-area-inset-right))
-            max(15px, env(safe-area-inset-bottom))
-            max(15px, env(safe-area-inset-left));
-
-        overflow: hidden;
-    }
-
-    body.phone.landscape .card {
-        width: 94%;
-
-        max-width: none;
-        max-height: none;
-
-        overflow: visible;
-
-        padding:
-            30px 20px;
-
-        border-radius:
-            28px;
-    }
-
-    body.phone.landscape .card::before {
-        border-radius:
-            27px;
-    }
-
-    body.phone.landscape #title {
-        font-size:
-            clamp(3rem, 9vw, 7rem);
-    }
-
-    body.phone.landscape #subtitle {
-        font-size:
-            clamp(2rem, 5vw, 4rem);
-
-        margin-bottom:
-            28px;
-    }
-
-    body.phone.landscape #countdown {
-        margin-bottom:
-            24px;
-
-        padding:
-            13px 15px;
-    }
-
-    body.phone.landscape .song-wrapper {
-        margin-bottom:
-            28px;
-    }
-
-    /*
-     * SMALL HEIGHT
-     */
-
-    @media (max-height: 650px) {
-
-        .card {
-            padding-top:
-                20px;
-
-            padding-bottom:
-                20px;
-        }
+        /*
+         * Smaller live label
+         */
 
         .live-label {
+            padding:
+                6px 13px;
+
+            gap:
+                7px;
+
+            font-size:
+                0.62rem;
+
             margin-bottom:
-                8px;
+                clamp(5px, 1.5vh, 10px);
+        }
+
+        .live-dot {
+            width:
+                7px;
+
+            height:
+                7px;
+        }
+
+        /*
+         * Smaller title
+         */
+
+        #title {
+            font-size:
+                clamp(
+                    2.2rem,
+                    10vh,
+                    4.2rem
+                );
+
+            line-height:
+                0.9;
+
+            margin-bottom:
+                4px;
         }
 
         #subtitle {
+            font-size:
+                clamp(
+                    1.4rem,
+                    6vh,
+                    2.5rem
+                );
+
             margin-bottom:
-                15px;
+                clamp(7px, 1.8vh, 14px);
+        }
+
+        /*
+         * Smaller countdown
+         */
+
+        #countdown {
+            width:
+                auto;
+
+            min-width:
+                0;
+
+            max-width:
+                90%;
+
+            padding:
+                8px 16px;
+
+            margin-bottom:
+                clamp(7px, 1.8vh, 14px);
+
+            font-size:
+                clamp(
+                    0.8rem,
+                    3.5vh,
+                    1.15rem
+                );
+
+            white-space:
+                nowrap;
+        }
+
+        /*
+         * Compact song information
+         */
+
+        .song-wrapper {
+            margin-bottom:
+                clamp(7px, 1.8vh, 14px);
+
+            width:
+                100%;
+        }
+
+        .now-playing {
+            font-size:
+                0.58rem;
+
+            margin-bottom:
+                4px;
+        }
+
+        #songName {
+            min-height:
+                1.2em;
+
+            padding:
+                0 5px;
+
+            font-size:
+                clamp(
+                    0.78rem,
+                    3vh,
+                    1.05rem
+                );
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
+        }
+
+        .up-next-wrapper {
+            margin-top:
+                5px;
+
+            margin-bottom:
+                0;
+        }
+
+        .up-next-label {
+            font-size:
+                0.5rem;
+
+            margin-bottom:
+                2px;
+        }
+
+        #upNext {
+            min-height:
+                1.1em;
+
+            font-size:
+                clamp(
+                    0.65rem,
+                    2.5vh,
+                    0.85rem
+                );
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
+        }
+
+        /*
+         * Compact play button
+         */
+
+        #playButton {
+            width:
+                auto;
+
+            min-width:
+                180px;
+
+            max-width:
+                280px;
+
+            padding:
+                9px 20px;
+
+            font-size:
+                clamp(
+                    0.72rem,
+                    2.8vh,
+                    0.9rem
+                );
+        }
+
+        /*
+         * Compact footer
+         */
+
+        footer {
+            margin-top:
+                clamp(5px, 1.5vh, 9px);
+
+            font-size:
+                clamp(
+                    0.52rem,
+                    2vh,
+                    0.68rem
+                );
+        }
+    }
+
+    /*
+     * =====================================================
+     * VERY SHORT LANDSCAPE PHONES
+     * =====================================================
+     */
+
+    @media (max-width: 900px)
+        and (orientation: landscape)
+        and (max-height: 430px) {
+
+        #container {
+            padding:
+                6px 12px;
+        }
+
+        .card {
+            padding:
+                8px 18px;
+
+            border-radius:
+                20px;
+        }
+
+        .card::before {
+            border-radius:
+                19px;
+        }
+
+        .live-label {
+            padding:
+                4px 10px;
+
+            margin-bottom:
+                4px;
+
+            font-size:
+                0.52rem;
+        }
+
+        #title {
+            font-size:
+                clamp(
+                    1.8rem,
+                    9vh,
+                    3.3rem
+                );
+
+            margin-bottom:
+                2px;
+        }
+
+        #subtitle {
+            font-size:
+                clamp(
+                    1.15rem,
+                    5vh,
+                    2rem
+                );
+
+            margin-bottom:
+                5px;
         }
 
         #countdown {
+            padding:
+                6px 12px;
+
             margin-bottom:
-                15px;
+                6px;
+
+            font-size:
+                clamp(
+                    0.7rem,
+                    3vh,
+                    0.95rem
+                );
         }
 
         .song-wrapper {
             margin-bottom:
-                15px;
+                6px;
+        }
+
+        .now-playing {
+            font-size:
+                0.5rem;
+
+            margin-bottom:
+                2px;
+        }
+
+        #songName {
+            font-size:
+                clamp(
+                    0.7rem,
+                    2.8vh,
+                    0.9rem
+                );
+        }
+
+        .up-next-wrapper {
+            margin-top:
+                3px;
+        }
+
+        .up-next-label {
+            font-size:
+                0.45rem;
+        }
+
+        #upNext {
+            font-size:
+                clamp(
+                    0.58rem,
+                    2.2vh,
+                    0.75rem
+                );
+        }
+
+        #playButton {
+            min-width:
+                160px;
+
+            padding:
+                7px 16px;
+
+            font-size:
+                clamp(
+                    0.65rem,
+                    2.5vh,
+                    0.8rem
+                );
         }
 
         footer {
@@ -1242,10 +1451,37 @@
     }
 
     /*
-     * SMALL PHONES
+     * =====================================================
+     * NON-PHONE TABLET/DESKTOP LANDSCAPE
+     * =====================================================
      */
 
-    @media (max-width: 380px) {
+    @media (min-width: 769px)
+        and (max-width: 1100px)
+        and (orientation: landscape) {
+
+        #container {
+            padding:
+                15px;
+        }
+
+        .card {
+            max-height:
+                94dvh;
+
+            overflow:
+                hidden;
+        }
+    }
+
+    /*
+     * =====================================================
+     * SMALL PHONES
+     * =====================================================
+     */
+
+    @media (max-width: 380px)
+        and (orientation: portrait) {
 
         .card {
             padding:
@@ -1280,7 +1516,9 @@
     }
 
     /*
+     * =====================================================
      * REDUCED MOTION
+     * =====================================================
      */
 
     @media (prefers-reduced-motion: reduce) {
@@ -1303,291 +1541,6 @@
 </head>
 
 <body>
-
-    <script>
-        /*
-         * =====================================================
-         * PHONE DETECTION + NATIVE PORTRAIT LOCK
-         * =====================================================
-         *
-         * The phone detection is intentionally done before
-         * the application is displayed so the correct canvas
-         * behavior is established immediately.
-         */
-
-        (function () {
-
-            const userAgent =
-                navigator.userAgent || "";
-
-
-            const applePhone =
-                /iPhone|iPod/i.test(
-                    userAgent
-                );
-
-
-            const androidPhone =
-                /Android/i.test(
-                    userAgent
-                ) &&
-                /Mobile/i.test(
-                    userAgent
-                ) &&
-                !/Tablet/i.test(
-                    userAgent
-                );
-
-
-            const windowsPhone =
-                /Windows Phone/i.test(
-                    userAgent
-                );
-
-
-            const genericPhone =
-                /Mobile/i.test(
-                    userAgent
-                ) &&
-                !/Tablet|iPad/i.test(
-                    userAgent
-                );
-
-
-            const isPhone =
-                applePhone ||
-                androidPhone ||
-                windowsPhone ||
-                genericPhone;
-
-
-            if (isPhone) {
-
-                document.body.classList.add(
-                    "phone"
-                );
-
-            } else {
-
-                document.body.classList.add(
-                    "not-phone"
-                );
-            }
-
-
-            /*
-             * =================================================
-             * ORIENTATION DETECTION
-             * =================================================
-             */
-
-            function getViewportWidth() {
-
-                return window.visualViewport
-                    ? window.visualViewport.width
-                    : window.innerWidth;
-            }
-
-
-            function getViewportHeight() {
-
-                return window.visualViewport
-                    ? window.visualViewport.height
-                    : window.innerHeight;
-            }
-
-
-            function updatePhoneOrientation() {
-
-                if (!isPhone) {
-                    return;
-                }
-
-
-                const width =
-                    getViewportWidth();
-
-
-                const height =
-                    getViewportHeight();
-
-
-                const landscape =
-                    width > height;
-
-
-                document.body.classList.toggle(
-                    "landscape",
-                    landscape
-                );
-
-
-                document.body.classList.toggle(
-                    "portrait",
-                    !landscape
-                );
-            }
-
-
-            updatePhoneOrientation();
-
-
-            window.addEventListener(
-                "resize",
-                updatePhoneOrientation,
-                {
-                    passive: true
-                }
-            );
-
-
-            window.addEventListener(
-                "orientationchange",
-                updatePhoneOrientation,
-                {
-                    passive: true
-                }
-            );
-
-
-            if (
-                window.visualViewport
-            ) {
-
-                window.visualViewport.addEventListener(
-                    "resize",
-                    updatePhoneOrientation,
-                    {
-                        passive: true
-                    }
-                );
-            }
-
-
-            /*
-             * Native Screen Orientation API.
-             *
-             * This is the same native request used by
-             * the Portrait Lock Test.
-             *
-             * The browser decides whether the request is
-             * permitted. Failure is intentionally silent.
-             */
-
-            let portraitLockAttempted =
-                false;
-
-
-            async function requestPortrait() {
-
-                if (!isPhone) {
-                    return;
-                }
-
-
-                if (
-                    !screen.orientation ||
-                    typeof screen.orientation.lock !==
-                        "function"
-                ) {
-                    return;
-                }
-
-
-                try {
-
-                    await screen.orientation.lock(
-                        "portrait"
-                    );
-
-
-                    portraitLockAttempted =
-                        true;
-
-                } catch (
-                    error
-                ) {
-
-                    /*
-                     * Some browsers require a user
-                     * activation before orientation
-                     * locking is permitted.
-                     *
-                     * Leave the CSS canvas active.
-                     */
-                }
-            }
-
-
-            /*
-             * Initial native request.
-             */
-
-            requestPortrait();
-
-
-            /*
-             * Retry after the first user interaction.
-             *
-             * This helps environments where the native
-             * orientation API rejects calls made during
-             * initial page loading.
-             */
-
-            function retryNativePortraitLock() {
-
-                if (
-                    !portraitLockAttempted
-                ) {
-
-                    requestPortrait();
-                }
-            }
-
-
-            window.addEventListener(
-                "pointerdown",
-                retryNativePortraitLock,
-                {
-                    passive: true,
-                    once: true
-                }
-            );
-
-
-            window.addEventListener(
-                "touchstart",
-                retryNativePortraitLock,
-                {
-                    passive: true,
-                    once: true
-                }
-            );
-
-
-            /*
-             * Keep the CSS state synchronized with the
-             * native orientation state when available.
-             */
-
-            if (
-                screen.orientation &&
-                typeof screen.orientation.addEventListener ===
-                    "function"
-            ) {
-
-                screen.orientation.addEventListener(
-                    "change",
-                    updatePhoneOrientation,
-                    {
-                        passive: true
-                    }
-                );
-            }
-
-        })();
-    </script>
-
 
     <div id="phonePortraitViewport">
 
@@ -1613,7 +1566,6 @@
             class="snow-layer">
         </div>
 
-
         <main id="container">
 
             <section class="card">
@@ -1626,21 +1578,17 @@
 
                 </div>
 
-
                 <h1 id="title">
                     Christmas
                 </h1>
-
 
                 <h1 id="subtitle">
                     Countdown
                 </h1>
 
-
                 <div id="countdown">
                     Loading...
                 </div>
-
 
                 <div class="song-wrapper">
 
@@ -1648,18 +1596,15 @@
                         Now Playing
                     </div>
 
-
                     <div id="songName">
                         Loading radio...
                     </div>
-
 
                     <div class="up-next-wrapper">
 
                         <div class="up-next-label">
                             Up Next
                         </div>
-
 
                         <div id="upNext">
                             Loading...
@@ -1669,11 +1614,9 @@
 
                 </div>
 
-
                 <button id="playButton">
                     🎄 Start Live Radio
                 </button>
-
 
                 <footer>
                     ❄️ Merry Christmas ❄️
@@ -1683,14 +1626,12 @@
 
         </main>
 
-
         <audio
             id="musicAudio"
             preload="auto"
             playsinline
             controlslist="nodownload noplaybackrate noremoteplayback">
         </audio>
-
 
         <audio
             id="speechAudio"
@@ -1776,7 +1717,9 @@
 
 
         /*
+         * =====================================================
          * ELEMENTS
+         * =====================================================
          */
 
         const musicAudio =
@@ -1811,7 +1754,9 @@
 
 
         /*
+         * =====================================================
          * RADIO CONFIGURATION
+         * =====================================================
          */
 
         const RADIO_START =
@@ -1833,7 +1778,9 @@
 
 
         /*
+         * =====================================================
          * STATE
+         * =====================================================
          */
 
         let songs = [];
@@ -1856,7 +1803,9 @@
 
 
         /*
+         * =====================================================
          * FORMAT TIME
+         * =====================================================
          */
 
         function formatTime(seconds) {
@@ -1896,7 +1845,9 @@
 
 
         /*
+         * =====================================================
          * CHRISTMAS COUNTDOWN
+         * =====================================================
          */
 
         function updateCountdown() {
@@ -1982,7 +1933,9 @@
 
 
         /*
+         * =====================================================
          * SNOW
+         * =====================================================
          */
 
         function setSnowDrift(
@@ -2384,7 +2337,9 @@
 
 
         /*
+         * =====================================================
          * LOAD durations.json
+         * =====================================================
          */
 
         async function loadDurations() {
@@ -2735,7 +2690,9 @@
 
 
         /*
+         * =====================================================
          * FIND LIVE SEGMENT
+         * =====================================================
          */
 
         function findLiveSegment() {
@@ -2861,7 +2818,9 @@
 
 
         /*
+         * =====================================================
          * DISPLAY SONG INDEX
+         * =====================================================
          */
 
         function getDisplaySongIndex(
@@ -2907,7 +2866,9 @@
 
 
         /*
+         * =====================================================
          * UPDATE RADIO UI
+         * =====================================================
          */
 
         function updateRadioUI(
@@ -2943,7 +2904,9 @@
 
 
         /*
+         * =====================================================
          * MEDIA SESSION
+         * =====================================================
          */
 
         function updateLiveMediaSession() {
@@ -3054,7 +3017,9 @@
 
 
         /*
+         * =====================================================
          * MEDIA SESSION SETUP
+         * =====================================================
          */
 
         function setupMediaSession() {
@@ -3126,7 +3091,9 @@
 
 
         /*
+         * =====================================================
          * LOAD AUDIO
+         * =====================================================
          */
 
         async function loadAudio(
@@ -3240,7 +3207,9 @@
 
 
         /*
+         * =====================================================
          * LOAD SONG
+         * =====================================================
          */
 
         async function loadSong(
@@ -3279,7 +3248,9 @@
 
 
         /*
+         * =====================================================
          * LOAD SPEECH
+         * =====================================================
          */
 
         async function loadSpeech(
@@ -3295,7 +3266,9 @@
 
 
         /*
+         * =====================================================
          * START LIVE RADIO
+         * =====================================================
          */
 
         async function playLive() {
@@ -3416,7 +3389,9 @@
 
 
         /*
+         * =====================================================
          * PAUSE
+         * =====================================================
          */
 
         function pauseRadio() {
@@ -3443,7 +3418,9 @@
 
 
         /*
+         * =====================================================
          * RESUME
+         * =====================================================
          */
 
         async function resumeLive() {
@@ -3457,7 +3434,9 @@
 
 
         /*
+         * =====================================================
          * BUTTON
+         * =====================================================
          */
 
         function updatePlayButton() {
@@ -3506,7 +3485,9 @@
 
 
         /*
+         * =====================================================
          * TRACK END
+         * =====================================================
          */
 
         musicAudio.addEventListener(
@@ -3538,7 +3519,9 @@
 
 
         /*
+         * =====================================================
          * ERROR RECOVERY
+         * =====================================================
          */
 
         function retryLive() {
@@ -3586,7 +3569,9 @@
 
 
         /*
+         * =====================================================
          * PERIODIC LIVE SYNCHRONIZATION
+         * =====================================================
          */
 
         async function syncRadio() {
@@ -3672,7 +3657,9 @@
 
 
         /*
+         * =====================================================
          * MEDIA SESSION POSITION
+         * =====================================================
          */
 
         setInterval(
@@ -3691,7 +3678,9 @@
 
 
         /*
+         * =====================================================
          * VISIBILITY SYNCHRONIZATION
+         * =====================================================
          */
 
         document.addEventListener(
@@ -3776,7 +3765,9 @@
 
 
         /*
+         * =====================================================
          * BLOCK TRACK-SKIPPING KEYS
+         * =====================================================
          */
 
         document.addEventListener(
@@ -3808,7 +3799,9 @@
 
 
         /*
+         * =====================================================
          * BLOCK CONTEXT MENU
+         * =====================================================
          */
 
         document.addEventListener(
@@ -3819,7 +3812,9 @@
 
 
         /*
+         * =====================================================
          * INITIAL UI
+         * =====================================================
          */
 
         updatePlayButton();
@@ -3834,7 +3829,9 @@
 
 
         /*
+         * =====================================================
          * LOAD MANIFEST ON PAGE LOAD
+         * =====================================================
          */
 
         loadDurations()
@@ -3884,7 +3881,9 @@
 
 
         /*
+         * =====================================================
          * CLEANUP
+         * =====================================================
          */
 
         window.addEventListener(
