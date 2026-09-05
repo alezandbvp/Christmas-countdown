@@ -353,59 +353,33 @@
      * LIQUID GLASS CARD
      */
 
-    .card {
-        width: min(92vw, 900px);
+  .card {
+    width: min(92vw, 900px);
+    padding: clamp(30px, 5vw, 60px);
+    text-align: center;
+    position: relative;
 
-        padding:
-            clamp(30px, 5vw, 60px);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.065),
+            rgba(255, 255, 255, 0.018) 45%,
+            rgba(255, 255, 255, 0.035)
+        );
 
-        text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 32px;
 
-        position: relative;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
 
-        background:
-    linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.11),
-        rgba(255, 255, 255, 0.035) 45%,
-        rgba(255, 255, 255, 0.06)
-    );
-
-        border:
-            1px solid
-            rgba(255, 255, 255, 0.24);
-
-        border-radius: 32px;
-
-        backdrop-filter:
-            blur(28px)
-            saturate(180%);
-
-        -webkit-backdrop-filter:
-            blur(28px)
-            saturate(180%);
-
-        box-shadow:
-            0 35px 100px
-                rgba(0, 0, 0, 0.48),
-
-            0 10px 30px
-                rgba(0, 0, 0, 0.22),
-
-            inset 0 1px 0
-                rgba(255, 255, 255, 0.42),
-
-            inset 1px 0 0
-                rgba(255, 255, 255, 0.12),
-
-            inset 0 -1px 0
-                rgba(255, 255, 255, 0.07);
-    }
-
-    /*
-     * GLASS REFLECTION
-     */
-
+    box-shadow:
+        0 35px 100px rgba(0, 0, 0, 0.42),
+        0 10px 30px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 1px 0 0 rgba(255, 255, 255, 0.07),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
     .card::before {
         content: "";
 
@@ -417,17 +391,17 @@
 
         pointer-events: none;
 
-        background:
-            linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.18),
-                transparent 27%,
-                transparent 65%,
-                rgba(255, 255, 255, 0.055)
-            );
+            background: linear-gradient(
 
-        opacity: 0.9;
-    }
+        135deg,
+
+        rgba(255,255,255,.08),
+
+        transparent 40%
+
+    );
+
+}
 
     /*
      * GLASS LOWER GLOW
