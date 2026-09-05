@@ -16,6 +16,7 @@
     <title>Christmas Countdown • Live Radio</title>
 
     <style>
+
     :root {
         --red: #d71920;
         --red-dark: #8d0710;
@@ -89,6 +90,44 @@
     }
 
     /*
+     * =====================================================
+     * PHONE-ONLY PORTRAIT LOCK
+     * =====================================================
+     *
+     * Phones are detected with JavaScript.
+     *
+     * On a phone in landscape, the entire website is
+     * placed into a portrait-sized canvas and rotated.
+     *
+     * Tablets, iPads, desktops and laptops are untouched.
+     */
+
+    #phonePortraitViewport {
+        width: 100%;
+        height: 100dvh;
+
+        position: relative;
+
+        transform-origin: center center;
+    }
+
+    body.phone.landscape #phonePortraitViewport {
+        width: 100dvh;
+        height: 100dvw;
+
+        position: fixed;
+
+        left: 50%;
+        top: 50%;
+
+        transform:
+            translate(-50%, -50%)
+            rotate(90deg);
+
+        transform-origin: center center;
+    }
+
+    /*
      * BACKGROUND
      */
 
@@ -134,21 +173,11 @@
         overflow: hidden;
     }
 
-    /*
-     * All normal snow stays behind
-     * the glass card.
-     */
-
     #snowFar,
     #snowMid,
     #snowNear {
         z-index: 2;
     }
-
-    /*
-     * Only selected white-circle
-     * snow is placed here.
-     */
 
     #snowAbove {
         z-index: 10;
@@ -169,11 +198,6 @@
 
         opacity: var(--opacity);
 
-        /*
-         * One combined animation prevents
-         * the old left/right twitching.
-         */
-
         animation:
             smoothSnowFall
             var(--duration)
@@ -184,10 +208,6 @@
 
         will-change: transform;
     }
-
-    /*
-     * White circle snow
-     */
 
     .circle-snow {
         color: #ffffff;
@@ -231,15 +251,6 @@
             0 0 18px
             rgba(255, 255, 255, 0.25);
     }
-
-    /*
-     * Smooth falling + gentle sideways
-     * movement.
-     *
-     * The horizontal movement is part
-     * of the same transform animation,
-     * so it never fights another animation.
-     */
 
     @keyframes smoothSnowFall {
 
@@ -353,33 +364,47 @@
      * LIQUID GLASS CARD
      */
 
-  .card {
-    width: min(92vw, 900px);
-    padding: clamp(30px, 5vw, 60px);
-    text-align: center;
-    position: relative;
+    .card {
+        width: min(92vw, 900px);
 
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.065),
-            rgba(255, 255, 255, 0.018) 45%,
-            rgba(255, 255, 255, 0.035)
-        );
+        padding:
+            clamp(30px, 5vw, 60px);
 
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 32px;
+        text-align: center;
 
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+        position: relative;
 
-    box-shadow:
-        0 35px 100px rgba(0, 0, 0, 0.42),
-        0 10px 30px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        inset 1px 0 0 rgba(255, 255, 255, 0.07),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-}
+        background:
+            linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.065),
+                rgba(255, 255, 255, 0.018) 45%,
+                rgba(255, 255, 255, 0.035)
+            );
+
+        border:
+            1px solid
+            rgba(255, 255, 255, 0.18);
+
+        border-radius:
+            32px;
+
+        backdrop-filter:
+            blur(14px)
+            saturate(180%);
+
+        -webkit-backdrop-filter:
+            blur(14px)
+            saturate(180%);
+
+        box-shadow:
+            0 35px 100px rgba(0, 0, 0, 0.42),
+            0 10px 30px rgba(0, 0, 0, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.22),
+            inset 1px 0 0 rgba(255, 255, 255, 0.07),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    }
+
     .card::before {
         content: "";
 
@@ -391,17 +416,13 @@
 
         pointer-events: none;
 
-            background: linear-gradient(
-
-        135deg,
-
-        rgba(255,255,255,.08),
-
-        transparent 40%
-
-    );
-
-}
+        background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.08),
+                transparent 40%
+            );
+    }
 
     /*
      * GLASS LOWER GLOW
@@ -452,7 +473,8 @@
         padding:
             9px 17px;
 
-        border-radius: 999px;
+        border-radius:
+            999px;
 
         background:
             linear-gradient(
@@ -536,34 +558,43 @@
 
     /*
      * CHRISTMAS TITLE
-     *
-     * Rich Christmas red + green.
      */
 
     #title {
-    font-size: clamp(3rem, 9vw, 7rem);
-    font-weight: 900;
-    line-height: 0.95;
-    margin: 0 0 10px;
+        font-size:
+            clamp(3rem, 9vw, 7rem);
 
-    background: linear-gradient(
-        105deg,
-        #ff2933 0%,
-        #d71920 30%,
-        #0fa15a 58%,
-        #0b6b3a 82%,
-        #16a864 100%
-    );
+        font-weight:
+            900;
 
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+        line-height:
+            0.95;
 
-    text-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-}
+        margin:
+            0 0 10px;
 
-        margin-bottom:
-            4px;
+        background:
+            linear-gradient(
+                105deg,
+                #ff2933 0%,
+                #d71920 30%,
+                #0fa15a 58%,
+                #0b6b3a 82%,
+                #16a864 100%
+            );
+
+        -webkit-background-clip:
+            text;
+
+        -webkit-text-fill-color:
+            transparent;
+
+        background-clip:
+            text;
+
+        text-shadow:
+            0 8px 30px
+            rgba(0, 0, 0, 0.25);
     }
 
     /*
@@ -995,16 +1026,21 @@
 
     /*
      * LANDSCAPE
+     *
+     * Only applies to non-phone devices.
+     *
+     * Phone landscape is handled by the portrait
+     * canvas above.
      */
 
     @media (max-width: 900px) and (orientation: landscape) {
 
-        #container {
+        body:not(.phone) #container {
             align-items:
                 center;
         }
 
-        .card {
+        body:not(.phone) .card {
             padding:
                 20px 35px;
 
@@ -1018,17 +1054,17 @@
                 26px;
         }
 
-        .live-label {
+        body:not(.phone) .live-label {
             margin-bottom:
                 8px;
         }
 
-        #title {
+        body:not(.phone) #title {
             font-size:
                 clamp(2.5rem, 8vw, 5rem);
         }
 
-        #subtitle {
+        body:not(.phone) #subtitle {
             font-size:
                 clamp(1.6rem, 4vw, 2.7rem);
 
@@ -1036,7 +1072,7 @@
                 15px;
         }
 
-        #countdown {
+        body:not(.phone) #countdown {
             margin-bottom:
                 15px;
 
@@ -1044,12 +1080,12 @@
                 9px 20px;
         }
 
-        .song-wrapper {
+        body:not(.phone) .song-wrapper {
             margin-bottom:
                 15px;
         }
 
-        footer {
+        body:not(.phone) footer {
             margin-top:
                 12px;
         }
@@ -1152,95 +1188,321 @@
                 0.001ms !important;
         }
     }
-</style>
+
+    </style>
 </head>
 
 <body>
 
-    <div id="bg"></div>
+    <script>
+        /*
+         * =====================================================
+         * PHONE DETECTION
+         * =====================================================
+         *
+         * iPhone / iPod
+         * Android phones
+         * Windows phones
+         * Other mobile phones
+         *
+         * Tablets and computers are excluded.
+         */
 
-    <div id="snowFar" class="snow-layer"></div>
-    <div id="snowMid" class="snow-layer"></div>
-    <div id="snowNear" class="snow-layer"></div>
+        (function () {
 
-    <!-- Only selected circle snow goes above the glass -->
-    <div id="snowAbove" class="snow-layer"></div>
+            const userAgent =
+                navigator.userAgent || "";
 
-    <main id="container">
+            const applePhone =
+                /iPhone|iPod/i.test(
+                    userAgent
+                );
 
-        <section class="card">
+            const androidPhone =
+                /Android/i.test(
+                    userAgent
+                ) &&
+                /Mobile/i.test(
+                    userAgent
+                ) &&
+                !/Tablet/i.test(
+                    userAgent
+                );
 
-            <div class="live-label">
-                <span class="live-dot"></span>
-                Christmas Radio
-            </div>
+            const windowsPhone =
+                /Windows Phone/i.test(
+                    userAgent
+                );
 
-            <h1 id="title">
-                Christmas
-            </h1>
+            const genericPhone =
+                /Mobile/i.test(
+                    userAgent
+                ) &&
+                !/Tablet|iPad/i.test(
+                    userAgent
+                );
 
-            <h1 id="subtitle">
-                Countdown
-            </h1>
+            const isPhone =
+                applePhone ||
+                androidPhone ||
+                windowsPhone ||
+                genericPhone;
 
-            <div id="countdown">
-                Loading...
-            </div>
+            if (isPhone) {
 
-            <div class="song-wrapper">
+                document.body.classList.add(
+                    "phone"
+                );
 
-                <div class="now-playing">
-                    Now Playing
+            } else {
+
+                document.body.classList.add(
+                    "not-phone"
+                );
+            }
+
+
+            function updatePhoneOrientation() {
+
+                if (!isPhone) {
+                    return;
+                }
+
+                const width =
+                    window.visualViewport
+                        ? window.visualViewport.width
+                        : window.innerWidth;
+
+                const height =
+                    window.visualViewport
+                        ? window.visualViewport.height
+                        : window.innerHeight;
+
+                const landscape =
+                    width > height;
+
+                document.body.classList.toggle(
+                    "landscape",
+                    landscape
+                );
+
+                document.body.classList.toggle(
+                    "portrait",
+                    !landscape
+                );
+            }
+
+
+            updatePhoneOrientation();
+
+
+            window.addEventListener(
+                "resize",
+                updatePhoneOrientation,
+                {
+                    passive: true
+                }
+            );
+
+
+            window.addEventListener(
+                "orientationchange",
+                updatePhoneOrientation,
+                {
+                    passive: true
+                }
+            );
+
+
+            if (
+                window.visualViewport
+            ) {
+
+                window.visualViewport.addEventListener(
+                    "resize",
+                    updatePhoneOrientation,
+                    {
+                        passive: true
+                    }
+                );
+            }
+
+
+            /*
+             * Try native portrait locking where the
+             * browser permits it.
+             *
+             * The CSS system above does NOT depend
+             * on this succeeding.
+             */
+
+            async function requestPortraitLock() {
+
+                if (!isPhone) {
+                    return;
+                }
+
+                try {
+
+                    if (
+                        screen.orientation &&
+                        typeof screen.orientation.lock ===
+                            "function"
+                    ) {
+
+                        await screen.orientation.lock(
+                            "portrait"
+                        );
+                    }
+
+                } catch (
+                    error
+                ) {
+
+                    /*
+                     * Safari normally does not allow
+                     * this from an ordinary webpage.
+                     *
+                     * The visual portrait lock still
+                     * works through CSS.
+                     */
+                }
+            }
+
+
+            requestPortraitLock();
+
+        })();
+    </script>
+
+
+    <!--
+         Everything inside this wrapper rotates together.
+
+         This is important because it makes the background,
+         snow, glass, buttons, text and audio UI all belong
+         to the same portrait canvas.
+    -->
+
+    <div id="phonePortraitViewport">
+
+        <div id="bg"></div>
+
+        <div
+            id="snowFar"
+            class="snow-layer">
+        </div>
+
+        <div
+            id="snowMid"
+            class="snow-layer">
+        </div>
+
+        <div
+            id="snowNear"
+            class="snow-layer">
+        </div>
+
+        <div
+            id="snowAbove"
+            class="snow-layer">
+        </div>
+
+
+        <main id="container">
+
+            <section class="card">
+
+                <div class="live-label">
+
+                    <span class="live-dot"></span>
+
+                    Christmas Radio
+
                 </div>
 
-                <div id="songName">
-                    Loading radio...
+
+                <h1 id="title">
+                    Christmas
+                </h1>
+
+
+                <h1 id="subtitle">
+                    Countdown
+                </h1>
+
+
+                <div id="countdown">
+                    Loading...
                 </div>
 
-                <div class="up-next-wrapper">
 
-                    <div class="up-next-label">
-                        Up Next
+                <div class="song-wrapper">
+
+                    <div class="now-playing">
+                        Now Playing
                     </div>
 
-                    <div id="upNext">
-                        Loading...
+
+                    <div id="songName">
+                        Loading radio...
+                    </div>
+
+
+                    <div class="up-next-wrapper">
+
+                        <div class="up-next-label">
+                            Up Next
+                        </div>
+
+
+                        <div id="upNext">
+                            Loading...
+                        </div>
+
                     </div>
 
                 </div>
 
-            </div>
 
-            <button id="playButton">
-                🎄 Start Live Radio
-            </button>
+                <button id="playButton">
+                    🎄 Start Live Radio
+                </button>
 
-            <footer>
-                ❄️ Merry Christmas ❄️
-            </footer>
 
-        </section>
+                <footer>
+                    ❄️ Merry Christmas ❄️
+                </footer>
 
-    </main>
+            </section>
 
-    <audio
-        id="musicAudio"
-        preload="auto"
-        playsinline
-        controlslist="nodownload noplaybackrate noremoteplayback">
-    </audio>
+        </main>
 
-    <audio
-        id="speechAudio"
-        preload="auto"
-        playsinline
-        controlslist="nodownload noplaybackrate noremoteplayback">
-    </audio>
+
+        <audio
+            id="musicAudio"
+            preload="auto"
+            playsinline
+            controlslist="nodownload noplaybackrate noremoteplayback">
+        </audio>
+
+
+        <audio
+            id="speechAudio"
+            preload="auto"
+            playsinline
+            controlslist="nodownload noplaybackrate noremoteplayback">
+        </audio>
+
+    </div>
+
 
     <script>
 
         /*
+         * =====================================================
          * FULL MOBILE GESTURE PREVENTION
+         * =====================================================
          */
 
         let lastTouchEnd = 0;
@@ -1249,46 +1511,58 @@
             "touchend",
             event => {
 
-                const now = Date.now();
+                const now =
+                    Date.now();
 
                 if (
                     now - lastTouchEnd <= 300
                 ) {
+
                     event.preventDefault();
                 }
 
-                lastTouchEnd = now;
+                lastTouchEnd =
+                    now;
 
             },
             {
                 passive: false
             }
         );
+
 
         document.addEventListener(
             "gesturestart",
             event => {
+
                 event.preventDefault();
+
             },
             {
                 passive: false
             }
         );
+
 
         document.addEventListener(
             "gesturechange",
             event => {
+
                 event.preventDefault();
+
             },
             {
                 passive: false
             }
         );
 
+
         document.addEventListener(
             "gestureend",
             event => {
+
                 event.preventDefault();
+
             },
             {
                 passive: false
@@ -1383,15 +1657,20 @@
         function formatTime(seconds) {
 
             if (
-                !Number.isFinite(seconds)
+                !Number.isFinite(
+                    seconds
+                )
             ) {
+
                 return "0:00";
             }
 
             seconds =
                 Math.max(
                     0,
-                    Math.floor(seconds)
+                    Math.floor(
+                        seconds
+                    )
                 );
 
             const minutes =
@@ -1431,6 +1710,7 @@
                     0
                 );
 
+
             if (
                 now >= christmas
             ) {
@@ -1447,6 +1727,7 @@
                     );
             }
 
+
             const seconds =
                 Math.floor(
                     (
@@ -1454,10 +1735,12 @@
                     ) / 1000
                 );
 
+
             const days =
                 Math.floor(
                     seconds / 86400
                 );
+
 
             const hours =
                 Math.floor(
@@ -1466,6 +1749,7 @@
                     ) / 3600
                 );
 
+
             const minutes =
                 Math.floor(
                     (
@@ -1473,14 +1757,18 @@
                     ) / 60
                 );
 
+
             const secs =
                 seconds % 60;
+
 
             countdownElement.textContent =
                 `${days}d ${hours}h ${minutes}m ${secs}s`;
         }
 
+
         updateCountdown();
+
 
         setInterval(
             updateCountdown,
@@ -1490,14 +1778,6 @@
 
         /*
          * SNOW
-         *
-         * ❄ and • are separated.
-         *
-         * ❄ snow remains at the original
-         * quantities.
-         *
-         * • snow gets considerably more
-         * particles.
          */
 
         function setSnowDrift(
@@ -1505,64 +1785,73 @@
             driftAmount
         ) {
 
-            /*
-             * Give every snowflake its own
-             * smooth horizontal path.
-             */
-
             const center =
-                (Math.random() - 0.5) *
+                (
+                    Math.random() - 0.5
+                ) *
                 driftAmount;
 
             const swing =
                 8 +
                 Math.random() *
-                (driftAmount * 0.55);
+                (
+                    driftAmount *
+                    0.55
+                );
 
             const direction =
                 Math.random() > 0.5
                     ? 1
                     : -1;
 
+
             snowflake.style.setProperty(
                 "--drift-start",
                 `${center - swing * direction}px`
             );
+
 
             snowflake.style.setProperty(
                 "--drift-one",
                 `${center + swing * 0.25 * direction}px`
             );
 
+
             snowflake.style.setProperty(
                 "--drift-two",
                 `${center + swing * direction}px`
             );
+
 
             snowflake.style.setProperty(
                 "--drift-three",
                 `${center + swing * 0.35 * direction}px`
             );
 
+
             snowflake.style.setProperty(
                 "--drift-four",
                 `${center - swing * 0.45 * direction}px`
             );
+
 
             snowflake.style.setProperty(
                 "--drift-five",
                 `${center - swing * direction}px`
             );
 
+
             snowflake.style.setProperty(
                 "--drift-six",
                 `${center - swing * 0.30 * direction}px`
             );
 
+
             snowflake.style.setProperty(
                 "--drift-seven",
                 `${center + swing * 0.55 * direction}px`
             );
+
 
             snowflake.style.setProperty(
                 "--drift-end",
@@ -1587,41 +1876,50 @@
                         "div"
                     );
 
+
                 snowflake.className =
                     "snowflake";
+
 
                 snowflake.textContent =
                     Math.random() > 0.5
                         ? "❄"
                         : "•";
 
+
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
+
 
                 snowflake.style.setProperty(
                     "--size",
                     `${8 + Math.random() * 14}px`
                 );
 
+
                 snowflake.style.setProperty(
                     "--opacity",
                     `${0.25 + Math.random() * 0.65}`
                 );
+
 
                 snowflake.style.setProperty(
                     "--duration",
                     `${7 + Math.random() * 12}s`
                 );
 
+
                 snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * 15}s`
                 );
 
+
                 setSnowDrift(
                     snowflake,
                     50
                 );
+
 
                 container.appendChild(
                     snowflake
@@ -1629,16 +1927,6 @@
             }
         }
 
-
-        /*
-         * WHITE CIRCLE SNOW
-         *
-         * Only selected • particles are
-         * moved into snowAbove.
-         *
-         * This means ❄ can NEVER appear
-         * over the glass.
-         */
 
         function createCircleSnow(
             container,
@@ -1657,8 +1945,10 @@
                         "div"
                     );
 
+
                 snowflake.className =
                     `snowflake circle-snow ${depth}`;
+
 
                 snowflake.textContent =
                     "•";
@@ -1729,6 +2019,7 @@
                         minSize
                     );
 
+
                 const opacity =
                     minOpacity +
                     Math.random() *
@@ -1736,6 +2027,7 @@
                         maxOpacity -
                         minOpacity
                     );
+
 
                 const duration =
                     minDuration +
@@ -1749,37 +2041,34 @@
                 snowflake.style.left =
                     `${Math.random() * 100}%`;
 
+
                 snowflake.style.setProperty(
                     "--size",
                     `${size}px`
                 );
+
 
                 snowflake.style.setProperty(
                     "--opacity",
                     opacity
                 );
 
+
                 snowflake.style.setProperty(
                     "--duration",
                     `${duration}s`
                 );
+
 
                 snowflake.style.setProperty(
                     "--delay",
                     `${-Math.random() * duration}s`
                 );
 
-                /*
-                 * Random starting height.
-                 */
 
                 snowflake.style.top =
                     `${-20 - Math.random() * 100}px`;
 
-
-                /*
-                 * Smooth natural movement.
-                 */
 
                 setSnowDrift(
                     snowflake,
@@ -1787,19 +2076,8 @@
                 );
 
 
-                /*
-                 * Above-glass probability.
-                 *
-                 * Far  = 8%
-                 * Mid  = 40%
-                 * Near = 70%
-                 *
-                 * This makes the effect noticeable
-                 * without putting all the snow
-                 * over the card.
-                 */
-
                 let aboveChance;
+
 
                 if (
                     depth === "far"
@@ -1849,10 +2127,6 @@
         }
 
 
-        /*
-         * ❄ ORIGINAL SNOW
-         */
-
         createSnowflakes(
             document.getElementById(
                 "snowFar"
@@ -1860,12 +2134,14 @@
             20
         );
 
+
         createSnowflakes(
             document.getElementById(
                 "snowMid"
             ),
             15
         );
+
 
         createSnowflakes(
             document.getElementById(
@@ -1875,10 +2151,6 @@
         );
 
 
-        /*
-         * • WHITE CIRCLES
-         */
-
         createCircleSnow(
             document.getElementById(
                 "snowFar"
@@ -1887,6 +2159,7 @@
             "far"
         );
 
+
         createCircleSnow(
             document.getElementById(
                 "snowMid"
@@ -1894,6 +2167,7 @@
             38,
             "mid"
         );
+
 
         createCircleSnow(
             document.getElementById(
@@ -1916,11 +2190,13 @@
                 return;
             }
 
+
             if (
                 metadataLoadingPromise
             ) {
                 return metadataLoadingPromise;
             }
+
 
             metadataLoadingPromise =
                 (async () => {
@@ -1934,6 +2210,7 @@
                             }
                         );
 
+
                     if (
                         !response.ok
                     ) {
@@ -1943,8 +2220,10 @@
                         );
                     }
 
+
                     const data =
                         await response.json();
+
 
                     if (
                         !data ||
@@ -1977,11 +2256,13 @@
                                     );
                                 }
 
+
                                 const name =
                                     String(
                                         entry.name ??
                                         ""
                                     ).trim();
+
 
                                 const file =
                                     String(
@@ -1989,10 +2270,12 @@
                                         ""
                                     ).trim();
 
+
                                 const duration =
                                     Number(
                                         entry.duration
                                     );
+
 
                                 if (
                                     !name
@@ -2003,6 +2286,7 @@
                                     );
                                 }
 
+
                                 if (
                                     !file
                                 ) {
@@ -2011,6 +2295,7 @@
                                         `"${name}" is missing its file in durations.json.`
                                     );
                                 }
+
 
                                 if (
                                     !Number.isFinite(
@@ -2023,6 +2308,7 @@
                                         `"${name}" has an invalid duration in durations.json.`
                                     );
                                 }
+
 
                                 return {
                                     name,
@@ -2043,10 +2329,6 @@
                     }
 
 
-                    /*
-                     * SPEECH DURATION
-                     */
-
                     try {
 
                         const speechMetadata =
@@ -2054,11 +2336,14 @@
                                 "audio"
                             );
 
+
                         speechMetadata.preload =
                             "metadata";
 
+
                         speechMetadata.src =
                             SPEECH_SRC;
+
 
                         speechDuration =
                             await new Promise(
@@ -2090,8 +2375,10 @@
                                                 timeout
                                             );
 
+
                                             const duration =
                                                 speechMetadata.duration;
+
 
                                             if (
                                                 Number.isFinite(
@@ -2129,6 +2416,7 @@
                                                 timeout
                                             );
 
+
                                             reject(
                                                 new Error(
                                                     "Could not load speech.mp3"
@@ -2144,6 +2432,7 @@
 
 
                                     speechMetadata.load();
+
                                 }
                             );
 
@@ -2156,17 +2445,15 @@
                             error
                         );
 
+
                         speechDuration =
                             0;
                     }
 
 
-                    /*
-                     * PLAYLIST DURATION
-                     */
-
                     totalPlaylistDuration =
                         0;
+
 
                     for (
                         let i = 0;
@@ -2176,6 +2463,7 @@
 
                         totalPlaylistDuration +=
                             songs[i].duration;
+
 
                         if (
                             (i + 1) %
@@ -2209,12 +2497,14 @@
                         songs.length
                     );
 
+
                     console.log(
                         "Speech duration:",
                         formatTime(
                             speechDuration
                         )
                     );
+
 
                     console.log(
                         "Total radio timeline:",
@@ -2387,6 +2677,7 @@
                 );
             }
 
+
             return segment.index;
         }
 
@@ -2399,6 +2690,7 @@
                 getDisplaySongIndex(
                     segment
                 );
+
 
             return (
                 (
@@ -2429,6 +2721,7 @@
                     segment
                 );
 
+
             const next =
                 getDisplayNextSongIndex(
                     segment
@@ -2437,6 +2730,7 @@
 
             songNameElement.textContent =
                 songs[current].name;
+
 
             upNextElement.textContent =
                 songs[next].name;
@@ -2519,6 +2813,7 @@
 
                 const duration =
                     audio.duration;
+
 
                 const position =
                     audio.currentTime;
@@ -2621,6 +2916,7 @@
             } catch {}
         }
 
+
         setupMediaSession();
 
 
@@ -2688,6 +2984,7 @@
                                     onMetadata
                                 );
 
+
                                 audio.removeEventListener(
                                     "error",
                                     onError
@@ -2713,6 +3010,7 @@
                                     true
                             }
                         );
+
                     }
                 );
             }
@@ -2868,6 +3166,7 @@
 
                 updatePlayButton();
 
+
                 updateLiveMediaSession();
 
 
@@ -2965,6 +3264,7 @@
                 playButton.textContent =
                     "⏸ Pause";
 
+
                 playButton.classList.remove(
                     "paused"
                 );
@@ -2973,6 +3273,7 @@
 
                 playButton.textContent =
                     "▶️ Play";
+
 
                 playButton.classList.add(
                     "paused"
@@ -3143,6 +3444,7 @@
                 updateRadioUI(
                     live
                 );
+
 
                 updateLiveMediaSession();
 
