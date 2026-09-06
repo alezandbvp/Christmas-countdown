@@ -184,6 +184,56 @@
       "name": "Home Alone",
       "file": "Home Alone.mp3",
       "duration": 165.256
+    },
+    {
+      "name": "Last Christmas",
+      "file": "Last Christmas.2.mp3",
+      "duration": 263.066
+    },
+    {
+      "name": "We Wish You A Merry Christmas",
+      "file": "We Wish You A Merry Christmas.2.mp3",
+      "duration": 139.575
+    },
+    {
+      "name": "Joy To The World",
+      "file": "Joy To The World.mp3",
+      "duration": 129.8
+    },
+    {
+      "name": "Everyday Is Christmas",
+      "file": "Everyday Is Christmas.mp3",
+      "duration": 205.989
+    },
+    {
+      "name": "Up In The Housetop",
+      "file": "Up In The Housetop.2.mp3",
+      "duration": 189.428
+    },
+    {
+      "name": "Berry Pie",
+      "file": "Berry Pie.mp3",
+      "duration": 174.219
+    },
+    {
+      "name": "God Rest Ye Merry Gentlemen",
+      "file": "God Rest Ye Merry Gentlemen.2.mp3",
+      "duration": 147.423
+    },
+    {
+      "name": "The Present",
+      "file": "The Present.mp3",
+      "duration": 183.113
+    },
+    {
+      "name": "Bring My Parents Back",
+      "file": "Bring My Parents Back.mp3",
+      "duration": 79.018
+    },
+    {
+      "name": "Carol Of The Bells",
+      "file": "Carol Of The Bells.2.mp3",
+      "duration": 189.336
     }
   ]
 }
