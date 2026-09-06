@@ -164,7 +164,7 @@
          * {
          *     "songs": [
          *         {
-         *             "name": "All I Want For Christmas Is You"
+         *             "name": "All I Want For Christmas Is You.2"
          *         },
          *         {
          *             "name": "Baby It's Cold Outside"
@@ -172,7 +172,7 @@
          *     ]
          * }
          *
-         * String entries are also supported for compatibility.
+         * String entries are also supported.
          */
         async function loadSongNames() {
 
@@ -232,15 +232,35 @@
 
 
         /*
-         * Convert the song name into the MP3 filename.
+         * Remove a trailing .number from the song name
+         * ONLY for the displayed/generated "name".
+         *
+         * Examples:
+         *
+         * "Song.1"  -> "Song"
+         * "Song.2"  -> "Song"
+         * "Song.15" -> "Song"
+         * "Song"    -> "Song"
+         *
+         * The original name is still used to locate
+         * the actual MP3 file.
+         */
+        function getDisplayName(songName) {
+
+            return songName.replace(/\.\d+$/, "");
+        }
+
+
+        /*
+         * Convert the original song name into the MP3 filename.
          *
          * Example:
          *
-         * All I Want For Christmas Is You
+         * "All I Want For Christmas Is You.2"
          *
          * becomes:
          *
-         * All I Want For Christmas Is You.mp3
+         * "All I Want For Christmas Is You.2.mp3"
          */
         function getFilename(songName) {
 
@@ -250,6 +270,9 @@
 
         /*
          * Create the URL for the MP3.
+         *
+         * This uses the ORIGINAL song name so that
+         * .number remains in the filename.
          */
         function getSongURL(songName) {
 
@@ -463,26 +486,49 @@
                     i++
                 ) {
 
-                    const name =
+                    /*
+                     * This is the ORIGINAL name.
+                     *
+                     * If it is:
+                     *
+                     * "Song.2"
+                     *
+                     * then the actual file will be:
+                     *
+                     * "Song.2.mp3"
+                     */
+                    const originalName =
                         songNames[i];
 
 
+                    /*
+                     * Remove .number ONLY for
+                     * the generated single/display name.
+                     */
+                    const displayName =
+                        getDisplayName(originalName);
+
+
+                    /*
+                     * Keep the .number in the
+                     * actual filename.
+                     */
                     const file =
-                        getFilename(name);
+                        getFilename(originalName);
 
 
                     status.textContent =
-                        `Checking ${i + 1} of ${total}\n\n${name}`;
+                        `Checking ${i + 1} of ${total}\n\n${displayName}`;
 
 
                     try {
 
                         const duration =
-                            await getDuration(name);
+                            await getDuration(originalName);
 
 
                         songs.push({
-                            name: name,
+                            name: displayName,
                             file: file,
                             duration: Number(
                                 duration.toFixed(3)
@@ -493,7 +539,7 @@
                     } catch (error) {
 
                         console.error(
-                            `Failed to load ${name}:`,
+                            `Failed to load ${originalName}:`,
                             error
                         );
 
@@ -502,16 +548,19 @@
                          * Keep the song in the
                          * generated manifest so
                          * the failure is visible.
+                         *
+                         * The display name has .number
+                         * removed, but the file keeps it.
                          */
                         songs.push({
-                            name: name,
+                            name: displayName,
                             file: file,
                             duration: null,
                             error: true
                         });
 
 
-                        failed.push(name);
+                        failed.push(displayName);
                     }
 
 
