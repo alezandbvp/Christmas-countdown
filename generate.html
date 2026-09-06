@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <meta name="theme-color" content="#12030a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <title>Christmas Radio Duration Generator</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: #12030a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: #1d0710;
+            border: 1px solid #4d1829;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 26px;
+        }
+
+        .description {
+            color: #c9aeb7;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 12px;
+            padding: 15px;
+            background: #8b1e3f;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #a5264c;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #12030a;
+            color: #d8c1c8;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        #progress {
+            width: 100%;
+            height: 10px;
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #35101d;
+            display: none;
+        }
+
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background: #b52b55;
+            transition: width 0.15s ease;
+        }
+
+        .success {
+            color: #8be28b;
+        }
+
+        .error {
+            color: #ff8585;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Christmas Radio Duration Generator</h1>
+
+        <div class="description">
+            Loads the song names from <strong>songs.json</strong>, checks each
+            corresponding MP3 in the <strong>songs</strong> folder, reads its
+            duration, and downloads a new <strong>durations.json</strong>.
+        </div>
+
+        <button id="generateButton">
+            Generate durations.json
+        </button>
+
+        <div id="progress">
+            <div id="progressBar"></div>
+        </div>
+
+        <div id="status">
+            Ready to load songs.json.
+        </div>
+
+    </div>
+
+    <script>
+        const SONG_FOLDER = "./songs/";
+
+        const generateButton =
+            document.getElementById("generateButton");
+
+        const status =
+            document.getElementById("status");
+
+        const progress =
+            document.getElementById("progress");
+
+        const progressBar =
+            document.getElementById("progressBar");
+
+
+        /*
+         * Load song names from songs.json.
+         *
+         * Expected format:
+         *
+         * {
+         *     "songs": [
+         *         {
+         *             "name": "All I Want For Christmas Is You.2"
+         *         },
+         *         {
+         *             "name": "Baby It's Cold Outside"
+         *         }
+         *     ]
+         * }
+         *
+         * String entries are also supported.
+         */
+        async function loadSongNames() {
+
+            const response = await fetch("./songs.json", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    `Could not load songs.json (${response.status})`
+                );
+            }
+
+            const data = await response.json();
+
+            if (!data || !Array.isArray(data.songs)) {
+                throw new Error(
+                    "songs.json must contain a 'songs' array."
+                );
+            }
+
+            const songs = data.songs
+                .map(song => {
+
+                    /*
+                     * Support:
+                     *
+                     * { "name": "Song Name" }
+                     *
+                     * and:
+                     *
+                     * "Song Name"
+                     */
+                    if (typeof song === "string") {
+                        return song.trim();
+                    }
+
+                    if (
+                        song &&
+                        typeof song.name === "string"
+                    ) {
+                        return song.name.trim();
+                    }
+
+                    return "";
+                })
+                .filter(Boolean);
+
+            if (songs.length === 0) {
+                throw new Error(
+                    "songs.json contains no valid songs."
+                );
+            }
+
+            return songs;
+        }
+
+
+        /*
+         * Remove a trailing .number from the song name
+         * ONLY for the displayed/generated "name".
+         *
+         * Examples:
+         *
+         * "Song.1"  -> "Song"
+         * "Song.2"  -> "Song"
+         * "Song.15" -> "Song"
+         * "Song"    -> "Song"
+         *
+         * The original name is still used to locate
+         * the actual MP3 file.
+         */
+        function getDisplayName(songName) {
+
+            return songName.replace(/\.\d+$/, "");
+        }
+
+
+        /*
+         * Convert the original song name into the MP3 filename.
+         *
+         * Example:
+         *
+         * "All I Want For Christmas Is You.2"
+         *
+         * becomes:
+         *
+         * "All I Want For Christmas Is You.2.mp3"
+         */
+        function getFilename(songName) {
+
+            return `${songName}.mp3`;
+        }
+
+
+        /*
+         * Create the URL for the MP3.
+         *
+         * This uses the ORIGINAL song name so that
+         * .number remains in the filename.
+         */
+        function getSongURL(songName) {
+
+            const filename =
+                getFilename(songName);
+
+            return (
+                SONG_FOLDER +
+                encodeURIComponent(filename)
+            );
+        }
+
+
+        /*
+         * Read the duration of an MP3.
+         *
+         * This is only used by the generator
+         * to create durations.json.
+         */
+        function getDuration(songName) {
+
+            return new Promise((resolve, reject) => {
+
+                const audio = new Audio();
+
+                let finished = false;
+
+
+                const cleanup = () => {
+
+                    audio.removeEventListener(
+                        "loadedmetadata",
+                        handleMetadata
+                    );
+
+                    audio.removeEventListener(
+                        "error",
+                        handleError
+                    );
+
+                    audio.src = "";
+                };
+
+
+                const handleMetadata = () => {
+
+                    if (finished) {
+                        return;
+                    }
+
+                    finished = true;
+
+                    const duration =
+                        audio.duration;
+
+                    cleanup();
+
+
+                    if (
+                        !Number.isFinite(duration) ||
+                        duration <= 0
+                    ) {
+
+                        reject(
+                            new Error(
+                                "Invalid audio duration"
+                            )
+                        );
+
+                        return;
+                    }
+
+
+                    resolve(duration);
+                };
+
+
+                const handleError = () => {
+
+                    if (finished) {
+                        return;
+                    }
+
+                    finished = true;
+
+                    cleanup();
+
+                    reject(
+                        new Error(
+                            "Could not load audio"
+                        )
+                    );
+                };
+
+
+                audio.preload = "metadata";
+
+
+                audio.addEventListener(
+                    "loadedmetadata",
+                    handleMetadata
+                );
+
+
+                audio.addEventListener(
+                    "error",
+                    handleError
+                );
+
+
+                audio.src =
+                    getSongURL(songName);
+
+                audio.load();
+            });
+        }
+
+
+        /*
+         * Download a JSON file.
+         */
+        function downloadJSON(data, filename) {
+
+            const json =
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
+
+
+            const blob =
+                new Blob(
+                    [json],
+                    {
+                        type: "application/json"
+                    }
+                );
+
+
+            const url =
+                URL.createObjectURL(blob);
+
+
+            const link =
+                document.createElement("a");
+
+
+            link.href = url;
+
+            link.download = filename;
+
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+
+
+        /*
+         * Generate durations.json.
+         */
+        async function generateDurations() {
+
+            generateButton.disabled = true;
+
+            progress.style.display = "block";
+
+            progressBar.style.width = "0%";
+
+            status.className = "";
+
+
+            try {
+
+                status.textContent =
+                    "Loading song names from songs.json...";
+
+
+                /*
+                 * songs.json is the source
+                 * for playlist order and names.
+                 */
+                const songNames =
+                    await loadSongNames();
+
+
+                const total =
+                    songNames.length;
+
+
+                status.textContent =
+                    `Checking ${total} hosted songs...`;
+
+
+                const songs = [];
+
+                const failed = [];
+
+
+                for (
+                    let i = 0;
+                    i < songNames.length;
+                    i++
+                ) {
+
+                    /*
+                     * This is the ORIGINAL name.
+                     *
+                     * If it is:
+                     *
+                     * "Song.2"
+                     *
+                     * then the actual file will be:
+                     *
+                     * "Song.2.mp3"
+                     */
+                    const originalName =
+                        songNames[i];
+
+
+                    /*
+                     * Remove .number ONLY for
+                     * the generated single/display name.
+                     */
+                    const displayName =
+                        getDisplayName(originalName);
+
+
+                    /*
+                     * Keep the .number in the
+                     * actual filename.
+                     */
+                    const file =
+                        getFilename(originalName);
+
+
+                    status.textContent =
+                        `Checking ${i + 1} of ${total}\n\n${displayName}`;
+
+
+                    try {
+
+                        const duration =
+                            await getDuration(originalName);
+
+
+                        songs.push({
+                            name: displayName,
+                            file: file,
+                            duration: Number(
+                                duration.toFixed(3)
+                            )
+                        });
+
+
+                    } catch (error) {
+
+                        console.error(
+                            `Failed to load ${originalName}:`,
+                            error
+                        );
+
+
+                        /*
+                         * Keep the song in the
+                         * generated manifest so
+                         * the failure is visible.
+                         *
+                         * The display name has .number
+                         * removed, but the file keeps it.
+                         */
+                        songs.push({
+                            name: displayName,
+                            file: file,
+                            duration: null,
+                            error: true
+                        });
+
+
+                        failed.push(displayName);
+                    }
+
+
+                    const percent =
+                        ((i + 1) / total) * 100;
+
+
+                    progressBar.style.width =
+                        `${percent}%`;
+                }
+
+
+                /*
+                 * Create the final durations.json.
+                 */
+                const output = {
+                    songs: songs
+                };
+
+
+                downloadJSON(
+                    output,
+                    "durations.json"
+                );
+
+
+                if (failed.length > 0) {
+
+                    status.className =
+                        "error";
+
+
+                    status.textContent =
+                        `Finished with ${failed.length} failed song(s).\n\n` +
+                        `durations.json has been downloaded.\n\n` +
+                        `Failed songs:\n` +
+                        failed.join("\n");
+
+                } else {
+
+                    status.className =
+                        "success";
+
+
+                    status.textContent =
+                        `Successfully generated durations.json.\n\n` +
+                        `${songs.length} songs processed.\n\n` +
+                        `The file has been downloaded.`;
+                }
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                status.className =
+                    "error";
+
+
+                status.textContent =
+                    `Error:\n\n${error.message}`;
+            }
+
+
+            generateButton.disabled = false;
+        }
+
+
+        generateButton.addEventListener(
+            "click",
+            generateDurations
+        );
+    </script>
+
+</body>
+
+</html>
